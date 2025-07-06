@@ -1,0 +1,9 @@
+﻿auth:
+  rootUser: minioadmin
+  rootPassword: minio123
+persistence:
+  size: 5Gi
+resources:
+  limits:
+    cpu: "0.5"
+    memory: 512Mi

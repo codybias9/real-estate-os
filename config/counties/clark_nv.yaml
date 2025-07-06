@@ -1,0 +1,4 @@
+﻿parcel_source : "clark county assessor"
+scrape_params :
+  parcel_url : "https://gis.clarkcountynv.gov/assessor/parcel/\"
+  headless   : true

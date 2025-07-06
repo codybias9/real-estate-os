@@ -1,0 +1,75 @@
+﻿executor: CeleryExecutor
+
+dags:
+  gitSync:
+    enabled: false
+  persistence:
+    enabled: false
+
+logs:
+  persistence:
+    enabled: false
+
+redis:
+  persistence:
+    enabled: false
+
+postgresql:
+  persistence:
+    enabled: false
+
+dag-processor:
+  extraVolumes:
+    - name: airflow-dags
+      configMap:
+        name: airflow-dags
+  extraVolumeMounts:
+    - name: airflow-dags
+      mountPath: /opt/airflow/dags
+      readOnly: true
+
+scheduler:
+  extraVolumes:
+    - name: airflow-dags
+      configMap:
+        name: airflow-dags
+  extraVolumeMounts:
+    - name: airflow-dags
+      mountPath: /opt/airflow/dags
+      readOnly: true
+
+triggerer:
+  extraVolumes:
+    - name: airflow-dags
+      configMap:
+        name: airflow-dags
+  extraVolumeMounts:
+    - name: airflow-dags
+      mountPath: /opt/airflow/dags
+      readOnly: true
+
+webserver:
+  extraVolumes:
+    - name: airflow-dags
+      configMap:
+        name: airflow-dags
+  extraVolumeMounts:
+    - name: airflow-dags
+      mountPath: /opt/airflow/dags
+      readOnly: true
+
+workers:
+  extraVolumes:
+    - name: airflow-dags
+      configMap:
+        name: airflow-dags
+  extraVolumeMounts:
+    - name: airflow-dags
+      mountPath: /opt/airflow/dags
+      readOnly: true
+
+migrations:
+  runOnStartup: true
+  waitForMigrations:
+    enabled: true
+    timeout: 300

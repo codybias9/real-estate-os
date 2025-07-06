@@ -1,0 +1,17 @@
+﻿apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: airflow-triggerer
+  namespace: orchestration
+spec:
+  template:
+    metadata:
+      annotations:
+        rollme: "2025-07-04T22:02:12.0832678-07:00"
+    spec:
+      initContainers:
+      - name: wait-for-airflow-migrations
+        env: []
+      containers:
+      - name: triggerer
+        env: []

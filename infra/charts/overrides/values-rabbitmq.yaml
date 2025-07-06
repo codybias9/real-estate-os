@@ -1,0 +1,8 @@
+﻿auth:
+  username: appuser
+  password: apppass
+  erlangCookie: secretcookie
+resources:
+  limits:
+    cpu: "0.5"
+    memory: 512Mi

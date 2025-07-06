@@ -1,0 +1,60 @@
+﻿dags:
+  persistence:
+    enabled: false
+  gitSync:
+    enabled: false
+
+extraDags:
+property_processing_pipeline.py: |
+  from airflow import DAG
+  from airflow.providers.cncf.kubernetes.operators.kubernetes_pod import KubernetesPodOperator
+  from airflow.utils.dates import days_ago
+  from datetime import timedelta
+
+  S3_BUCKET = "real-estate-bucket"
+  AGENT_IMAGE = "codybias9/real-estate-os-agent:latest"
+
+  with DAG(
+      dag_id="property_processing_pipeline",
+      description="End-to-end pipeline for property enrichment and outreach",
+      schedule_interval=None,
+      start_date=days_ago(1),
+      catchup=False,
+      tags=["real-estate", "processing"],
+      doc_md=\"""\"
+      ### Property Processing Pipeline
+
+      This DAG orchestrates the enrichment, scoring, document generation,
+      and outreach for off-market real estate properties.
+
+      **Triggering the DAG**
+      This DAG is triggered manually or via an API call with a configuration object like:
+
+      `json
+      {
+        "property_id": "123-abc-street",
+        "raw_data_path": "s3://initial-data/123-abc-street.json",
+        "target_email": "homeowner@example.com"
+      }
+      `
+      \"""\"
+  ) as dag:
+
+      property_id = "{{ dag_run.conf['property_id'] }}"
+
+      enrich_task = KubernetesPodOperator(
+          task_id="enrich_property_data",
+          name="enrich-property-pod",
+          image=AGENT_IMAGE,
+          cmds=["python", "-m", "agents.enrichment.enrich"],
+          arguments=[
+              "--input-uri", "{{ dag_run.conf['raw_data_path'] }}",
+              "--output-uri", f"s3://{S3_BUCKET}/enriched/{property_id}.json"
+          ],
+          get_logs=True,
+          is_delete_operator_pod=True,
+          in_cluster=True,
+          namespace="orchestration"
+      )
+
+      enrich_task

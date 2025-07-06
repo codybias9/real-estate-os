@@ -1,0 +1,13 @@
+{
+  "property_address": "123 Main St, Anytown, USA",
+  "owner_name": "John Doe",
+  "last_sale_date": "2015-06-20",
+  "assessor_data": {
+    "apn": "203-656-44",
+    "square_footage": 2225,
+    "bedrooms": 3,
+    "bathrooms": 1.6,
+    "year_built": 1969,
+    "assessed_value": 351458
+  }
+}

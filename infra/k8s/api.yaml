@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: real-estate-api
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: real-estate-api
+  template:
+    metadata:
+      labels:
+        app: real-estate-api
+    spec:
+      containers:
+        - name: api
+          image: codybias9/real-estate-os:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          env:
+            - name: DB_DSN
+              valueFrom:
+                secretKeyRef:
+                  name: db-credentials
+                  key: DB_DSN

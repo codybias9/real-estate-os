@@ -1,0 +1,101 @@
+﻿apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: airflow-triggerer
+  namespace: orchestration
+  labels:
+    app.kubernetes.io/managed-by: Helm
+    chart: airflow-1.17.0
+    component: triggerer
+    heritage: Helm
+    release: airflow
+    tier: airflow
+  annotations:
+    meta.helm.sh/release-name: airflow
+    meta.helm.sh/release-namespace: orchestration
+spec:
+  serviceName: airflow-triggerer
+  replicas: 1
+  podManagementPolicy: OrderedReady
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      component: triggerer
+      release: airflow
+      tier: airflow
+  template:
+    metadata:
+      labels:
+        component: triggerer
+        release: airflow
+        tier: airflow
+      annotations:
+        checksum/airflow-config: c6402c26b2b90a9c9850619feb04979e2102b1d655bbaa423293d41fb34cc467
+        checksum/extra-configmaps: e862ea47e13e634cf17d476323784fa27dac20015550c230953b526182f5cac8
+        checksum/extra-secrets: e9582fdd622296c976cbc10a5ba7d6702c28a24fe80795ea5b84ba443a56c827
+        checksum/metadata-secret: e9582fdd622296c976cbc10a5ba7d6702c28a24fe80795ea5b84ba443a56c827
+        checksum/pgbouncer-config-secret: 1dae2adc757473469686d37449d076b0c82404f61413b58ae68b3c5e99527688
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
+        rollme: "2025-07-04T22:02:12.0832678-07:00"
+    spec:
+      serviceAccountName: airflow-triggerer
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext:
+        runAsUser: 50000
+        fsGroup: 0
+      dnsPolicy: ClusterFirst
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                topologyKey: kubernetes.io/hostname
+                labelSelector:
+                  matchLabels:
+                    component: triggerer
+      volumes:
+        - name: config
+          configMap:
+            name: airflow-config
+            defaultMode: 420
+        - name: logs
+          emptyDir: {}
+      initContainers:
+        - name: wait-for-airflow-migrations
+          image: apache/airflow:3.0.2
+          imagePullPolicy: IfNotPresent
+          env: []
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          args:
+            - airflow
+            - db
+            - check-migrations
+            - --migration-wait-timeout=60
+      containers:
+        - name: triggerer
+          image: apache/airflow:3.0.2
+          imagePullPolicy: IfNotPresent
+          args:
+            - bash
+            - -c
+            - exec airflow triggerer
+          env: []
+          resources: {}
+          volumeMounts:
+            - name: config
+              mountPath: /opt/airflow/airflow.cfg
+              subPath: airflow.cfg
+            - name: config
+              mountPath: /opt/airflow/config/airflow_local_settings.py
+              subPath: airflow_local_settings.py
+            - name: logs
+              mountPath: /opt/airflow/logs
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      partition: 0
