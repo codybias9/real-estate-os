@@ -1,24 +1,23 @@
 [tool.poetry]
 name = "real-estate-os"
 version = "0.1.0"
-description = "A real estate data processing and outreach platform."
-authors = ["Cody Bias <codybias9@gmail.com>"]
+description = "Real estate platform"
+authors = ["codybias9 <you@example.com>"]
 readme = "README.md"
-package-mode = false
 package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.10"
-# Core agent dependencies - add more as needed
-scrapy = "^2.11.2"
-playwright = "^1.45.0"
-boto3 = "^1.34.138"
-pydantic = "^2.8.2"
-requests = "^2.32.3"
+scrapy = "^2.13.3"
+playwright = "^1.53.0"
+aiohttp = "^3.12.13"
+boto3 = "^1.39.3"
+pydantic = "^2.11.7"
+requests = "^2.32.4"
 
 [tool.poetry.group.dev.dependencies]
-pytest = "^8.2.2"
-black = "^24.4.2"
+pytest = "^8.4.1"
+black = "^25.1.0"
 
 [build-system]
 requires = ["poetry-core"]
