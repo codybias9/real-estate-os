@@ -2,6 +2,8 @@ import scrapy
 from scrapy.http import Response
 from typing import Any
 
+from scraper.items import BookItem
+
 class ListingsSpider(scrapy.Spider):
     """
     A spider to scrape book listings from books.toscrape.com,
@@ -20,10 +22,11 @@ class ListingsSpider(scrapy.Spider):
 
         # Iterate over each book article on the page
         for book in response.css("article.product_pod"):
-            yield {
-                "title": book.css("h3 a::attr(title)").get(),
-                "price": book.css("p.price_color::text").get(),
-            }
+            # Create an instance of our structured item
+            item = BookItem()
+            item["title"] = book.css("h3 a::attr(title)").get()
+            item["price"] = book.css("p.price_color::text").get()
+            yield item
 
         # Find the 'next' button and follow it if it exists
         next_page = response.css("li.next a::attr(href)").get()
