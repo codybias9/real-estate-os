@@ -1,3 +1,11 @@
+# Use our custom-built image for all Airflow components
+defaultImage:
+  repository: codybias9/reo-airflow
+  tag: 0.1.0
+  # Use IfNotPresent for local development with Minikube to avoid unnecessary pulls
+  # and allow the use of locally built images.
+  pullPolicy: IfNotPresent
+
 # Airflow Helm Chart Overrides
 executor: CeleryExecutor
 postgresql:
@@ -29,3 +37,4 @@ data:
     db: airflow
     sslmode: disable
   brokerUrl: "amqp://user:guest@rabbitmq.messaging.svc.cluster.local:5672/"
+
