@@ -25,3 +25,4 @@ spec:
                 secretKeyRef:
                   name: db-credentials
                   key: DB_DSN
+
