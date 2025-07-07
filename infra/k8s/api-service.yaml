@@ -1,13 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: real-estate-api
-  namespace: default
+  name: reo-api-service
 spec:
+  type: ClusterIP
   selector:
     app: reo-api
   ports:
-    - port: 8000
+    - protocol: TCP
+      port: 8000
       targetPort: 8000
-      protocol: TCP
-  type: ClusterIP
