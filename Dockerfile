@@ -11,7 +11,10 @@ ENV PATH="/root/.local/bin:"
 WORKDIR /app
 COPY pyproject.toml poetry.lock ./
 
-# Install dependencies into a virtual environment.
+# CRITICAL FIX: Configure Poetry to create the virtual env in the project's directory.
+RUN poetry config virtualenvs.in-project true
+
+# Install dependencies into the .venv directory within /app.
 RUN poetry install --no-root --no-dev --no-interaction
 
 # ---- Final Stage ----
