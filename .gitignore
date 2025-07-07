@@ -218,3 +218,6 @@ infra/.env
 
 # Scrapy output files
 *.json
+
+# Scrapy output files
+*.json
