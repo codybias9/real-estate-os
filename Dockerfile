@@ -1,12 +1,13 @@
 # ---- Build Stage ----
 FROM python:3.10-slim as builder
 
-# Install Poetry using the official installer, which is the recommended best practice.
-ENV POETRY_VERSION=1.8.2
-RUN curl -sSL https://install.python-poetry.org | python3 -
+# Use pipx to install poetry. This is a robust method for CI/CD and Docker.
+RUN pip install pipx
+RUN pipx install poetry==1.8.2
+
+# Add pipx-injected binaries to the PATH.
 ENV PATH="/root/.local/bin:"
 
-# Set up a non-root user for better security.
 WORKDIR /app
 COPY pyproject.toml poetry.lock ./
 
@@ -16,14 +17,13 @@ RUN poetry install --no-root --no-dev --no-interaction
 # ---- Final Stage ----
 FROM python:3.10-slim
 
-# Create and use a non-root user.
+# Create and use a non-root user for better security.
 RUN useradd --create-home --shell /bin/bash appuser
 USER appuser
 WORKDIR /home/appuser/app
 
-# Copy virtual environment from the builder stage.
+# Copy the virtual environment and application code from the builder stage.
 COPY --from=builder /app/.venv ./.venv
-# Copy application code.
 COPY src/ ./src
 
 # Make the venv python the default, ensuring our app uses the installed dependencies.
