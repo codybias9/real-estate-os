@@ -1,14 +1,9 @@
 # Use a specific version of the official Airflow image for reproducibility
 FROM apache/airflow:2.9.3
 
-# Switch to root user to install system-level dependencies
-USER root
-
 # Install poetry, which is needed to install our project's Python dependencies
+# This is run as the default 'airflow' user, as required by the base image.
 RUN pip install "poetry==1.8.2"
-
-# Switch back to the non-root 'airflow' user for security
-USER airflow
 
 # Copy the project's dependency definitions into the image
 # The WORKDIR is already /opt/airflow in the base image
