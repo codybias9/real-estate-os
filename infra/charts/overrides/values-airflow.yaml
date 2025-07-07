@@ -1,50 +1,31 @@
-﻿
-  enabled: false
-
-executor: "LocalExecutor"
-
+# Airflow Helm Chart Overrides
+executor: CeleryExecutor
 postgresql:
   enabled: false
-
+redis:
+  enabled: false
+webserverSecretKey: "your-super-secret-webserver-key-for-dev"
 dags:
+  persistence:
+    enabled: true
+    size: 1Gi
   gitSync:
     enabled: false
-
-config:
-  database:
-    sql_alchemy_conn: postgresql+psycopg2://postgres:postgres@postgres-postgresql.data.svc.cluster.local:5432/realestate
-    migration_wait_timeout: 300
-  api:
-    secret_key: L0d_ZL84KPKFO_ZAphRm8WFRiZvkxy-6Nf-tgZCV-04
-    auth_backends: airflow.api.auth.backend.basic_auth
-
-webserver:
-  defaultUser:
-    enabled: true
-    username: admin
-    password: admin
-
-apiServer:
-  defaultUser:
-    enabled: true
-    username: admin
-    password: admin
-
-resources:
-  limits:
-    cpu: "1"
-    memory: 1Gi
-
-# <- this style (multi-line) is what the chart expects
-
-
-  enabled: false
-
-
-api:
-  healthCheckPath: /health
-runMigrations:
-  enabled: false
-
-waitForMigrations:
-  enabled: false
+data:
+  metadataConnection:
+    user: postgres
+    pass: postgres
+    protocol: postgresql
+    host: postgres-postgresql.data.svc.cluster.local
+    port: 5432
+    db: airflow
+    sslmode: disable
+  resultBackendConnection:
+    user: postgres
+    pass: postgres
+    protocol: postgresql
+    host: postgres-postgresql.data.svc.cluster.local
+    port: 5432
+    db: airflow
+    sslmode: disable
+  brokerUrl: "amqp://user:guest@rabbitmq.messaging.svc.cluster.local:5672/"
