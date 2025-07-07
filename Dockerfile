@@ -18,9 +18,8 @@ FROM python:3.10-slim
 RUN useradd --create-home --shell /bin/bash appuser
 WORKDIR /home/appuser/app
 
-# Copy the virtual environment from the builder stage.
+# Copy files and set ownership to the non-root user.
 COPY --from=builder --chown=appuser:appuser /app/.venv ./.venv
-# CRITICAL FIX: Copy the contents of src/ directly into the workdir.
 COPY --chown=appuser:appuser src/ .
 
 # Now, switch to the non-root user.
@@ -33,5 +32,5 @@ ENV PYTHONPATH="/home/appuser/app"
 # Expose the port the app runs on.
 EXPOSE 8000
 
-# CRITICAL FIX: The command now correctly references the 'main' module.
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# CRITICAL FIX: Use 'python -m uvicorn' to avoid shebang/line-ending issues.
+CMD ["python", "-m", "uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
