@@ -1,22 +1,16 @@
 # Airflow Helm Chart Overrides
 executor: CeleryExecutor
-
-# Explicitly disable sub-charts we are not using. This is a best practice.
 postgresql:
   enabled: false
 redis:
   enabled: false
-
 webserverSecretKey: "your-super-secret-webserver-key-for-dev"
-
 dags:
   persistence:
     enabled: true
     size: 1Gi
   gitSync:
     enabled: false
-
-# External Database and Broker Configuration (Modern 'data' block format)
 data:
   metadataConnection:
     user: postgres
@@ -25,8 +19,7 @@ data:
     host: postgres-postgresql.data.svc.cluster.local
     port: 5432
     db: airflow
-    sslmode: disable # Explicitly disable SSL for local dev
-  
+    sslmode: disable
   resultBackendConnection:
     user: postgres
     pass: postgres
@@ -34,6 +27,5 @@ data:
     host: postgres-postgresql.data.svc.cluster.local
     port: 5432
     db: airflow
-    sslmode: disable # Explicitly disable SSL for local dev
-
+    sslmode: disable
   brokerUrl: "amqp://user:guest@rabbitmq.messaging.svc.cluster.local:5672/"
