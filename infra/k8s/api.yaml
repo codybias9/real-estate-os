@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: api
-        image: codybias9/reo-api:0.1.0
+        image: codybias9/reo-api:0.1.1
         ports:
         - containerPort: 8000
         env:
