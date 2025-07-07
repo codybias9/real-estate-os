@@ -1,0 +1,14 @@
+global:
+  postgresql:
+    auth:
+      # NOTE: In a real production environment, this should be sourced from a managed secret store.
+      postgresPassword: postgres
+      database: realestate
+    servicePort: 5432
+primary:
+  persistence:
+    size: 5Gi
+  resources:
+    limits:
+      memory: 512Mi
+      cpu: "0.5"
