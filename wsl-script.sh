@@ -17,6 +17,10 @@ curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stabl
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
 
+echo "--- Cleaning up downloaded binaries ---"
+rm minikube-linux-amd64
+rm kubectl
+
 echo "--- Starting Minikube cluster with Docker driver ---"
 minikube start --driver=docker --memory=7000 --cpus=6 --force --kubernetes-version=v1.28.3
 
