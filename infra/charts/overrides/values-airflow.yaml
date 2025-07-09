@@ -2,16 +2,17 @@
 defaultImage:
   repository: codybias9/reo-airflow
   tag: 0.1.0
-  # Use IfNotPresent for local development with Minikube to avoid unnecessary pulls
-  # and allow the use of locally built images.
   pullPolicy: IfNotPresent
 
 # Airflow Helm Chart Overrides
 executor: CeleryExecutor
+
+# Let the Airflow chart manage its own dependencies for a simpler local setup.
 postgresql:
-  enabled: false
+  enabled: true
 redis:
-  enabled: false
+  enabled: true
+
 webserverSecretKey: "your-super-secret-webserver-key-for-dev"
 dags:
   persistence:
@@ -19,22 +20,6 @@ dags:
     size: 1Gi
   gitSync:
     enabled: false
-data:
-  metadataConnection:
-    user: postgres
-    pass: postgres
-    protocol: postgresql
-    host: postgres-postgresql.data.svc.cluster.local
-    port: 5432
-    db: airflow
-    sslmode: disable
-  resultBackendConnection:
-    user: postgres
-    pass: postgres
-    protocol: postgresql
-    host: postgres-postgresql.data.svc.cluster.local
-    port: 5432
-    db: airflow
-    sslmode: disable
-  brokerUrl: "amqp://user:guest@rabbitmq.messaging.svc.cluster.local:5672/"
 
+# The 'data' block is no longer needed as the chart will auto-configure
+# connections to its internal postgresql and redis instances.

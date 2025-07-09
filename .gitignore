@@ -221,3 +221,7 @@ infra/.env
 
 # Scrapy output files
 *.json
+
+# Downloaded binaries from deployment scripts
+kubectl
+minikube-linux-amd64
