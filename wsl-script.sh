@@ -24,18 +24,23 @@ rm kubectl
 echo "--- Starting Minikube cluster with Docker driver ---"
 minikube start --driver=docker --memory=7000 --cpus=6 --force --kubernetes-version=v1.28.3
 
-echo "--- Building Docker image ---"
+echo "--- Building Docker image for Airflow ---"
 docker build -t codybias9/reo-airflow:0.1.0 -f infra/images/airflow/Dockerfile .
 
-echo "--- Loading image into Minikube ---"
+echo "--- Loading Airflow image into Minikube ---"
 minikube image load codybias9/reo-airflow:0.1.0
 
-echo "--- Setting up Helm repository ---"
+echo "--- Setting up Helm Repositories ---"
 helm repo add apache-airflow https://airflow.apache.org
+helm repo add bitnami https://charts.bitnami.com/bitnami
 helm repo update
 
-echo "--- Installing or Upgrading Airflow Helm release (with increased timeout) ---"
+echo "--- Installing Airflow Helm release (with increased timeout) ---"
 helm upgrade --install airflow apache-airflow/airflow --namespace airflow --create-namespace -f infra/charts/overrides/values-airflow.yaml --timeout 15m
 
+echo "--- Deploying Application PostgreSQL Database ---"
+kubectl create namespace data-services || true
+helm upgrade --install app-postgres bitnami/postgresql --namespace data-services -f infra/charts/overrides/values-postgres.yaml
+
 echo "--- Deployment script completed successfully! ---"
-echo "--- Monitor the pod rollout with: kubectl get pods -n airflow -w ---"
+echo "--- Monitor the pod rollout with: kubectl get pods -A -w ---"

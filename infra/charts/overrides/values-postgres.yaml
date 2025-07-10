@@ -1,14 +1,15 @@
-global:
-  postgresql:
-    auth:
-      # NOTE: In a real production environment, this should be sourced from a managed secret store.
-      postgresPassword: postgres
-      database: realestate
-    servicePort: 5432
+# values-postgres.yaml
+# Configuration for the main application PostgreSQL database
+
+# Use a simple username and password for local development.
+# In a real production environment, this would be managed via secrets.
+auth:
+  username: "user"
+  password: "password"
+  database: "realestateos"
+
+# Use a non-persistent volume for local development to keep things simple.
+# The data will be wiped out if the pod is deleted.
 primary:
   persistence:
-    size: 5Gi
-  resources:
-    limits:
-      memory: 512Mi
-      cpu: "0.5"
+    enabled: false
