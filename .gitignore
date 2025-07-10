@@ -215,12 +215,15 @@ node_modules/
 ui/.svelte-kit
 infra/.env
 
-
 # Scrapy output files
 *.json
 
 # Scrapy output files
 *.json
+
+# Downloaded binaries from deployment scripts
+kubectl
+minikube-linux-amd64
 
 # Downloaded binaries from deployment scripts
 kubectl
