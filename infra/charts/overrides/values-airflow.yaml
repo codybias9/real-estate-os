@@ -20,6 +20,3 @@ dags:
     size: 1Gi
   gitSync:
     enabled: false
-
-# The 'data' block is no longer needed as the chart will auto-configure
-# connections to its internal postgresql and redis instances.
