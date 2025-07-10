@@ -7,6 +7,7 @@ readme = "README.md"
 package-mode = false
 
 [tool.poetry.dependencies]
+psycopg2-binary = "^2.9.9"
 python = "^3.10"
 scrapy = "^2.13.3"
 playwright = "^1.53.0"
