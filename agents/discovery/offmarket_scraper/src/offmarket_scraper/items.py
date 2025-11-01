@@ -4,6 +4,7 @@ Uses Pydantic for validation and Scrapy Items for pipeline compatibility.
 """
 from typing import Optional, Dict, Any, List
 from datetime import datetime
+from decimal import Decimal
 from pydantic import BaseModel, Field, validator, HttpUrl
 from scrapy import Item, Field as ScrapyField
 
@@ -196,3 +197,69 @@ class PropertyItem(Item):
     # Metadata
     scraped_at = ScrapyField()
     raw_data = ScrapyField()
+
+
+# ============================================================================
+# Field Provenance Items (for Deal Genome tracking)
+# ============================================================================
+
+class FieldProvenanceTuple(BaseModel):
+    """
+    Field-level provenance tracking for Deal Genome
+
+    Captures source, method, and confidence for each extracted field value.
+    Enables lineage tracking and provenance tooltips in UI.
+    """
+
+    # Entity identification
+    entity_type: str = Field(..., description="Entity type (e.g., 'property', 'owner')")
+    entity_key: str = Field(..., description="Deterministic entity key (source:source_id)")
+
+    # Field identification
+    field_path: str = Field(..., description="Dot notation field path (e.g., 'address.street')")
+    value: Any = Field(..., description="Field value")
+
+    # Provenance metadata
+    source_system: str = Field(..., description="Source system identifier (e.g., 'fsbo.com')")
+    source_url: str = Field(..., description="URL where data was scraped")
+    method: str = Field(default="scrape", description="Extraction method: scrape, api, manual, computed")
+    confidence: Decimal = Field(default=Decimal("0.85"), description="Confidence score (0-1)")
+    extracted_at: datetime = Field(default_factory=datetime.utcnow, description="Extraction timestamp")
+
+    # Tenant context
+    tenant_id: Optional[str] = Field(None, description="Tenant ID for multi-tenant isolation")
+
+    @validator('confidence', pre=True)
+    def validate_confidence(cls, v):
+        """Ensure confidence is between 0 and 1"""
+        if v is None:
+            return Decimal("0.85")
+
+        decimal_val = Decimal(str(v))
+        if decimal_val < 0:
+            return Decimal("0")
+        if decimal_val > 1:
+            return Decimal("1")
+        return decimal_val
+
+
+class FieldProvenanceItem(Item):
+    """Scrapy Item for field provenance"""
+
+    # Entity identification
+    entity_type = ScrapyField()
+    entity_key = ScrapyField()
+
+    # Field identification
+    field_path = ScrapyField()
+    value = ScrapyField()
+
+    # Provenance metadata
+    source_system = ScrapyField()
+    source_url = ScrapyField()
+    method = ScrapyField()
+    confidence = ScrapyField()
+    extracted_at = ScrapyField()
+
+    # Tenant context
+    tenant_id = ScrapyField()

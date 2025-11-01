@@ -8,7 +8,7 @@ from scrapy import Spider
 from scrapy.exceptions import DropItem
 import json
 from datetime import datetime
-from .items import PropertyListing, PropertyItem
+from .items import PropertyListing, PropertyItem, FieldProvenanceItem, FieldProvenanceTuple
 from pydantic import ValidationError
 
 logger = logging.getLogger(__name__)
@@ -234,3 +234,140 @@ class StatsPipeline:
             logger.info(f"  Avg: ${avg_price:,.2f}")
 
         logger.info("=" * 50)
+
+
+class ProvenancePipeline:
+    """
+    Pipeline to store field provenance tuples in staging table
+
+    Stores provenance data for later processing by lineage_writer DAG.
+    Creates field_provenance_staging table if needed.
+    """
+
+    def __init__(self, database_url: str):
+        self.database_url = database_url
+        self.conn: PgConnection = None
+        self.stats = {
+            'inserted': 0,
+            'errors': 0
+        }
+
+    @classmethod
+    def from_crawler(cls, crawler):
+        """Factory method to get database URL from settings"""
+        return cls(
+            database_url=crawler.settings.get('DATABASE_URL')
+        )
+
+    def open_spider(self, spider: Spider):
+        """Open database connection and ensure staging table exists"""
+        try:
+            self.conn = psycopg2.connect(self.database_url)
+            self.conn.autocommit = False
+
+            # Create staging table for provenance tuples if it doesn't exist
+            with self.conn.cursor() as cursor:
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS field_provenance_staging (
+                        id SERIAL PRIMARY KEY,
+                        entity_type VARCHAR(50) NOT NULL,
+                        entity_key VARCHAR(255) NOT NULL,
+                        field_path VARCHAR(255) NOT NULL,
+                        value JSONB NOT NULL,
+                        source_system VARCHAR(100) NOT NULL,
+                        source_url TEXT NOT NULL,
+                        method VARCHAR(50) DEFAULT 'scrape',
+                        confidence NUMERIC(5,2) DEFAULT 0.85,
+                        extracted_at TIMESTAMP WITH TIME ZONE NOT NULL,
+                        tenant_id UUID,
+                        created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+                        processed BOOLEAN DEFAULT FALSE
+                    )
+                """)
+
+                # Create index for faster lookups by lineage_writer
+                cursor.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_provenance_staging_processed
+                    ON field_provenance_staging(processed, created_at)
+                    WHERE NOT processed
+                """)
+
+                cursor.execute("""
+                    CREATE INDEX IF NOT EXISTS idx_provenance_staging_entity
+                    ON field_provenance_staging(entity_key, field_path)
+                """)
+
+                self.conn.commit()
+
+            logger.info("Provenance pipeline initialized")
+
+        except Exception as e:
+            logger.error(f"Failed to initialize provenance pipeline: {e}")
+            raise
+
+    def close_spider(self, spider: Spider):
+        """Close database connection and log stats"""
+        if self.conn:
+            self.conn.close()
+            logger.info("Provenance pipeline closed")
+
+        logger.info(f"Provenance stats - Inserted: {self.stats['inserted']}, "
+                   f"Errors: {self.stats['errors']}")
+
+    def process_item(self, item, spider: Spider):
+        """Process items - store provenance tuples, pass through property items"""
+
+        # Only process FieldProvenanceItem
+        if not isinstance(item, FieldProvenanceItem):
+            return item
+
+        try:
+            # Validate with Pydantic
+            item_dict = dict(item)
+            validated = FieldProvenanceTuple(**item_dict)
+
+            # Insert into staging table
+            query = """
+                INSERT INTO field_provenance_staging (
+                    entity_type,
+                    entity_key,
+                    field_path,
+                    value,
+                    source_system,
+                    source_url,
+                    method,
+                    confidence,
+                    extracted_at,
+                    tenant_id,
+                    processed
+                )
+                VALUES (%s, %s, %s, %s::jsonb, %s, %s, %s, %s, %s, %s::uuid, FALSE)
+            """
+
+            with self.conn.cursor() as cursor:
+                cursor.execute(query, (
+                    validated.entity_type,
+                    validated.entity_key,
+                    validated.field_path,
+                    json.dumps(validated.value, default=str),
+                    validated.source_system,
+                    validated.source_url,
+                    validated.method,
+                    str(validated.confidence),
+                    validated.extracted_at,
+                    validated.tenant_id
+                ))
+
+                self.conn.commit()
+                self.stats['inserted'] += 1
+
+            logger.debug(f"Stored provenance: {validated.entity_key}:{validated.field_path}")
+
+            return item
+
+        except Exception as e:
+            self.stats['errors'] += 1
+            self.conn.rollback()
+            logger.error(f"Provenance pipeline error: {e}")
+            # Don't drop item - just log error
+            return item

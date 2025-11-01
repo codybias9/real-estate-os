@@ -3,13 +3,15 @@
 Provides common functionality for all listing spiders.
 """
 import logging
-from typing import Iterator, Optional, Dict, Any
+from typing import Iterator, Optional, Dict, Any, List
 from abc import ABC, abstractmethod
 import yaml
 from pathlib import Path
+from datetime import datetime
+from decimal import Decimal
 from scrapy import Spider as ScrapySpider
 from scrapy.http import Response, Request
-from ..items import PropertyItem
+from ..items import PropertyItem, FieldProvenanceItem
 
 logger = logging.getLogger(__name__)
 
@@ -33,18 +35,21 @@ class BasePropertySpider(ScrapySpider, ABC):
     name: str = None
     source_name: str = None  # Identifier for database (e.g., 'zillow', 'fsbo')
 
-    def __init__(self, county: Optional[str] = None, config_path: Optional[str] = None, *args, **kwargs):
+    def __init__(self, county: Optional[str] = None, config_path: Optional[str] = None,
+                 tenant_id: Optional[str] = None, *args, **kwargs):
         """
         Initialize spider with county configuration
 
         Args:
             county: County identifier (e.g., 'clark_nv')
             config_path: Path to county configuration file
+            tenant_id: Tenant ID for multi-tenant isolation
         """
         super().__init__(*args, **kwargs)
 
         self.county = county
         self.config = {}
+        self.tenant_id = tenant_id or "00000000-0000-0000-0000-000000000001"  # Default tenant
 
         # Load configuration if provided
         if config_path:
@@ -56,8 +61,14 @@ class BasePropertySpider(ScrapySpider, ABC):
         self.stats = {
             'pages_scraped': 0,
             'listings_found': 0,
-            'errors': 0
+            'errors': 0,
+            'provenance_tuples': 0
         }
+
+        # Field provenance tracking
+        self._current_entity_key: Optional[str] = None
+        self._current_source_url: Optional[str] = None
+        self._provenance_tuples: List[FieldProvenanceItem] = []
 
     def load_config(self, config_path: str):
         """Load configuration from YAML file"""
@@ -151,6 +162,68 @@ class BasePropertySpider(ScrapySpider, ABC):
 
         return item
 
+    def begin_entity_tracking(self, entity_key: str, source_url: str):
+        """
+        Begin tracking field provenance for an entity
+
+        Args:
+            entity_key: Deterministic entity key (e.g., "fsbo.com:12345")
+            source_url: URL where entity was scraped
+        """
+        self._current_entity_key = entity_key
+        self._current_source_url = source_url
+        self._provenance_tuples = []
+
+    def track_field(
+        self,
+        field_path: str,
+        value: Any,
+        entity_type: str = "property",
+        confidence: float = 0.85,
+        method: str = "scrape"
+    ):
+        """
+        Track provenance for a field value
+
+        Args:
+            field_path: Dot notation field path (e.g., 'address.street')
+            value: Field value
+            entity_type: Entity type (default: 'property')
+            confidence: Confidence score 0-1 (default: 0.85)
+            method: Extraction method (default: 'scrape')
+        """
+        if not self._current_entity_key or not self._current_source_url:
+            logger.warning(f"Cannot track field {field_path}: entity tracking not started")
+            return
+
+        if value is None:
+            return  # Don't track null values
+
+        provenance_item = FieldProvenanceItem()
+        provenance_item['entity_type'] = entity_type
+        provenance_item['entity_key'] = self._current_entity_key
+        provenance_item['field_path'] = field_path
+        provenance_item['value'] = value
+        provenance_item['source_system'] = self.source_name or self.name
+        provenance_item['source_url'] = self._current_source_url
+        provenance_item['method'] = method
+        provenance_item['confidence'] = Decimal(str(confidence))
+        provenance_item['extracted_at'] = datetime.utcnow()
+        provenance_item['tenant_id'] = self.tenant_id
+
+        self._provenance_tuples.append(provenance_item)
+
+    def get_provenance_tuples(self) -> List[FieldProvenanceItem]:
+        """
+        Get and clear collected provenance tuples
+
+        Returns:
+            List of FieldProvenanceItem objects
+        """
+        tuples = self._provenance_tuples
+        self._provenance_tuples = []
+        return tuples
+
     def extract_text(self, selector, css: str = None, xpath: str = None, default: str = None) -> Optional[str]:
         """
         Extract and clean text from selector
@@ -240,5 +313,6 @@ class BasePropertySpider(ScrapySpider, ABC):
         logger.info(f"Spider {self.name} closed: {reason}")
         logger.info(f"Pages scraped: {self.stats['pages_scraped']}")
         logger.info(f"Listings found: {self.stats['listings_found']}")
+        logger.info(f"Provenance tuples: {self.stats['provenance_tuples']}")
         logger.info(f"Errors: {self.stats['errors']}")
         logger.info("=" * 50)
