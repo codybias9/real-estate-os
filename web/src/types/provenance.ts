@@ -327,3 +327,96 @@ export interface NegotiationStrategyResponse {
   // Error handling
   error?: string;
 }
+
+// =====================================================================
+// WAVE 3.3: OUTREACH CAMPAIGNS TYPES
+// =====================================================================
+
+/**
+ * Email template with variables
+ */
+export interface EmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  body_html: string;
+  body_text?: string | null;
+  variables: string[];
+  tags: string[];
+  created_at: string;
+}
+
+/**
+ * Campaign step in sequence
+ */
+export interface CampaignStep {
+  template_id: string;
+  delay_days: number;
+  delay_hours?: number;
+  send_time_hour?: number | null;
+  conditions?: Record<string, any> | null;
+}
+
+/**
+ * Campaign response
+ */
+export interface Campaign {
+  id: string;
+  name: string;
+  description?: string | null;
+  campaign_type: string;
+  status: string;
+  from_email: string;
+  from_name: string;
+  reply_to?: string | null;
+  total_recipients: number;
+  emails_sent: number;
+  emails_delivered: number;
+  emails_opened: number;
+  emails_clicked: number;
+  replies_received: number;
+  unsubscribes: number;
+  tags: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Campaign recipient
+ */
+export interface CampaignRecipient {
+  email: string;
+  name?: string | null;
+  property_id?: string | null;
+  template_data?: Record<string, any>;
+  tags?: string[];
+}
+
+/**
+ * Campaign analytics
+ */
+export interface CampaignAnalytics {
+  campaign_id: string;
+  total_recipients: number;
+  sent: number;
+  delivered: number;
+  opened: number;
+  clicked: number;
+  replied: number;
+  unsubscribed: number;
+  bounced: number;
+  delivery_rate: number;
+  open_rate: number;
+  click_rate: number;
+  reply_rate: number;
+  unsubscribe_rate: number;
+  bounce_rate: number;
+  step_metrics: Array<{
+    step_number: number;
+    total: number;
+    opened: number;
+    clicked: number;
+    open_rate: number;
+    click_rate: number;
+  }>;
+}

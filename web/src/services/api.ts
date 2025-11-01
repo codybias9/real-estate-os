@@ -14,6 +14,11 @@ import type {
   FeedbackResponse,
   CompAnalysisResponse,
   NegotiationStrategyResponse,
+  EmailTemplate,
+  Campaign,
+  CampaignStep,
+  CampaignRecipient,
+  CampaignAnalytics,
 } from '@/types/provenance';
 
 class ApiClient {
@@ -236,6 +241,107 @@ class ApiClient {
         desired_closing_days: options.desired_closing_days || 45,
         flexibility: options.flexibility || 'moderate',
       }
+    );
+    return response.data;
+  }
+
+  // =====================================================================
+  // WAVE 3.3: OUTREACH CAMPAIGNS
+  // =====================================================================
+
+  /**
+   * Create email template (Wave 3.3)
+   */
+  async createTemplate(template: {
+    name: string;
+    subject: string;
+    body_html: string;
+    body_text?: string;
+    variables?: string[];
+    tags?: string[];
+  }): Promise<EmailTemplate> {
+    const response = await this.client.post<EmailTemplate>('/outreach/templates', template);
+    return response.data;
+  }
+
+  /**
+   * List email templates (Wave 3.3)
+   */
+  async listTemplates(limit?: number): Promise<EmailTemplate[]> {
+    const response = await this.client.get<EmailTemplate[]>('/outreach/templates', {
+      params: { limit },
+    });
+    return response.data;
+  }
+
+  /**
+   * Create campaign (Wave 3.3)
+   */
+  async createCampaign(campaign: {
+    name: string;
+    description?: string;
+    campaign_type: string;
+    from_email: string;
+    from_name: string;
+    reply_to?: string;
+    steps: CampaignStep[];
+    tags?: string[];
+  }): Promise<Campaign> {
+    const response = await this.client.post<Campaign>('/outreach/campaigns', campaign);
+    return response.data;
+  }
+
+  /**
+   * List campaigns (Wave 3.3)
+   */
+  async listCampaigns(status?: string, limit?: number): Promise<Campaign[]> {
+    const response = await this.client.get<Campaign[]>('/outreach/campaigns', {
+      params: { status, limit },
+    });
+    return response.data;
+  }
+
+  /**
+   * Get campaign details (Wave 3.3)
+   */
+  async getCampaign(campaignId: string): Promise<Campaign> {
+    const response = await this.client.get<Campaign>(`/outreach/campaigns/${campaignId}`);
+    return response.data;
+  }
+
+  /**
+   * Update campaign status (Wave 3.3)
+   */
+  async updateCampaignStatus(
+    campaignId: string,
+    status: string
+  ): Promise<{ campaign_id: string; status: string; updated_at: string }> {
+    const response = await this.client.patch(`/outreach/campaigns/${campaignId}/status`, {
+      status,
+    });
+    return response.data;
+  }
+
+  /**
+   * Add recipients to campaign (Wave 3.3)
+   */
+  async addCampaignRecipients(
+    campaignId: string,
+    recipients: CampaignRecipient[]
+  ): Promise<{ campaign_id: string; added: number; total_recipients: number }> {
+    const response = await this.client.post(
+      `/outreach/campaigns/${campaignId}/recipients`,
+      recipients
+    );
+    return response.data;
+  }
+
+  /**
+   * Get campaign analytics (Wave 3.3)
+   */
+  async getCampaignAnalytics(campaignId: string): Promise<CampaignAnalytics> {
+    const response = await this.client.get<CampaignAnalytics>(
+      `/outreach/campaigns/${campaignId}/analytics`
     );
     return response.data;
   }

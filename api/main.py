@@ -1,8 +1,28 @@
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine, text
 import os
 
-app = FastAPI()
+app = FastAPI(
+    title="Real Estate OS API",
+    description="RESTful API for Real Estate Operating System",
+    version="1.0.0"
+)
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include routers
+from app.routers import properties, outreach
+
+app.include_router(properties.router)
+app.include_router(outreach.router)
 
 # Health endpoint
 @app.get("/healthz")
