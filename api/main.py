@@ -3,24 +3,40 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine, text
 import os
 
+# Import auth configuration and middleware
+from app.auth.config import CORS_ORIGINS, ENABLE_HSTS, RATE_LIMIT_PER_MINUTE, RATE_LIMIT_PER_TENANT_MINUTE
+from app.middleware import RateLimitMiddleware, SecurityHeadersMiddleware
+
 app = FastAPI(
     title="Real Estate OS API",
     description="RESTful API for Real Estate Operating System",
     version="1.0.0"
 )
 
-# CORS middleware
+# Security Headers Middleware
+app.add_middleware(SecurityHeadersMiddleware, enable_hsts=ENABLE_HSTS)
+
+# Rate Limiting Middleware
+app.add_middleware(
+    RateLimitMiddleware,
+    per_ip_limit=RATE_LIMIT_PER_MINUTE,
+    per_tenant_limit=RATE_LIMIT_PER_TENANT_MINUTE
+)
+
+# CORS middleware (production-ready with allowlist)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=CORS_ORIGINS,  # Production allowlist from env
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
     allow_headers=["*"],
+    expose_headers=["X-RateLimit-Limit-IP", "X-RateLimit-Remaining-IP"],
 )
 
 # Include routers
-from app.routers import properties, outreach
+from app.routers import properties, outreach, auth
 
+app.include_router(auth.router)  # Auth endpoints (no auth required)
 app.include_router(properties.router)
 app.include_router(outreach.router)
 
