@@ -15,13 +15,14 @@ import { ScorecardTab } from './ScorecardTab';
 import { TimelineTab } from './TimelineTab';
 import { SimilarPropertiesTab } from './SimilarPropertiesTab';
 import { CompAnalysisTab } from './CompAnalysisTab';
+import { NegotiationTab } from './NegotiationTab';
 
 interface PropertyDrawerProps {
   propertyId: string;
   onClose: () => void;
 }
 
-type TabId = 'details' | 'provenance' | 'scorecard' | 'timeline' | 'similar' | 'comps';
+type TabId = 'details' | 'provenance' | 'scorecard' | 'timeline' | 'similar' | 'comps' | 'negotiate';
 
 interface Tab {
   id: TabId;
@@ -38,6 +39,7 @@ export function PropertyDrawer({ propertyId, onClose }: PropertyDrawerProps) {
     { id: 'provenance', label: 'Provenance', badge: property?.fields ? Object.keys(property.fields).length : undefined },
     { id: 'scorecard', label: 'Scorecard' },
     { id: 'comps', label: 'Comps', badge: '📊' },
+    { id: 'negotiate', label: 'Negotiate', badge: '🎯' },
     { id: 'similar', label: 'Similar', badge: '✨' },
     { id: 'timeline', label: 'Timeline' },
   ];
@@ -143,6 +145,7 @@ export function PropertyDrawer({ propertyId, onClose }: PropertyDrawerProps) {
                   {activeTab === 'provenance' && <ProvenanceTab propertyId={propertyId} property={property} />}
                   {activeTab === 'scorecard' && <ScorecardTab propertyId={propertyId} />}
                   {activeTab === 'comps' && <CompAnalysisTab propertyId={propertyId} property={property} />}
+                  {activeTab === 'negotiate' && <NegotiationTab propertyId={propertyId} property={property} />}
                   {activeTab === 'similar' && <SimilarPropertiesTab propertyId={propertyId} property={property} />}
                   {activeTab === 'timeline' && <TimelineTab propertyId={propertyId} />}
                 </>

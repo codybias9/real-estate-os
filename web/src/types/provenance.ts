@@ -250,3 +250,80 @@ export interface CompAnalysisResponse {
   // Error handling
   error?: string;
 }
+
+// =====================================================================
+// WAVE 3.2: NEGOTIATION BRAIN TYPES
+// =====================================================================
+
+/**
+ * Talking point for negotiation leverage
+ */
+export interface TalkingPoint {
+  category: string;
+  point: string;
+  evidence: string;
+  weight: number;
+}
+
+/**
+ * Counter-offer strategy details
+ */
+export interface CounterOfferStrategy {
+  initial_counter_max_increase: number;
+  walk_away_price: number;
+  concession_strategy: string;
+  alternative_concessions: string[];
+}
+
+/**
+ * Deal structure recommendations
+ */
+export interface DealStructure {
+  contingencies: string[];
+  inspection_period_days: number;
+  closing_timeline_days: number;
+  earnest_money_percent: number;
+  escalation_clause: boolean;
+  appraisal_gap_coverage?: number | null;
+  seller_concessions_target?: number | null;
+}
+
+/**
+ * Negotiation strategy response from Negotiation Brain
+ */
+export interface NegotiationStrategyResponse {
+  property_id: string;
+
+  // Strategy
+  strategy: string; // aggressive/moderate/cautious/walk_away
+  strategy_confidence: number;
+  strategy_rationale: string;
+
+  // Offers
+  recommended_initial_offer: number;
+  recommended_max_offer: number;
+  walk_away_price: number;
+  offer_justification: string;
+
+  // Market context
+  market_condition: string;
+  seller_motivation: string;
+
+  // Tactical guidance
+  talking_points: TalkingPoint[];
+  counter_offer_strategy: CounterOfferStrategy;
+  deal_structure: DealStructure;
+
+  // Risks and opportunities
+  key_risks: string[];
+  key_opportunities: string[];
+
+  // Timeline
+  recommended_response_time: string;
+
+  // Metadata
+  created_at: string;
+
+  // Error handling
+  error?: string;
+}

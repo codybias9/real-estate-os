@@ -13,6 +13,7 @@ import type {
   RecommendationsResponse,
   FeedbackResponse,
   CompAnalysisResponse,
+  NegotiationStrategyResponse,
 } from '@/types/provenance';
 
 class ApiClient {
@@ -203,6 +204,38 @@ class ApiClient {
   async getNegotiationLeverage(propertyId: string): Promise<any> {
     const response = await this.client.get(
       `/properties/${propertyId}/negotiation-leverage`
+    );
+    return response.data;
+  }
+
+  // =====================================================================
+  // WAVE 3.2: NEGOTIATION BRAIN
+  // =====================================================================
+
+  /**
+   * Get comprehensive negotiation strategy (Wave 3.2)
+   */
+  async getNegotiationStrategy(
+    propertyId: string,
+    options: {
+      max_budget: number;
+      preferred_budget: number;
+      financing_type?: string;
+      down_payment_percent?: number;
+      desired_closing_days?: number;
+      flexibility?: string;
+    }
+  ): Promise<NegotiationStrategyResponse> {
+    const response = await this.client.post<NegotiationStrategyResponse>(
+      `/properties/${propertyId}/negotiation-strategy`,
+      {
+        max_budget: options.max_budget,
+        preferred_budget: options.preferred_budget,
+        financing_type: options.financing_type || 'conventional',
+        down_payment_percent: options.down_payment_percent || 20,
+        desired_closing_days: options.desired_closing_days || 45,
+        flexibility: options.flexibility || 'moderate',
+      }
     );
     return response.data;
   }

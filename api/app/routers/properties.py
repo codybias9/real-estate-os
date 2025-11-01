@@ -789,3 +789,145 @@ def get_negotiation_leverage(
         "recommended_offer_range": analysis_result.get('recommended_offer_range', {}),
         "top_recommendation": analysis_result.get('recommendations', ['No analysis available'])[0]
     }
+
+
+# =====================================================================
+# WAVE 3.2: NEGOTIATION BRAIN ENDPOINTS
+# =====================================================================
+
+@router.post("/{property_id}/negotiation-strategy")
+def get_negotiation_strategy(
+    property_id: UUID,
+    tenant_id: UUID = Query(..., description="Tenant ID"),
+    max_budget: float = Body(..., embed=True, description="Buyer's maximum budget"),
+    preferred_budget: float = Body(..., embed=True, description="Buyer's preferred budget"),
+    financing_type: str = Body("conventional", embed=True, description="Financing type"),
+    down_payment_percent: float = Body(20.0, embed=True, description="Down payment percentage"),
+    desired_closing_days: int = Body(45, embed=True, description="Desired closing timeline"),
+    flexibility: str = Body("moderate", embed=True, description="flexible/moderate/inflexible"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get comprehensive negotiation strategy recommendation
+
+    Uses Negotiation Brain to analyze property, market conditions, and buyer
+    constraints to provide strategic guidance including:
+    - Recommended negotiation strategy (aggressive/moderate/cautious)
+    - Optimal offer range with justification
+    - Talking points and leverage indicators
+    - Counter-offer response strategies
+    - Deal structure recommendations
+
+    **Wave 3.2** - Negotiation Brain integration
+    """
+    logger.info(f"Generating negotiation strategy for property {property_id}")
+
+    # Verify property exists
+    property = get_property_or_404(property_id, tenant_id, db)
+
+    # Get property fields
+    fields = reconstruct_property_fields(property_id, tenant_id, db)
+
+    # Get comp analysis for market context
+    comp_analysis = get_comp_analysis(property_id, tenant_id, 20, None, db)
+
+    if "error" in comp_analysis:
+        return {
+            "error": "Cannot generate negotiation strategy without market analysis",
+            "property_id": str(property_id),
+            "message": comp_analysis.get("message", "Comp analysis unavailable")
+        }
+
+    try:
+        # Import Negotiation Brain
+        from ml.models.negotiation_brain import (
+            NegotiationBrain,
+            PropertyContext,
+            BuyerConstraints
+        )
+
+        # Build property context from comp analysis and fields
+        property_context = PropertyContext(
+            property_id=str(property_id),
+            listing_price=float(fields.get('listing_price', 0)),
+            price_per_sqft=comp_analysis.get('subject_price_per_sqft', 0),
+            days_on_market=int(fields.get('days_on_market', 0)),
+            market_position=comp_analysis.get('market_position', 'fairly_valued'),
+            price_deviation_percent=comp_analysis.get('price_deviation_percent', 0),
+            negotiation_leverage=comp_analysis.get('negotiation_leverage', 0.5),
+            avg_comp_price=comp_analysis.get('avg_comp_price', 0),
+            num_comps=comp_analysis.get('num_comps', 0),
+            property_type=str(fields.get('property_type', 'Single Family')),
+            bedrooms=int(fields.get('bedrooms', 3)),
+            bathrooms=float(fields.get('bathrooms', 2.0)),
+            square_footage=int(fields.get('square_footage', 2000)),
+            condition=fields.get('condition'),
+            price_reductions=int(fields.get('price_reductions', 0)),
+            price_reduction_amount=float(fields.get('price_reduction_amount', 0)),
+            listing_history_days=int(fields.get('listing_history_days', 0))
+        )
+
+        # Build buyer constraints
+        buyer_constraints = BuyerConstraints(
+            max_budget=max_budget,
+            preferred_budget=preferred_budget,
+            financing_type=financing_type,
+            down_payment_percent=down_payment_percent,
+            contingencies_required=["inspection", "financing", "appraisal"],
+            desired_closing_timeline_days=desired_closing_days,
+            flexibility=flexibility
+        )
+
+        # Generate recommendation
+        brain = NegotiationBrain()
+        recommendation = brain.recommend(property_context, buyer_constraints)
+
+        # Format response
+        return {
+            "property_id": recommendation.property_id,
+            "strategy": recommendation.strategy.value,
+            "strategy_confidence": round(recommendation.strategy_confidence, 3),
+            "strategy_rationale": recommendation.strategy_rationale,
+            "recommended_initial_offer": round(recommendation.recommended_initial_offer, 2),
+            "recommended_max_offer": round(recommendation.recommended_max_offer, 2),
+            "walk_away_price": round(recommendation.walk_away_price, 2),
+            "offer_justification": recommendation.offer_justification,
+            "market_condition": recommendation.market_condition.value,
+            "seller_motivation": recommendation.seller_motivation.value,
+            "talking_points": [
+                {
+                    "category": tp.category,
+                    "point": tp.point,
+                    "evidence": tp.evidence,
+                    "weight": round(tp.weight, 2)
+                }
+                for tp in recommendation.talking_points
+            ],
+            "counter_offer_strategy": {
+                "initial_counter_max_increase": round(recommendation.counter_offer_strategy.initial_counter_max_increase, 2),
+                "walk_away_price": round(recommendation.counter_offer_strategy.walk_away_price, 2),
+                "concession_strategy": recommendation.counter_offer_strategy.concession_strategy,
+                "alternative_concessions": recommendation.counter_offer_strategy.alternative_concessions
+            },
+            "deal_structure": {
+                "contingencies": recommendation.deal_structure.contingencies,
+                "inspection_period_days": recommendation.deal_structure.inspection_period_days,
+                "closing_timeline_days": recommendation.deal_structure.closing_timeline_days,
+                "earnest_money_percent": recommendation.deal_structure.earnest_money_percent,
+                "escalation_clause": recommendation.deal_structure.escalation_clause,
+                "appraisal_gap_coverage": recommendation.deal_structure.appraisal_gap_coverage,
+                "seller_concessions_target": recommendation.deal_structure.seller_concessions_target
+            },
+            "key_risks": recommendation.key_risks,
+            "key_opportunities": recommendation.key_opportunities,
+            "recommended_response_time": recommendation.recommended_response_time,
+            "created_at": recommendation.created_at.isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"Negotiation strategy generation failed: {e}")
+        return {
+            "error": "Negotiation strategy service unavailable",
+            "property_id": str(property_id),
+            "message": str(e)
+        }
