@@ -1,0 +1,39 @@
+name: Tenant ID Checks
+
+on:
+  pull_request:
+    paths:
+      - 'api/**/*.py'
+      - 'db/**/*.py'
+      - 'dags/**/*.py'
+  push:
+    branches:
+      - main
+      - develop
+
+jobs:
+  check-tenant-id:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install pylint sqlalchemy alembic pydantic
+
+      - name: Check API queries for tenant_id
+        run: |
+          python scripts/ci/check_tenant_queries.py
+
+      - name: Check migrations for tenant_id
+        run: |
+          python scripts/ci/check_migrations.py
+
+      - name: Run tenant_id linting
+        run: |
+          python scripts/ci/lint_tenant_usage.py
