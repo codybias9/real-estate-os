@@ -7,11 +7,20 @@ import os
 from app.auth.config import CORS_ORIGINS, ENABLE_HSTS, RATE_LIMIT_PER_MINUTE, RATE_LIMIT_PER_TENANT_MINUTE
 from app.middleware import RateLimitMiddleware, SecurityHeadersMiddleware
 
+# Import observability (PR#4)
+from app.observability import setup_tracing, setup_metrics, setup_logging, setup_sentry
+
 app = FastAPI(
     title="Real Estate OS API",
     description="RESTful API for Real Estate Operating System",
     version="1.0.0"
 )
+
+# Setup observability (PR#4)
+setup_logging(log_level=os.getenv("LOG_LEVEL", "INFO"))
+setup_tracing(app)
+setup_metrics(app)
+setup_sentry(app)
 
 # Security Headers Middleware
 app.add_middleware(SecurityHeadersMiddleware, enable_hsts=ENABLE_HSTS)
