@@ -1,0 +1,27 @@
+apiVersion: v2
+name: real-estate-os
+description: Real Estate Operating System - Helm Chart
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+keywords:
+  - real-estate
+  - crm
+  - property-management
+  - machine-learning
+
+maintainers:
+  - name: Real Estate OS Team
+    email: engineering@real-estate-os.com
+
+dependencies:
+  - name: postgresql
+    version: "12.x.x"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: postgresql.enabled
+
+  - name: redis
+    version: "17.x.x"
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: redis.enabled

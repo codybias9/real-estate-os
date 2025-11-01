@@ -1,0 +1,95 @@
+version: '3.8'
+
+# Development override for docker-compose
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+services:
+  # ============================================================================
+  # API Development Mode
+  # ============================================================================
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile.dev
+      target: development
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      # Mount source code for hot reload
+      - ./api:/app/api
+      - ./db:/app/db
+      - ./ml:/app/ml
+    environment:
+      # Enable debug mode
+      DEBUG: "true"
+      LOG_LEVEL: DEBUG
+
+  # ============================================================================
+  # Web Development Mode
+  # ============================================================================
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile.dev
+    command: npm run dev -- --host 0.0.0.0
+    volumes:
+      # Mount source code for hot reload
+      - ./web:/app
+      - /app/node_modules  # Preserve node_modules
+    environment:
+      VITE_API_URL: http://localhost:8000
+      NODE_ENV: development
+    ports:
+      - "5173:5173"  # Vite dev server
+
+  # ============================================================================
+  # PgAdmin (Database Management)
+  # ============================================================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: real-estate-os-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    networks:
+      - real-estate-network
+    profiles:
+      - tools
+
+  # ============================================================================
+  # Redis Commander (Redis Management)
+  # ============================================================================
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: real-estate-os-redis-commander
+    restart: unless-stopped
+    environment:
+      REDIS_HOSTS: local:redis:6379:0:${REDIS_PASSWORD:-redis}
+    ports:
+      - "8081:8081"
+    depends_on:
+      - redis
+    networks:
+      - real-estate-network
+    profiles:
+      - tools
+
+  # ============================================================================
+  # Mailhog (Email Testing)
+  # ============================================================================
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: real-estate-os-mailhog
+    restart: unless-stopped
+    ports:
+      - "1025:1025"  # SMTP
+      - "8025:8025"  # Web UI
+    networks:
+      - real-estate-network
+    profiles:
+      - tools
