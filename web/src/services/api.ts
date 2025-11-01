@@ -12,6 +12,7 @@ import type {
   SimilarPropertiesResponse,
   RecommendationsResponse,
   FeedbackResponse,
+  CompAnalysisResponse,
 } from '@/types/provenance';
 
 class ApiClient {
@@ -169,6 +170,39 @@ class ApiClient {
         user_id: userId,
         feedback: feedback,
       }
+    );
+    return response.data;
+  }
+
+  // =====================================================================
+  // WAVE 3.1: COMP-CRITIC COMP ANALYSIS
+  // =====================================================================
+
+  /**
+   * Get comparative market analysis with negotiation leverage (Wave 3.1)
+   */
+  async getCompAnalysis(
+    propertyId: string,
+    options?: {
+      top_k?: number;
+      property_type?: string;
+    }
+  ): Promise<CompAnalysisResponse> {
+    const response = await this.client.get<CompAnalysisResponse>(
+      `/properties/${propertyId}/comp-analysis`,
+      {
+        params: options,
+      }
+    );
+    return response.data;
+  }
+
+  /**
+   * Get quick negotiation leverage score (Wave 3.1)
+   */
+  async getNegotiationLeverage(propertyId: string): Promise<any> {
+    const response = await this.client.get(
+      `/properties/${propertyId}/negotiation-leverage`
     );
     return response.data;
   }

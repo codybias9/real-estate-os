@@ -199,3 +199,54 @@ export interface FeedbackResponse {
   recorded_at: string;
   message?: string;
 }
+
+// =====================================================================
+// WAVE 3.1: COMP-CRITIC TYPES
+// =====================================================================
+
+/**
+ * Comparable property for comp analysis
+ */
+export interface ComparableProperty {
+  property_id: string;
+  similarity_score: number;
+  listing_price: number;
+  price_per_sqft: number;
+}
+
+/**
+ * Comp analysis result from Comp-Critic
+ */
+export interface CompAnalysisResponse {
+  property_id: string;
+  subject_price: number;
+  subject_price_per_sqft: number;
+
+  // Comp statistics
+  num_comps: number;
+  avg_comp_price: number;
+  avg_comp_price_per_sqft: number;
+
+  // Market position
+  market_position: 'overvalued' | 'fairly_valued' | 'undervalued';
+  price_deviation_percent: number;
+
+  // Negotiation
+  negotiation_leverage: number;
+  negotiation_strategy: 'aggressive' | 'moderate' | 'cautious';
+  recommended_offer_range: {
+    min: number;
+    max: number;
+  };
+
+  // Comps
+  comps: ComparableProperty[];
+
+  // Insights
+  recommendations: string[];
+  risk_factors: string[];
+  opportunities: string[];
+
+  // Error handling
+  error?: string;
+}

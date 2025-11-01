@@ -1,7 +1,8 @@
 /**
  * PropertyDrawer - Main drawer component with tabbed interface
- * Displays property details, provenance, scorecard, timeline, and similar properties
+ * Displays property details, provenance, scorecard, timeline, similar properties, and comp analysis
  * Wave 2.4: Added ML-powered similar properties tab
+ * Wave 3.1: Added comp analysis tab
  */
 
 import React, { useState } from 'react';
@@ -13,13 +14,14 @@ import { ProvenanceTab } from './ProvenanceTab';
 import { ScorecardTab } from './ScorecardTab';
 import { TimelineTab } from './TimelineTab';
 import { SimilarPropertiesTab } from './SimilarPropertiesTab';
+import { CompAnalysisTab } from './CompAnalysisTab';
 
 interface PropertyDrawerProps {
   propertyId: string;
   onClose: () => void;
 }
 
-type TabId = 'details' | 'provenance' | 'scorecard' | 'timeline' | 'similar';
+type TabId = 'details' | 'provenance' | 'scorecard' | 'timeline' | 'similar' | 'comps';
 
 interface Tab {
   id: TabId;
@@ -35,6 +37,7 @@ export function PropertyDrawer({ propertyId, onClose }: PropertyDrawerProps) {
     { id: 'details', label: 'Details' },
     { id: 'provenance', label: 'Provenance', badge: property?.fields ? Object.keys(property.fields).length : undefined },
     { id: 'scorecard', label: 'Scorecard' },
+    { id: 'comps', label: 'Comps', badge: '📊' },
     { id: 'similar', label: 'Similar', badge: '✨' },
     { id: 'timeline', label: 'Timeline' },
   ];
@@ -139,6 +142,7 @@ export function PropertyDrawer({ propertyId, onClose }: PropertyDrawerProps) {
                   {activeTab === 'details' && <DetailsTab property={property} />}
                   {activeTab === 'provenance' && <ProvenanceTab propertyId={propertyId} property={property} />}
                   {activeTab === 'scorecard' && <ScorecardTab propertyId={propertyId} />}
+                  {activeTab === 'comps' && <CompAnalysisTab propertyId={propertyId} property={property} />}
                   {activeTab === 'similar' && <SimilarPropertiesTab propertyId={propertyId} property={property} />}
                   {activeTab === 'timeline' && <TimelineTab propertyId={propertyId} />}
                 </>
