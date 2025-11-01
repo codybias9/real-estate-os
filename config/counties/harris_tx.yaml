@@ -1,0 +1,66 @@
+# Harris County, Texas Configuration
+# Market: Houston Metro Area
+# Population: ~4.7M
+# Key Cities: Houston, Pasadena, Baytown
+
+county_info:
+  name: "Harris County"
+  state: "TX"
+  state_full: "Texas"
+  fips_code: "48201"
+  population: 4731145
+  median_home_price: 325000
+  key_cities:
+    - "Houston"
+    - "Pasadena"
+    - "Baytown"
+    - "Pearland"
+    - "League City"
+
+scrape_params:
+  state: "TX"
+  city: "Houston"
+  max_pages: 30
+  rate_limit_delay: 2
+  headless: true
+
+assessor:
+  name: "Harris County Appraisal District"
+  website: "https://hcad.org/"
+  parcel_url: "https://public.hcad.org/records/"
+  api_endpoint: null
+  requires_selenium: true
+
+data_sources:
+  primary:
+    - name: "FSBO.com"
+      priority: 1
+      spider: "fsbo"
+
+filters:
+  min_price: 150000
+  max_price: 1000000
+  property_types: ["Single Family", "Townhouse", "Condo"]
+  min_bedrooms: 2
+  min_bathrooms: 2.0
+
+scoring_adjustments:
+  market_heat: 1.12
+  appreciation_rate: 0.07
+  days_on_market_target: 40
+
+target_neighborhoods:
+  - name: "The Heights"
+    zip_codes: ["77008", "77009", "77018"]
+    score_multiplier: 1.25
+  - name: "Montrose"
+    zip_codes: ["77006", "77019"]
+    score_multiplier: 1.20
+  - name: "Katy"
+    zip_codes: ["77449", "77450", "77493", "77494"]
+    score_multiplier: 1.10
+
+notes: |
+  Houston is a diverse, energy-driven economy with no state income tax.
+  Large medical center and aerospace industry.
+  Watch for hurricane/flood risks.

@@ -1,4 +1,83 @@
-﻿parcel_source : "clark county assessor"
-scrape_params :
-  parcel_url : "https://gis.clarkcountynv.gov/assessor/parcel/\"
-  headless   : true
+# Clark County, Nevada Configuration
+# Market: Las Vegas Metro Area
+# Population: ~2.3M
+# Key Cities: Las Vegas, Henderson, North Las Vegas
+
+county_info:
+  name: "Clark County"
+  state: "NV"
+  state_full: "Nevada"
+  fips_code: "32003"
+  population: 2315963
+  median_home_price: 450000
+  key_cities:
+    - "Las Vegas"
+    - "Henderson"
+    - "North Las Vegas"
+    - "Boulder City"
+
+# Scraping parameters for various sources
+scrape_params:
+  state: "NV"
+  city: "Las-Vegas"
+  max_pages: 20
+  rate_limit_delay: 2  # seconds between requests
+  headless: true
+
+# County assessor data source
+assessor:
+  name: "Clark County Assessor"
+  website: "https://gis.clarkcountynv.gov/assessor/"
+  parcel_url: "https://gis.clarkcountynv.gov/assessor/parcel/"
+  api_endpoint: null  # No public API
+  requires_selenium: true
+
+# Data source priorities (1 = highest)
+data_sources:
+  primary:
+    - name: "FSBO.com"
+      priority: 1
+      spider: "fsbo"
+    - name: "ForSaleByOwner.com"
+      priority: 2
+      spider: "forsalebyowner"
+
+  secondary:
+    - name: "Craigslist Las Vegas"
+      priority: 3
+      spider: "craigslist"
+
+# Market-specific filters and criteria
+filters:
+  min_price: 100000
+  max_price: 2000000
+  property_types:
+    - "Single Family"
+    - "Townhouse"
+    - "Condo"
+  min_bedrooms: 2
+  min_bathrooms: 1.5
+
+# Scoring adjustments for this market
+scoring_adjustments:
+  market_heat: 1.15  # Hot market multiplier
+  appreciation_rate: 0.08  # 8% annual
+  days_on_market_target: 45  # Average DOM
+
+# Neighborhoods of interest (high investment potential)
+target_neighborhoods:
+  - name: "Summerlin"
+    zip_codes: ["89138", "89144", "89145"]
+    score_multiplier: 1.2
+  - name: "Henderson"
+    zip_codes: ["89012", "89014", "89052"]
+    score_multiplier: 1.15
+  - name: "Southwest Las Vegas"
+    zip_codes: ["89113", "89117", "89141"]
+    score_multiplier: 1.1
+
+# Notes
+notes: |
+  Las Vegas metro is a high-growth market with strong rental demand.
+  Focus on properties near the Strip for rental potential.
+  Watch for distressed properties due to gaming industry volatility.

@@ -1,0 +1,68 @@
+# Maricopa County, Arizona Configuration
+# Market: Phoenix Metro Area
+# Population: ~4.5M
+# Key Cities: Phoenix, Mesa, Scottsdale, Tempe, Chandler
+
+county_info:
+  name: "Maricopa County"
+  state: "AZ"
+  state_full: "Arizona"
+  fips_code: "04013"
+  population: 4485414
+  median_home_price: 425000
+  key_cities:
+    - "Phoenix"
+    - "Mesa"
+    - "Scottsdale"
+    - "Tempe"
+    - "Chandler"
+    - "Glendale"
+    - "Gilbert"
+
+scrape_params:
+  state: "AZ"
+  city: "Phoenix"
+  max_pages: 25
+  rate_limit_delay: 2
+  headless: true
+
+assessor:
+  name: "Maricopa County Assessor"
+  website: "https://mcassessor.maricopa.gov/"
+  parcel_url: "https://mcassessor.maricopa.gov/parcel/"
+  api_endpoint: null
+  requires_selenium: true
+
+data_sources:
+  primary:
+    - name: "FSBO.com"
+      priority: 1
+      spider: "fsbo"
+
+filters:
+  min_price: 150000
+  max_price: 1500000
+  property_types: ["Single Family", "Townhouse", "Condo"]
+  min_bedrooms: 2
+  min_bathrooms: 2.0
+
+scoring_adjustments:
+  market_heat: 1.20  # Very hot market
+  appreciation_rate: 0.10  # 10% annual
+  days_on_market_target: 35
+
+target_neighborhoods:
+  - name: "Scottsdale"
+    zip_codes: ["85250", "85251", "85254", "85259"]
+    score_multiplier: 1.25
+  - name: "Tempe"
+    zip_codes: ["85281", "85282", "85283"]
+    score_multiplier: 1.15
+  - name: "Gilbert"
+    zip_codes: ["85233", "85234", "85295", "85296"]
+    score_multiplier: 1.15
+
+notes: |
+  Phoenix is one of the fastest-growing metros in the US.
+  Strong tech job market and population influx from California.
+  Watch for water scarcity issues long-term.

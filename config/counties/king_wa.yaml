@@ -1,0 +1,67 @@
+# King County, Washington Configuration
+# Market: Seattle Metro Area
+# Population: ~2.3M
+# Key Cities: Seattle, Bellevue, Kent, Renton
+
+county_info:
+  name: "King County"
+  state: "WA"
+  state_full: "Washington"
+  fips_code: "53033"
+  population: 2269675
+  median_home_price: 775000
+  key_cities:
+    - "Seattle"
+    - "Bellevue"
+    - "Kent"
+    - "Renton"
+    - "Federal Way"
+    - "Redmond"
+
+scrape_params:
+  state: "WA"
+  city: "Seattle"
+  max_pages: 25
+  rate_limit_delay: 3
+  headless: true
+
+assessor:
+  name: "King County Assessor"
+  website: "https://blue.kingcounty.com/Assessor/"
+  parcel_url: "https://blue.kingcounty.com/Assessor/eRealProperty/"
+  api_endpoint: null
+  requires_selenium: true
+
+data_sources:
+  primary:
+    - name: "FSBO.com"
+      priority: 1
+      spider: "fsbo"
+
+filters:
+  min_price: 400000
+  max_price: 2500000
+  property_types: ["Single Family", "Townhouse", "Condo"]
+  min_bedrooms: 2
+  min_bathrooms: 2.0
+
+scoring_adjustments:
+  market_heat: 1.15
+  appreciation_rate: 0.08
+  days_on_market_target: 45
+
+target_neighborhoods:
+  - name: "Bellevue"
+    zip_codes: ["98004", "98005", "98006", "98007", "98008"]
+    score_multiplier: 1.25
+  - name: "Redmond"
+    zip_codes: ["98052", "98053"]
+    score_multiplier: 1.20
+  - name: "Capitol Hill"
+    zip_codes: ["98102", "98112", "98122"]
+    score_multiplier: 1.15
+
+notes: |
+  Seattle is a major tech hub (Amazon, Microsoft headquarters).
+  Strong job market and high incomes.
+  No state income tax. Watch for rain and gloomy weather impact on demand.

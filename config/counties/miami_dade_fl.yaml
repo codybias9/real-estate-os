@@ -1,0 +1,67 @@
+# Miami-Dade County, Florida Configuration
+# Market: Miami Metro Area
+# Population: ~2.7M
+# Key Cities: Miami, Miami Beach, Hialeah, Coral Gables
+
+county_info:
+  name: "Miami-Dade County"
+  state: "FL"
+  state_full: "Florida"
+  fips_code: "12086"
+  population: 2701767
+  median_home_price: 550000
+  key_cities:
+    - "Miami"
+    - "Miami Beach"
+    - "Hialeah"
+    - "Coral Gables"
+    - "Kendall"
+    - "Homestead"
+
+scrape_params:
+  state: "FL"
+  city: "Miami"
+  max_pages: 25
+  rate_limit_delay: 2
+  headless: true
+
+assessor:
+  name: "Miami-Dade Property Appraiser"
+  website: "https://www.miamidade.gov/pa/"
+  parcel_url: "https://www.miamidade.gov/Apps/PA/propertysearch/"
+  api_endpoint: null
+  requires_selenium: true
+
+data_sources:
+  primary:
+    - name: "FSBO.com"
+      priority: 1
+      spider: "fsbo"
+
+filters:
+  min_price: 250000
+  max_price: 2000000
+  property_types: ["Single Family", "Townhouse", "Condo"]
+  min_bedrooms: 2
+  min_bathrooms: 2.0
+
+scoring_adjustments:
+  market_heat: 1.18
+  appreciation_rate: 0.09
+  days_on_market_target: 50
+
+target_neighborhoods:
+  - name: "Coral Gables"
+    zip_codes: ["33134", "33143", "33146"]
+    score_multiplier: 1.30
+  - name: "Coconut Grove"
+    zip_codes: ["33133"]
+    score_multiplier: 1.25
+  - name: "Brickell"
+    zip_codes: ["33129", "33130", "33131"]
+    score_multiplier: 1.20
+
+notes: |
+  Miami is an international gateway with strong foreign investment.
+  No state income tax. Watch for hurricane/flood insurance costs.
+  Strong rental market, especially for short-term rentals.
