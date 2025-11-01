@@ -1,3 +1,6 @@
 # Owner deduplication (PR#7)
 splink==3.9.10
 python-Levenshtein==0.23.0
+# ML Explainability (PR#8)
+shap==0.44.0
+dice-ml==0.11
