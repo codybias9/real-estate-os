@@ -1,0 +1,2 @@
+# Temporal workflows (PR#9)
+temporalio==1.5.0
