@@ -1,6 +1,7 @@
 /**
  * PropertyDrawer - Main drawer component with tabbed interface
- * Displays property details, provenance, scorecard, and timeline
+ * Displays property details, provenance, scorecard, timeline, and similar properties
+ * Wave 2.4: Added ML-powered similar properties tab
  */
 
 import React, { useState } from 'react';
@@ -11,13 +12,14 @@ import { DetailsTab } from './DetailsTab';
 import { ProvenanceTab } from './ProvenanceTab';
 import { ScorecardTab } from './ScorecardTab';
 import { TimelineTab } from './TimelineTab';
+import { SimilarPropertiesTab } from './SimilarPropertiesTab';
 
 interface PropertyDrawerProps {
   propertyId: string;
   onClose: () => void;
 }
 
-type TabId = 'details' | 'provenance' | 'scorecard' | 'timeline';
+type TabId = 'details' | 'provenance' | 'scorecard' | 'timeline' | 'similar';
 
 interface Tab {
   id: TabId;
@@ -33,6 +35,7 @@ export function PropertyDrawer({ propertyId, onClose }: PropertyDrawerProps) {
     { id: 'details', label: 'Details' },
     { id: 'provenance', label: 'Provenance', badge: property?.fields ? Object.keys(property.fields).length : undefined },
     { id: 'scorecard', label: 'Scorecard' },
+    { id: 'similar', label: 'Similar', badge: '✨' },
     { id: 'timeline', label: 'Timeline' },
   ];
 
@@ -136,6 +139,7 @@ export function PropertyDrawer({ propertyId, onClose }: PropertyDrawerProps) {
                   {activeTab === 'details' && <DetailsTab property={property} />}
                   {activeTab === 'provenance' && <ProvenanceTab propertyId={propertyId} property={property} />}
                   {activeTab === 'scorecard' && <ScorecardTab propertyId={propertyId} />}
+                  {activeTab === 'similar' && <SimilarPropertiesTab propertyId={propertyId} property={property} />}
                   {activeTab === 'timeline' && <TimelineTab propertyId={propertyId} />}
                 </>
               ) : null}

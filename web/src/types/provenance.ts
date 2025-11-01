@@ -150,3 +150,52 @@ export interface EvidenceEventDetail {
   occurred_at: string;
   created_at: string;
 }
+
+// =====================================================================
+// WAVE 2.3/2.4: ML-Powered Similarity Search Types
+// =====================================================================
+
+/**
+ * Similar property result from ML embeddings
+ */
+export interface SimilarProperty {
+  property_id: string;
+  similarity_score: number;
+  listing_price?: number | null;
+  bedrooms?: number | null;
+  bathrooms?: number | null;
+  property_type?: string | null;
+  zipcode?: string | null;
+  confidence?: number | null;
+}
+
+/**
+ * Response from GET /properties/{id}/similar
+ */
+export interface SimilarPropertiesResponse {
+  property_id: string;
+  total_results: number;
+  similar_properties: SimilarProperty[];
+  error?: string;
+}
+
+/**
+ * Response from POST /properties/recommend
+ */
+export interface RecommendationsResponse {
+  user_id: number;
+  total_results: number;
+  recommendations: SimilarProperty[];
+  message?: string;
+}
+
+/**
+ * Response from POST /properties/{id}/feedback
+ */
+export interface FeedbackResponse {
+  property_id: string;
+  user_id: number;
+  feedback: 'like' | 'dislike';
+  recorded_at: string;
+  message?: string;
+}

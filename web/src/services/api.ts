@@ -9,6 +9,9 @@ import type {
   ProvenanceStatsResponse,
   FieldHistoryResponse,
   ScoreExplainabilityDetail,
+  SimilarPropertiesResponse,
+  RecommendationsResponse,
+  FeedbackResponse,
 } from '@/types/provenance';
 
 class ApiClient {
@@ -103,6 +106,69 @@ class ApiClient {
   async getScorecard(propertyId: string): Promise<ScoreExplainabilityDetail> {
     const response = await this.client.get<ScoreExplainabilityDetail>(
       `/properties/${propertyId}/scorecard`
+    );
+    return response.data;
+  }
+
+  // =====================================================================
+  // WAVE 2.3/2.4: ML-Powered Similarity Search & Feedback
+  // =====================================================================
+
+  /**
+   * Get similar properties using ML embeddings (Wave 2.3)
+   */
+  async getSimilarProperties(
+    propertyId: string,
+    options?: {
+      top_k?: number;
+      property_type?: string;
+      zipcode?: string;
+    }
+  ): Promise<SimilarPropertiesResponse> {
+    const response = await this.client.get<SimilarPropertiesResponse>(
+      `/properties/${propertyId}/similar`,
+      {
+        params: options,
+      }
+    );
+    return response.data;
+  }
+
+  /**
+   * Get personalized recommendations for user (Wave 2.3)
+   */
+  async getRecommendations(
+    userId: number,
+    options?: {
+      top_k?: number;
+      filters?: Record<string, any>;
+    }
+  ): Promise<RecommendationsResponse> {
+    const response = await this.client.post<RecommendationsResponse>(
+      '/properties/recommend',
+      {
+        user_id: userId,
+        top_k: options?.top_k || 10,
+        filters: options?.filters,
+      }
+    );
+    return response.data;
+  }
+
+  /**
+   * Submit user feedback (like/dislike) for a property (Wave 2.3)
+   */
+  async submitFeedback(
+    propertyId: string,
+    userId: number,
+    feedback: 'like' | 'dislike'
+  ): Promise<FeedbackResponse> {
+    const response = await this.client.post<FeedbackResponse>(
+      `/properties/${propertyId}/feedback`,
+      {
+        user_id: userId,
+        feedback: feedback,
+      }
     );
     return response.data;
   }
