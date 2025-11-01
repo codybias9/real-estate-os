@@ -931,3 +931,168 @@ def get_negotiation_strategy(
             "property_id": str(property_id),
             "message": str(e)
         }
+
+
+# =====================================================================
+# WAVE 4.1: OFFER WIZARD ENDPOINT
+# =====================================================================
+
+@router.post("/{property_id}/offer-wizard")
+def get_offer_scenarios(
+    property_id: UUID,
+    tenant_id: UUID = Query(..., description="Tenant ID"),
+    max_price: float = Body(..., embed=True, description="Maximum price (hard constraint)"),
+    target_price: float = Body(..., embed=True, description="Target price (soft preference)"),
+    max_closing_days: int = Body(60, embed=True, description="Maximum closing days"),
+    target_closing_days: int = Body(30, embed=True, description="Target closing days"),
+    min_inspection_days: int = Body(7, embed=True, description="Minimum inspection period"),
+    financing_required: bool = Body(True, embed=True, description="Financing contingency required"),
+    risk_tolerance: str = Body("moderate", embed=True, description="Risk tolerance: low/moderate/high"),
+    objectives: List[str] = Body(
+        ["maximize_acceptance", "minimize_price"],
+        embed=True,
+        description="Ordered objectives"
+    ),
+    db: Session = Depends(get_db)
+):
+    """
+    Generate optimal offer scenarios using constraint satisfaction and multi-objective optimization
+
+    Returns ranked deal structures optimized for buyer's objectives while respecting hard constraints.
+
+    **Wave 4.1** - Offer Wizard
+    """
+    logger.info(f"Generating offer scenarios for property {property_id}")
+
+    # Verify property exists
+    property = get_property_or_404(property_id, tenant_id, db)
+    fields = reconstruct_property_fields(property_id, tenant_id, db)
+
+    # Get market analysis for context
+    comp_analysis = get_comp_analysis(property_id, tenant_id, 20, None, db)
+
+    if "error" in comp_analysis:
+        return {
+            "error": "Cannot generate offer scenarios without market analysis",
+            "property_id": str(property_id),
+            "message": comp_analysis.get("message", "Comp analysis unavailable")
+        }
+
+    try:
+        from ml.models.offer_wizard import (
+            OfferWizard,
+            HardConstraints,
+            SoftPreferences,
+            MarketInputs,
+            ObjectiveType
+        )
+
+        # Build hard constraints
+        hard_constraints = HardConstraints(
+            max_price=max_price,
+            max_closing_days=max_closing_days,
+            min_inspection_days=min_inspection_days,
+            required_contingencies=["inspection"],
+            financing_contingency_required=financing_required
+        )
+
+        # Build soft preferences
+        objective_map = {
+            "minimize_price": ObjectiveType.MINIMIZE_PRICE,
+            "maximize_acceptance": ObjectiveType.MAXIMIZE_ACCEPTANCE,
+            "minimize_risk": ObjectiveType.MINIMIZE_RISK,
+            "minimize_time": ObjectiveType.MINIMIZE_TIME,
+            "maximize_flexibility": ObjectiveType.MAXIMIZE_FLEXIBILITY
+        }
+        parsed_objectives = [objective_map.get(obj, ObjectiveType.MAXIMIZE_ACCEPTANCE) for obj in objectives]
+
+        soft_preferences = SoftPreferences(
+            target_price=target_price,
+            target_closing_days=target_closing_days,
+            preferred_contingencies=["inspection", "financing", "appraisal"],
+            risk_tolerance=risk_tolerance,
+            objectives=parsed_objectives
+        )
+
+        # Build market inputs
+        market_inputs = MarketInputs(
+            listing_price=float(fields.get('listing_price', 0)),
+            estimated_market_value=comp_analysis.get('avg_comp_price', 0),
+            days_on_market=int(fields.get('days_on_market', 0)),
+            competing_offers_likelihood=0.3,  # Default
+            seller_motivation=comp_analysis.get('negotiation_leverage', 0.5),
+            market_velocity="warm",  # Default
+            property_condition=fields.get('condition', 'good')
+        )
+
+        # Run Offer Wizard
+        wizard = OfferWizard()
+        result = wizard.create_offer_scenarios(
+            hard_constraints,
+            soft_preferences,
+            market_inputs
+        )
+
+        # Format response
+        if not result.recommended:
+            return {
+                "property_id": str(property_id),
+                "error": "No feasible scenarios found",
+                "infeasible_reasons": result.infeasible_reasons,
+                "market_summary": result.market_summary
+            }
+
+        return {
+            "property_id": str(property_id),
+            "market_summary": result.market_summary,
+            "recommended_scenario": {
+                "name": result.recommended.name,
+                "rank": result.recommended.rank,
+                "offer_price": result.recommended.deal.offer_price,
+                "earnest_money": result.recommended.deal.earnest_money,
+                "closing_days": result.recommended.deal.closing_days,
+                "inspection_period_days": result.recommended.deal.inspection_period_days,
+                "contingencies": result.recommended.deal.contingencies,
+                "escalation_clause": result.recommended.deal.escalation_clause,
+                "escalation_max": result.recommended.deal.escalation_max,
+                "appraisal_gap_coverage": result.recommended.deal.appraisal_gap_coverage,
+                "deal_risk": result.recommended.deal.deal_risk.value,
+                "acceptance_probability": round(result.recommended.deal.acceptance_probability, 3),
+                "competitive_score": round(result.recommended.deal.competitive_score, 3),
+                "scores": {
+                    "price": round(result.recommended.price_score, 3),
+                    "acceptance": round(result.recommended.acceptance_score, 3),
+                    "risk": round(result.recommended.risk_score, 3),
+                    "time": round(result.recommended.time_score, 3),
+                    "flexibility": round(result.recommended.flexibility_score, 3),
+                    "overall": round(result.recommended.overall_score, 3)
+                },
+                "strengths": result.recommended.strengths,
+                "weaknesses": result.recommended.weaknesses,
+                "tradeoffs": result.recommended.tradeoffs
+            },
+            "all_scenarios": [
+                {
+                    "name": scenario.name,
+                    "rank": scenario.rank,
+                    "offer_price": scenario.deal.offer_price,
+                    "closing_days": scenario.deal.closing_days,
+                    "contingencies": scenario.deal.contingencies,
+                    "acceptance_probability": round(scenario.deal.acceptance_probability, 3),
+                    "overall_score": round(scenario.overall_score, 3),
+                    "strengths": scenario.strengths,
+                    "weaknesses": scenario.weaknesses
+                }
+                for scenario in result.scenarios
+            ],
+            "infeasible_reasons": result.infeasible_reasons,
+            "created_at": result.created_at.isoformat()
+        }
+
+    except Exception as e:
+        logger.error(f"Offer Wizard failed: {e}")
+        return {
+            "error": "Offer Wizard service unavailable",
+            "property_id": str(property_id),
+            "message": str(e)
+        }
