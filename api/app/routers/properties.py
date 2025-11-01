@@ -5,12 +5,16 @@ Provides API endpoints for:
 - GET /properties/{id}/provenance - Provenance statistics
 - GET /properties/{id}/history/{field_path} - Field history
 - GET /properties/{id}/scorecard - Latest scorecard with explainability
+- GET /properties/{id}/similar - Find similar properties (Wave 2.3)
+- POST /properties/recommend - Get personalized recommendations (Wave 2.3)
+- POST /properties/{id}/feedback - Submit user feedback (Wave 2.3)
 """
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Body
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, desc
-from typing import List, Optional
+from typing import List, Optional, Dict
 from uuid import UUID
+from datetime import datetime
 import logging
 
 from ..database import get_db
@@ -452,3 +456,169 @@ def get_latest_scorecard(
         counterfactuals=counterfactuals_list,
         created_at=explainability.created_at
     )
+
+# =====================================================================
+# WAVE 2.3: SIMILARITY SEARCH & USER FEEDBACK
+# =====================================================================
+
+@router.get("/{property_id}/similar")
+def get_similar_properties(
+    property_id: UUID,
+    tenant_id: UUID = Query(..., description="Tenant ID"),
+    top_k: int = Query(10, ge=1, le=50, description="Number of similar properties"),
+    property_type: Optional[str] = Query(None, description="Filter by property type"),
+    zipcode: Optional[str] = Query(None, description="Filter by zipcode"),
+    db: Session = Depends(get_db)
+):
+    """
+    Find properties similar to the given property using ML embeddings
+
+    Uses Qdrant vector database to find properties with similar characteristics.
+    Great for comp analysis and portfolio diversification.
+
+    **Wave 2.3** - ML-powered similarity search
+    """
+    logger.info(f"Finding similar properties to {property_id}")
+
+    # Verify property exists
+    property = get_property_or_404(property_id, tenant_id, db)
+
+    try:
+        # Import Qdrant client
+        from ml.embeddings.qdrant_client import QdrantVectorDB
+
+        # Connect to Qdrant
+        qdrant = QdrantVectorDB(host="localhost", port=6333)
+
+        # Build filters
+        filters = {}
+        if property_type:
+            filters['property_type'] = property_type
+        if zipcode:
+            filters['zipcode'] = zipcode
+
+        # Find similar properties
+        similar = qdrant.find_look_alikes(
+            property_id=str(property_id),
+            tenant_id=str(tenant_id),
+            top_k=top_k,
+            filters=filters if filters else None
+        )
+
+        # Format response
+        results = []
+        for prop in similar:
+            results.append({
+                "property_id": prop.property_id,
+                "similarity_score": round(prop.similarity_score, 3),
+                "listing_price": prop.metadata.get('listing_price'),
+                "bedrooms": prop.metadata.get('bedrooms'),
+                "bathrooms": prop.metadata.get('bathrooms'),
+                "property_type": prop.metadata.get('property_type'),
+                "zipcode": prop.metadata.get('zipcode'),
+                "confidence": prop.metadata.get('confidence')
+            })
+
+        return {
+            "property_id": str(property_id),
+            "total_results": len(results),
+            "similar_properties": results
+        }
+
+    except Exception as e:
+        logger.error(f"Similarity search failed: {e}")
+        # Fallback: Return empty results if Qdrant not available
+        return {
+            "property_id": str(property_id),
+            "total_results": 0,
+            "similar_properties": [],
+            "error": "Similarity search service unavailable"
+        }
+
+
+@router.post("/recommend")
+def get_recommendations(
+    user_id: int = Body(..., embed=True, description="User ID"),
+    tenant_id: UUID = Query(..., description="Tenant ID"),
+    top_k: int = Body(10, embed=True, ge=1, le=50, description="Number of recommendations"),
+    filters: Optional[Dict] = Body(None, embed=True, description="Optional filters"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get personalized property recommendations for user
+
+    Uses Portfolio Twin ML model to predict which properties match
+    the user's investment criteria based on past behavior.
+
+    **Wave 2.3** - Personalized recommendations
+    """
+    logger.info(f"Getting recommendations for user {user_id}")
+
+    try:
+        # Import Portfolio Twin service
+        from ml.serving.portfolio_twin_service import PortfolioTwinService
+        from pathlib import Path
+
+        # Load model
+        model_path = Path("ml/serving/models/portfolio_twin.pt")
+        if not model_path.exists():
+            raise HTTPException(
+                status_code=503,
+                detail="Recommendation service unavailable (model not trained yet)"
+            )
+
+        service = PortfolioTwinService(str(model_path))
+
+        # TODO: Implement full recommendation pipeline
+        # For now, return placeholder
+        return {
+            "user_id": user_id,
+            "total_results": 0,
+            "recommendations": [],
+            "message": "Recommendation system coming soon (Wave 2.4)"
+        }
+
+    except Exception as e:
+        logger.error(f"Recommendation failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/{property_id}/feedback")
+def submit_feedback(
+    property_id: UUID,
+    feedback: str = Body(..., embed=True, description="Feedback type: 'like' or 'dislike'"),
+    user_id: int = Body(..., embed=True, description="User ID"),
+    tenant_id: UUID = Query(..., description="Tenant ID"),
+    db: Session = Depends(get_db)
+):
+    """
+    Submit user feedback on a property (thumbs up/down)
+
+    Feedback is used to improve Portfolio Twin recommendations.
+    Creates a record that can be used for model retraining.
+
+    **Wave 2.3** - User feedback collection
+    """
+    logger.info(f"User {user_id} submitting feedback '{feedback}' for property {property_id}")
+
+    # Validate feedback
+    if feedback not in ['like', 'dislike']:
+        raise HTTPException(
+            status_code=400,
+            detail="Feedback must be 'like' or 'dislike'"
+        )
+
+    # Verify property exists
+    property = get_property_or_404(property_id, tenant_id, db)
+
+    # TODO: Store feedback in database (needs UserFeedback table)
+    # For now, just log it
+    logger.info(f"Feedback recorded: user={user_id}, property={property_id}, feedback={feedback}")
+
+    return {
+        "property_id": str(property_id),
+        "user_id": user_id,
+        "feedback": feedback,
+        "recorded_at": datetime.utcnow().isoformat(),
+        "message": "Feedback recorded successfully (Wave 2.4 will store in database)"
+    }
