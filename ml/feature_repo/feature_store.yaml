@@ -1,0 +1,14 @@
+project: real_estate_os
+registry: data/registry.db
+provider: local
+online_store:
+  type: redis
+  connection_string: "${REDIS_URL:redis://localhost:6379/1}"
+offline_store:
+  type: postgres
+  host: "${POSTGRES_HOST:localhost}"
+  port: ${POSTGRES_PORT:5432}
+  database: "${POSTGRES_DB:real_estate_os}"
+  user: "${POSTGRES_USER:postgres}"
+  password: "${POSTGRES_PASSWORD:postgres}"
+entity_key_serialization_version: 2
