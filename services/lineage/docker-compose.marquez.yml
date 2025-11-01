@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  # ============================================================================
+  # Marquez API
+  # ============================================================================
+  marquez:
+    image: marquezproject/marquez:latest
+    container_name: marquez
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+    environment:
+      - MARQUEZ_PORT=5000
+      - MARQUEZ_ADMIN_PORT=5001
+      - MARQUEZ_CONFIG=/usr/src/app/marquez.yml
+      - POSTGRES_HOST=marquez-db
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=marquez
+      - POSTGRES_USER=marquez
+      - POSTGRES_PASSWORD=marquez
+    volumes:
+      - ./marquez/marquez.yml:/usr/src/app/marquez.yml
+    depends_on:
+      - marquez-db
+    networks:
+      - lineage-network
+
+  # ============================================================================
+  # Marquez PostgreSQL Database
+  # ============================================================================
+  marquez-db:
+    image: postgres:15-alpine
+    container_name: marquez-db
+    environment:
+      - POSTGRES_DB=marquez
+      - POSTGRES_USER=marquez
+      - POSTGRES_PASSWORD=marquez
+    volumes:
+      - marquez-db-data:/var/lib/postgresql/data
+    networks:
+      - lineage-network
+
+  # ============================================================================
+  # Marquez Web UI
+  # ============================================================================
+  marquez-web:
+    image: marquezproject/marquez-web:latest
+    container_name: marquez-web
+    ports:
+      - "3001:3000"
+    environment:
+      - MARQUEZ_HOST=marquez
+      - MARQUEZ_PORT=5000
+    depends_on:
+      - marquez
+    networks:
+      - lineage-network
+
+volumes:
+  marquez-db-data:
+
+networks:
+  lineage-network:
+    driver: bridge
