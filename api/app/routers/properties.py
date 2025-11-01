@@ -622,3 +622,170 @@ def submit_feedback(
         "recorded_at": datetime.utcnow().isoformat(),
         "message": "Feedback recorded successfully (Wave 2.4 will store in database)"
     }
+
+# =====================================================================
+# WAVE 3.1: COMP-CRITIC ADVERSARIAL COMP ANALYSIS
+# =====================================================================
+
+@router.get("/{property_id}/comp-analysis")
+def get_comp_analysis(
+    property_id: UUID,
+    tenant_id: UUID = Query(..., description="Tenant ID"),
+    top_k: int = Query(20, ge=5, le=50, description="Number of comps"),
+    property_type: Optional[str] = Query(None, description="Filter by property type"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get comprehensive comp analysis with negotiation leverage
+
+    Uses Comp-Critic ML model to analyze property against comparables.
+    Identifies over/undervalued properties and calculates negotiation leverage.
+
+    **Wave 3.1** - Adversarial comp analysis
+    """
+    logger.info(f"Getting comp analysis for property {property_id}")
+
+    # Verify property exists
+    property = get_property_or_404(property_id, tenant_id, db)
+
+    # Get property data
+    fields = reconstruct_property_fields(property_id, tenant_id, db)
+
+    try:
+        # Import Comp-Critic service
+        from ml.models.comp_critic import CompCriticAnalyzer, ComparableProperty
+        from ml.embeddings.qdrant_client import QdrantVectorDB
+
+        # Connect to Qdrant
+        qdrant = QdrantVectorDB(host="localhost", port=6333)
+
+        # Find similar properties
+        filters = {}
+        if property_type:
+            filters['property_type'] = property_type
+
+        similar = qdrant.find_look_alikes(
+            property_id=str(property_id),
+            tenant_id=str(tenant_id),
+            top_k=top_k,
+            filters=filters if filters else None
+        )
+
+        if not similar:
+            return {
+                "error": "No comparable properties found",
+                "property_id": str(property_id),
+                "num_comps": 0
+            }
+
+        # Convert to ComparableProperty objects
+        comps = []
+        for sim in similar:
+            metadata = sim.metadata
+            comps.append(ComparableProperty(
+                property_id=sim.property_id,
+                similarity_score=sim.similarity_score,
+                listing_price=metadata.get('listing_price', 0),
+                price_per_sqft=metadata.get('listing_price', 0) / max(metadata.get('square_footage', 1), 1),
+                bedrooms=metadata.get('bedrooms', 3),
+                bathrooms=metadata.get('bathrooms', 2.0),
+                square_footage=metadata.get('square_footage', 2000),
+                days_on_market=metadata.get('days_on_market', 0),
+                property_type=metadata.get('property_type', 'Unknown')
+            ))
+
+        # Create subject property
+        listing_price = float(fields.get('listing_price', 0))
+        square_footage = int(fields.get('square_footage', 2000))
+
+        subject = ComparableProperty(
+            property_id=str(property_id),
+            similarity_score=1.0,
+            listing_price=listing_price,
+            price_per_sqft=listing_price / square_footage if square_footage > 0 else 0,
+            bedrooms=int(fields.get('bedrooms', 3)),
+            bathrooms=float(fields.get('bathrooms', 2.0)),
+            square_footage=square_footage,
+            days_on_market=int(fields.get('days_on_market', 0)),
+            property_type=str(fields.get('property_type', 'Unknown'))
+        )
+
+        # Run analysis
+        analyzer = CompCriticAnalyzer()
+        analysis = analyzer.analyze(
+            subject_property=subject,
+            comparable_properties=comps
+        )
+
+        # Format response
+        return {
+            "property_id": str(property_id),
+            "subject_price": analysis.subject_price,
+            "subject_price_per_sqft": analysis.subject_price_per_sqft,
+            "num_comps": analysis.num_comps,
+            "avg_comp_price": analysis.avg_comp_price,
+            "avg_comp_price_per_sqft": analysis.avg_comp_price_per_sqft,
+            "market_position": analysis.market_position.value,
+            "price_deviation_percent": round(analysis.price_deviation_percent, 2),
+            "negotiation_leverage": round(analysis.negotiation_leverage, 3),
+            "negotiation_strategy": analysis.negotiation_strategy.value,
+            "recommended_offer_range": {
+                "min": round(analysis.recommended_offer_range[0], 2),
+                "max": round(analysis.recommended_offer_range[1], 2)
+            },
+            "comps": [
+                {
+                    "property_id": comp.property_id,
+                    "similarity_score": round(comp.similarity_score, 3),
+                    "listing_price": comp.listing_price,
+                    "price_per_sqft": round(comp.price_per_sqft, 2)
+                }
+                for comp in analysis.comps[:10]  # Top 10 comps
+            ],
+            "recommendations": analysis.recommendations,
+            "risk_factors": analysis.risk_factors,
+            "opportunities": analysis.opportunities
+        }
+
+    except Exception as e:
+        logger.error(f"Comp analysis failed: {e}")
+        return {
+            "error": "Comp analysis service unavailable",
+            "property_id": str(property_id),
+            "message": str(e)
+        }
+
+
+@router.get("/{property_id}/negotiation-leverage")
+def get_negotiation_leverage(
+    property_id: UUID,
+    tenant_id: UUID = Query(..., description="Tenant ID"),
+    db: Session = Depends(get_db)
+):
+    """
+    Get quick negotiation leverage score
+
+    Returns leverage score (0-1) and recommended strategy.
+
+    **Wave 3.1** - Quick leverage calculation
+    """
+    logger.info(f"Getting negotiation leverage for property {property_id}")
+
+    # Verify property exists
+    property = get_property_or_404(property_id, tenant_id, db)
+
+    # Get comp analysis (cached for 1 hour)
+    analysis_result = get_comp_analysis(property_id, tenant_id, 10, None, db)
+
+    if "error" in analysis_result:
+        return analysis_result
+
+    return {
+        "property_id": str(property_id),
+        "negotiation_leverage": analysis_result.get('negotiation_leverage', 0.5),
+        "negotiation_strategy": analysis_result.get('negotiation_strategy', 'moderate'),
+        "market_position": analysis_result.get('market_position', 'fairly_valued'),
+        "price_deviation_percent": analysis_result.get('price_deviation_percent', 0.0),
+        "recommended_offer_range": analysis_result.get('recommended_offer_range', {}),
+        "top_recommendation": analysis_result.get('recommendations', ['No analysis available'])[0]
+    }
