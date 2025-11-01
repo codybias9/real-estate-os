@@ -1,4 +1,7 @@
-﻿flask
-scrapy
-playwright
-gunicorn
+flask==3.0.0
+scrapy==2.11.0
+playwright==1.40.0
+gunicorn==21.2.0
+psycopg2-binary==2.9.9
+pydantic==2.5.0
+PyYAML==6.0.1
