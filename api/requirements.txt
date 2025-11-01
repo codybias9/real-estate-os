@@ -28,3 +28,6 @@ redis==5.0.1
 # PostGIS (PR#6)
 geoalchemy2==0.14.3
 shapely==2.0.2
+
+# DocuSign (PR#10)
+docusign-esign==3.25.0
