@@ -1,0 +1,46 @@
+# Qdrant Configuration for Real Estate OS
+
+service:
+  # API settings
+  host: 0.0.0.0
+  http_port: 6333
+  grpc_port: 6334
+
+  # Performance
+  max_request_size_mb: 32
+  max_workers: 0  # Auto-detect CPUs
+
+storage:
+  # Storage path
+  storage_path: /qdrant/storage
+
+  # Performance tuning
+  optimizers:
+    # Delete vacuum min threshold
+    deleted_threshold: 0.2
+
+    # Indexing threshold
+    indexing_threshold: 20000
+
+    # Flush interval (seconds)
+    flush_interval_sec: 5
+
+  # WAL settings
+  wal:
+    wal_capacity_mb: 32
+    wal_segments_ahead: 0
+
+  # Async I/O
+  async_io: true
+
+  # On-disk payload
+  on_disk_payload: true
+
+# Cluster (optional - for HA)
+cluster:
+  enabled: false
+
+# Telemetry
+telemetry:
+  # Disable telemetry for privacy
+  enabled: false
