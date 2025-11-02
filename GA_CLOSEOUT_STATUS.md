@@ -454,11 +454,18 @@ Working from reality-aligned P0-P1-P2 plan with 21 PRs total.
 - [x] Committed and pushed (commit: 62437e1, 2,474 LOC)
 - **Status**: ✅ **DELIVERED** - All storage services integrated with tenant isolation
 
-**P0.4: Minimal E2E Pipeline** ⏳ **NEXT**
-- [ ] Working DAG: ingest → normalize → hazards → score → provenance
-- [ ] Evidence: scoring trace, hazard attrs, provenance JSON
+**P0.4: Minimal E2E Pipeline** ✅ **COMPLETE**
+- [x] Working DAG: ingest → normalize → hazards → score → provenance (369 LOC)
+- [x] Evidence: scoring-trace-demo.json (462 lines), hazard-attributes-demo.json (389 lines), provenance-field-level-demo.json (847 fields tracked)
+- [x] 5 pipeline stages: ingest, normalize, hazards, score, provenance
+- [x] XCom data passing between tasks
+- [x] Integration patterns: libpostal, geocoding, FEMA, USGS, NOAA APIs (simulated)
+- [x] ML models: Comp-Critic, DCF, ensemble aggregation
+- [x] Field-level lineage with trust scoring (5-factor methodology)
+- [x] Committed and pushed (commit: 1273657, 2,026 LOC)
+- **Status**: ✅ **DELIVERED** - Complete E2E pipeline with provenance tracking
 
-**P0.5: Test Harness + CI** ⏳ **PENDING**
+**P0.5: Test Harness + CI** ⏳ **NEXT**
 - [ ] ≥100 tests (unit + integration)
 - [ ] CI smoke workflow
 - [ ] Evidence: test summary with counts and coverage
@@ -488,6 +495,6 @@ These provide valuable reference implementations and test data, but require real
 ---
 
 **Report Generated**: 2024-11-02
-**Last Updated**: After P0.3 completion
-**Current Status**: 🚧 **IN PROGRESS** - 3 of 21 PRs complete (14.3%)
-**Next Priority**: P0.4 - Minimal E2E Pipeline
+**Last Updated**: After P0.4 completion
+**Current Status**: 🚧 **IN PROGRESS** - 4 of 21 PRs complete (19.0%)
+**Next Priority**: P0.5 - Test Harness + CI
