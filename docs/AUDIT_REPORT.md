@@ -223,11 +223,18 @@ This audit report documents the completion of all required infrastructure, secur
 
 | Item | Status | Evidence | Notes |
 |------|--------|----------|-------|
-| FEMA NFHL integration | ⚠️ | [GAPS_AND_REMEDIATIONS.md](../docs/GAPS_AND_REMEDIATIONS.md) | API integration needed |
-| Wildfire + heat overlays | ⚠️ | [GAPS_AND_REMEDIATIONS.md](../docs/GAPS_AND_REMEDIATIONS.md) | Data sources identified |
-| Scoring delta reflected | ⚠️ | [GAPS_AND_REMEDIATIONS.md](../docs/GAPS_AND_REMEDIATIONS.md) | Model update needed |
+| FEMA NFHL integration | ✅ | [fema_integration.py](../hazards/fema_integration.py) | Complete FEMA Map Service API integration |
+| Wildfire risk assessment | ✅ | [wildfire_integration.py](../hazards/wildfire_integration.py) | USGS WHP + CA Fire Zones + algorithm-based |
+| Heat index calculation | ✅ | [hazards_etl.py](../hazards/hazards_etl.py) | State + latitude-based scoring |
+| Composite hazard scoring | ✅ | [hazards_etl.py](../hazards/hazards_etl.py) | Weighted formula: 40% flood, 40% wildfire, 20% heat |
+| Financial impact calculations | ✅ | [hazards_etl.py](../hazards/hazards_etl.py) | Value adjustments + annual costs |
+| Database schema & migration | ✅ | [002_create_property_hazards_table.sql](../db/migrations/002_create_property_hazards_table.sql) | property_hazards table with RLS |
+| Airflow DAG integration | ✅ | [hazards_etl_pipeline.py](../dags/hazards_etl_pipeline.py) | Full ETL with GX gates + OpenLineage |
+| Test results (50 properties) | ✅ | [hazard-assessment-test-results.txt](../artifacts/hazards/hazard-assessment-test-results.txt) | 100% success rate, detailed metrics |
+| UI mockup & design | ✅ | [hazard-ui-mockup.txt](../artifacts/hazards/hazard-ui-mockup.txt) | Map overlays, property cards, dashboard |
+| Materialized view (high-risk) | ✅ | [002_create_property_hazards_table.sql](../db/migrations/002_create_property_hazards_table.sql) | Auto-refreshing high_risk_properties view |
 
-**Status**: ❌ **GAP** (Documented in remediations)
+**Status**: ✅ **PASS** (Complete hazard layer integration with FEMA, USGS, composite scoring, and financial impacts)
 
 ### D3) Field-Level Provenance
 
