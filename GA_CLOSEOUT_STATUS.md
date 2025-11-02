@@ -445,13 +445,16 @@ Working from reality-aligned P0-P1-P2 plan with 21 PRs total.
 - [x] Committed and pushed (commit: 91836e6, 5,439 LOC)
 - **Status**: ✅ **DELIVERED** - Complete API layer with auth/authz
 
-**P0.3: Enable Qdrant + MinIO + Redis (Remove Mocks)** ⏳ **NEXT**
-- [ ] Qdrant collections with tenant_id filters
-- [ ] MinIO with {tenant_id}/... prefixes
-- [ ] Redis for rate-limits, caching, coordination
-- [ ] Evidence: Qdrant filter proof, MinIO prefix proof
+**P0.3: Enable Qdrant + MinIO + Redis (Remove Mocks)** ✅ **COMPLETE**
+- [x] Qdrant collections with tenant_id filters (634 LOC client)
+- [x] MinIO with {tenant_id}/... prefixes (614 LOC client)
+- [x] Redis already integrated in P0.2 (rate-limits, caching, coordination)
+- [x] Docker compose for all 9 services (PostgreSQL, Redis, Qdrant, MinIO, Keycloak, RabbitMQ, Prometheus, Grafana, API)
+- [x] Evidence: qdrant-filter-tests.txt (19 tests), minio-prefix-tests.txt (21 tests)
+- [x] Committed and pushed (commit: 62437e1, 2,474 LOC)
+- **Status**: ✅ **DELIVERED** - All storage services integrated with tenant isolation
 
-**P0.4: Minimal E2E Pipeline** ⏳ **PENDING**
+**P0.4: Minimal E2E Pipeline** ⏳ **NEXT**
 - [ ] Working DAG: ingest → normalize → hazards → score → provenance
 - [ ] Evidence: scoring trace, hazard attrs, provenance JSON
 
@@ -485,6 +488,6 @@ These provide valuable reference implementations and test data, but require real
 ---
 
 **Report Generated**: 2024-11-02
-**Last Updated**: After P0.2 completion
-**Current Status**: 🚧 **IN PROGRESS** - 2 of 21 PRs complete (9.5%)
-**Next Priority**: P0.3 - Enable Qdrant + MinIO + Redis (Remove Mocks)
+**Last Updated**: After P0.3 completion
+**Current Status**: 🚧 **IN PROGRESS** - 3 of 21 PRs complete (14.3%)
+**Next Priority**: P0.4 - Minimal E2E Pipeline
