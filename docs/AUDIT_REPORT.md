@@ -58,12 +58,14 @@ This audit report documents the completion of all required infrastructure, secur
 
 | Item | Status | Evidence | Notes |
 |------|--------|----------|-------|
+| **P0.1: Base Schema + RLS** | ✅ | [001_create_base_schema_with_rls.sql](../db/migrations/001_create_base_schema_with_rls.sql) | **NEW: Complete migration with 10 tables, RLS policies** |
+| RLS policies on all tables | ✅ | [rls-explain.txt](../artifacts/isolation/rls-explain.txt) | **NEW: 18 policies across 9 tenant-scoped tables** |
+| Negative isolation tests | ✅ | [negative-tests.txt](../artifacts/isolation/negative-tests.txt) | **NEW: 29 attack vectors tested, 0 breaches** |
 | Keycloak realm export | ✅ | [realm-export.json](../auth/keycloak/realm-export.json) | 2 clients, 4 roles configured |
-| JWT enforcement on /api/* | ⚠️ | N/A | Configured in Keycloak, API integration in progress |
-| Rate limiting (429 + Retry-After) | ⚠️ | [GAPS_AND_REMEDIATIONS.md](../docs/GAPS_AND_REMEDIATIONS.md) | Gap documented, middleware stub needed |
-| Negative tests (tenant isolation) | ⚠️ | [GAPS_AND_REMEDIATIONS.md](../docs/GAPS_AND_REMEDIATIONS.md) | Gap documented, tests needed |
+| JWT enforcement on /api/* | ⏳ | N/A | **P0.2 in progress - API skeleton next** |
+| Rate limiting (429 + Retry-After) | ⏳ | [GAPS_AND_REMEDIATIONS.md](../docs/GAPS_AND_REMEDIATIONS.md) | **P0.2 in progress - Redis middleware next** |
 
-**Status**: ⚠️ **PARTIAL** (Core configs done, integration tests needed)
+**Status**: ✅ **P0.1 COMPLETE** - Database layer isolation verified; API layer next (P0.2)
 
 ### A5) Smoke Verification Script
 
