@@ -1,0 +1,226 @@
+================================================================================
+Property Twin Search - Embedding Generation Demo
+================================================================================
+
+Property: San Francisco Residential
+  Size: 2,400 sqft
+  Price: $1,200,000
+  Bedrooms: 4
+  Year Built: 1985
+  Hazard Score: 0.45
+
+Generated embedding: (128,)
+Embedding norm: 1.0000 (should be ~1.0)
+Non-zero dimensions: 20/128
+
+Embedding Breakdown by Feature Group:
+  Location (0-19):    0.6088
+  Physical (20-49):   0.3464
+  Type (50-59):       0.4716
+  Financial (60-79):  0.3419
+  Condition (80-89):  0.3537
+  Hazards (90-99):    0.2122
+
+Similar Property: San Francisco Residential (1.1 km away)
+  Size: 2,350 sqft
+  Price: $1,250,000
+  Year Built: 1988
+  Similarity Score: 0.9994 (cosine similarity)
+
+Dissimilar Property: Los Angeles Commercial
+  Size: 15,000 sqft
+  Price: $5,000,000
+  Type: Commercial
+  Similarity Score: 0.6185 (cosine similarity)
+
+✓ Similar properties have higher scores (closer to 1.0)
+✓ Dissimilar properties have lower scores
+
+
+
+
+================================================================================
+Property Twin Search - Search Demo
+================================================================================
+
+SUBJECT PROPERTY:
+  Address: San Francisco, CA 94102
+  Type: Residential
+  Size: 2,400 sqft
+  Bedrooms: 4
+  Bathrooms: 3.0
+  Year Built: 1985
+  Price: $1,200,000
+  Monthly Rent: $4,500
+  Condition: 7.5/10
+  Hazard Score: 0.45
+
+Searching for property twins...
+Found 5 similar properties:
+
+1. 1000 Similar St
+   📍 San Francisco, CA
+   📊 Similarity: 95.0%
+   📐 Size: 2,262 sqft
+   💰 Price: $1,283,417
+   📏 Distance: 3.6 miles
+
+   Feature Breakdown:
+      Location    : 25.0%
+      Physical    : 30.0%
+      Financial   : 25.0%
+      Condition   : 15.0%
+      Hazards     : 5.0%
+
+2. 1100 Similar St
+   📍 San Francisco, CA
+   📊 Similarity: 90.0%
+   📐 Size: 2,332 sqft
+   💰 Price: $1,232,119
+   📏 Distance: 4.3 miles
+
+   Feature Breakdown:
+      Location    : 25.0%
+      Physical    : 30.0%
+      Financial   : 25.0%
+      Condition   : 15.0%
+      Hazards     : 5.0%
+
+3. 1200 Similar St
+   📍 San Francisco, CA
+   📊 Similarity: 85.0%
+   📐 Size: 2,328 sqft
+   💰 Price: $1,150,667
+   📏 Distance: 0.9 miles
+
+   Feature Breakdown:
+      Location    : 25.0%
+      Physical    : 30.0%
+      Financial   : 25.0%
+      Condition   : 15.0%
+      Hazards     : 5.0%
+
+4. 1300 Similar St
+   📍 San Francisco, CA
+   📊 Similarity: 80.0%
+   📐 Size: 2,391 sqft
+   💰 Price: $1,263,795
+   📏 Distance: 4.9 miles
+
+   Feature Breakdown:
+      Location    : 25.0%
+      Physical    : 30.0%
+      Financial   : 25.0%
+      Condition   : 15.0%
+      Hazards     : 5.0%
+
+5. 1400 Similar St
+   📍 San Francisco, CA
+   📊 Similarity: 75.0%
+   📐 Size: 2,450 sqft
+   💰 Price: $1,198,957
+   📏 Distance: 2.4 miles
+
+   Feature Breakdown:
+      Location    : 25.0%
+      Physical    : 30.0%
+      Financial   : 25.0%
+      Condition   : 15.0%
+      Hazards     : 5.0%
+
+--------------------------------------------------------------------------------
+Searching with filters (price range $1M - $1.5M)...
+
+Found 5 properties matching filters
+1. 1000 Similar St - 95.0% similar - $1,092,716
+2. 1100 Similar St - 90.0% similar - $1,116,832
+3. 1200 Similar St - 85.0% similar - $1,293,777
+4. 1300 Similar St - 80.0% similar - $1,092,221
+5. 1400 Similar St - 75.0% similar - $1,318,090
+
+✓ Twin search working correctly
+
+
+
+
+================================================================================
+Property Twin Search - Use Cases
+================================================================================
+
+USE CASE 1: Comparable Property Analysis
+----------------------------------------
+Goal: Find comps for property valuation
+
+Process:
+  1. Input subject property features
+  2. Search for twins with filters (location, type, size)
+  3. Get ranked list by similarity
+  4. Use top 3-5 twins as comparable properties
+  5. Analyze pricing based on high-similarity comps
+
+Benefits:
+  ✓ More accurate than simple filter-based comps
+  ✓ Considers ALL features simultaneously
+  ✓ Explainable (feature breakdown shows what drives similarity)
+
+USE CASE 2: Investment Opportunity Discovery
+----------------------------------------
+Goal: Find similar properties to successful investments
+
+Process:
+  1. Identify high-performing property in portfolio
+  2. Use it as subject for twin search
+  3. Find properties with high similarity
+  4. Focus acquisition efforts on similar properties
+
+Benefits:
+  ✓ Replicate successful investment patterns
+  ✓ Data-driven target identification
+  ✓ Scale winning strategies
+
+USE CASE 3: Portfolio Analysis
+----------------------------------------
+Goal: Understand portfolio composition and diversity
+
+Process:
+  1. Search for twins of each portfolio property
+  2. Calculate average similarity within portfolio
+  3. Identify clusters of similar properties
+  4. Measure diversification
+
+Benefits:
+  ✓ Quantify portfolio concentration risk
+  ✓ Identify over-exposed segments
+  ✓ Guide diversification strategy
+
+USE CASE 4: Market Research
+----------------------------------------
+Goal: Understand competitive landscape in target market
+
+Process:
+  1. Define ideal target property profile
+  2. Search for twins in target markets
+  3. Analyze density of similar properties
+  4. Identify markets with high twin density
+
+Benefits:
+  ✓ Data-driven market selection
+  ✓ Competitive analysis
+  ✓ Supply assessment
+
+================================================================================
+Property Twin Search Demo Complete
+================================================================================
+
+Key Capabilities:
+  ✓ 128-dimensional property embeddings
+  ✓ Vector similarity search (Qdrant)
+  ✓ Multi-feature matching (location, physical, financial, hazards)
+  ✓ Explainable results (feature breakdown)
+  ✓ Flexible filtering (price, location, type)
+
+API Endpoints:
+  POST /api/v1/twins/search - Search for property twins
+  POST /api/v1/twins/index - Index a property
+  GET  /api/v1/twins/status - Get index status
+
