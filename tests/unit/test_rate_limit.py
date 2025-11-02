@@ -5,7 +5,15 @@ import pytest
 import time
 from unittest.mock import Mock, patch, AsyncMock
 
-from api.rate_limit import RateLimitMiddleware  # RateLimiter and RateLimitExceeded don't exist - using middleware
+from fastapi import Request, Response
+from starlette.datastructures import Headers
+
+from api.rate_limit import (
+    RateLimitMiddleware,
+    RateLimiter,
+    RateLimitExceeded,
+    generate_rate_limit_key
+)
 from api.config import settings
 
 
@@ -175,8 +183,6 @@ class TestRateLimitMiddleware:
     @pytest.mark.asyncio
     async def test_middleware_allows_within_limit(self, mock_redis):
         """Test middleware allows requests within limit."""
-        from fastapi import Request, Response
-        from starlette.datastructures import Headers
 
         async def call_next(request):
             return Response(content="OK", status_code=200)
@@ -198,7 +204,6 @@ class TestRateLimitMiddleware:
     @pytest.mark.asyncio
     async def test_middleware_denies_over_limit(self, mock_redis):
         """Test middleware denies requests over limit."""
-        from fastapi import Request, Response
 
         async def call_next(request):
             return Response(content="OK", status_code=200)
@@ -226,7 +231,6 @@ class TestRateLimitMiddleware:
     @pytest.mark.asyncio
     async def test_middleware_different_limits_per_endpoint(self, mock_redis):
         """Test different rate limits for different endpoints."""
-        from fastapi import Request, Response
 
         async def call_next(request):
             return Response(content="OK", status_code=200)
@@ -258,7 +262,6 @@ class TestRateLimitMiddleware:
     @pytest.mark.asyncio
     async def test_middleware_burst_protection(self, mock_redis):
         """Test burst protection (short window limit)."""
-        from fastapi import Request
 
         async def call_next(request):
             return Response(content="OK", status_code=200)
@@ -284,7 +287,6 @@ class TestRateLimitMiddleware:
     @pytest.mark.asyncio
     async def test_middleware_excludes_health_check(self, mock_redis):
         """Test health check endpoints are excluded from rate limiting."""
-        from fastapi import Request, Response
 
         async def call_next(request):
             return Response(content="OK", status_code=200)
@@ -312,8 +314,6 @@ class TestRateLimitKey:
 
     def test_generate_key_for_authenticated_user(self):
         """Test key generation for authenticated user."""
-        from api.rate_limit import generate_rate_limit_key
-
         key = generate_rate_limit_key(
             tenant_id="tenant_abc",
             user_id="user_123",
@@ -326,8 +326,6 @@ class TestRateLimitKey:
 
     def test_generate_key_for_unauthenticated_user(self):
         """Test key generation for unauthenticated user (IP-based)."""
-        from api.rate_limit import generate_rate_limit_key
-
         key = generate_rate_limit_key(
             ip_address="192.168.1.1",
             endpoint="/api/v1/public"
@@ -338,8 +336,6 @@ class TestRateLimitKey:
 
     def test_key_uniqueness(self):
         """Test that different users get different keys."""
-        from api.rate_limit import generate_rate_limit_key
-
         key1 = generate_rate_limit_key(
             tenant_id="tenant_abc",
             user_id="user_123",

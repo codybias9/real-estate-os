@@ -15,6 +15,117 @@ from api.auth import TokenData, verify_token
 logger = logging.getLogger(__name__)
 
 
+# ========================================================================
+# Exceptions
+# ========================================================================
+
+class RateLimitExceeded(HTTPException):
+    """Exception raised when rate limit is exceeded."""
+
+    def __init__(
+        self,
+        message: str = "Rate limit exceeded",
+        retry_after: int = 60,
+        limit: Optional[int] = None,
+        window_seconds: Optional[int] = None,
+        current_count: Optional[int] = None
+    ):
+        super().__init__(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=message
+        )
+        self.message = message
+        self.retry_after = retry_after
+        self.limit = limit
+        self.window_seconds = window_seconds
+        self.current_count = current_count
+
+    def __str__(self):
+        """Return just the message, not the status code."""
+        return self.message
+
+
+# ========================================================================
+# Helper Functions
+# ========================================================================
+
+def generate_rate_limit_key(
+    endpoint: str,
+    tenant_id: Optional[str] = None,
+    user_id: Optional[str] = None,
+    ip_address: Optional[str] = None
+) -> str:
+    """
+    Generate a unique rate limit key.
+
+    Args:
+        endpoint: API endpoint path
+        tenant_id: Tenant ID (for authenticated users)
+        user_id: User ID (for authenticated users)
+        ip_address: IP address (for unauthenticated users)
+
+    Returns:
+        Rate limit key string
+    """
+    parts = []
+
+    if tenant_id:
+        parts.append(f"tenant:{tenant_id}")
+    if user_id:
+        parts.append(f"user:{user_id}")
+    if ip_address:
+        parts.append(f"ip:{ip_address}")
+
+    parts.append(f"path:{endpoint}")
+
+    return ":".join(parts)
+
+
+# ========================================================================
+# RateLimiter Class
+# ========================================================================
+
+class RateLimiter:
+    """
+    Rate limiter using Redis sliding window algorithm.
+
+    Thin wrapper around redis_client.check_rate_limit for testing.
+    """
+
+    def __init__(self, redis_client=None):
+        """
+        Initialize rate limiter.
+
+        Args:
+            redis_client: Redis client instance (defaults to global instance)
+        """
+        from api.redis_client import redis_client as default_client
+        self.redis_client = redis_client or default_client
+
+    async def check_rate_limit(
+        self,
+        key: str,
+        limit: int,
+        window_seconds: int
+    ) -> tuple[bool, int, int]:
+        """
+        Check if request is within rate limit.
+
+        Args:
+            key: Rate limit key
+            limit: Maximum requests allowed
+            window_seconds: Time window in seconds
+
+        Returns:
+            Tuple of (allowed, current_count, remaining)
+        """
+        return await self.redis_client.check_rate_limit(
+            key=key,
+            limit=limit,
+            window_seconds=window_seconds
+        )
+
+
 class RateLimitMiddleware(BaseHTTPMiddleware):
     """
     Middleware to enforce rate limits on API endpoints.
