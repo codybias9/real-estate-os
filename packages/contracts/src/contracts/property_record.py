@@ -81,6 +81,7 @@ class PropertyRecord(BaseModel):
     """
 
     apn: str = Field(..., description="Assessor Parcel Number (primary key)")
+    apn_hash: Optional[str] = Field(None, description="SHA-256 hash of normalized APN for deduplication")
     address: Address = Field(..., description="Normalized address")
     geo: Optional[Geo] = Field(None, description="Geocoded location")
     owner: Optional[Owner] = Field(None, description="Owner information")

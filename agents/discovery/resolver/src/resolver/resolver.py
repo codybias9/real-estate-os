@@ -7,7 +7,7 @@ import hashlib
 import logging
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, Optional
 from uuid import UUID, uuid4
 
 from pydantic import BaseModel, Field
@@ -59,11 +59,20 @@ class DiscoveryResolver:
     - Generate idempotency keys
     - Emit event.discovery.intake with Envelope
     - Handle missing/invalid data gracefully
+    - Persist to database with idempotency guarantees
     """
 
-    def __init__(self, tenant_id: UUID):
+    def __init__(self, tenant_id: UUID, db_repository: Optional[Any] = None):
+        """
+        Initialize Discovery Resolver.
+
+        Args:
+            tenant_id: UUID of the tenant
+            db_repository: Optional PropertyRepository for database persistence
+        """
         self.tenant_id = tenant_id
         self.logger = logging.getLogger(f"{__name__}.{tenant_id}")
+        self.db_repository = db_repository
 
     @staticmethod
     def compute_apn_hash(apn: str) -> str:
@@ -218,9 +227,14 @@ class DiscoveryResolver:
             owner = self.normalize_owner(raw_data.get("owner", {})) if raw_data.get("owner") else None
             attrs = self.normalize_attributes(raw_data.get("attributes", {})) if raw_data.get("attributes") else None
 
+            # Compute APN hash for deduplication
+            apn_normalized = str(apn).strip()
+            apn_hash = self.compute_apn_hash(apn_normalized)
+
             # Build PropertyRecord
             record = PropertyRecord(
-                apn=str(apn).strip(),
+                apn=apn_normalized,
+                apn_hash=apn_hash,
                 address=address,
                 geo=geo,
                 owner=owner,
@@ -320,3 +334,83 @@ class DiscoveryResolver:
         )
 
         return envelope
+
+    def persist_property(self, record: PropertyRecord) -> tuple[str, bool]:
+        """
+        Persist property record to database with idempotency.
+
+        Uses the database repository to:
+        1. Check if property with same apn_hash already exists (idempotency)
+        2. Create new property if it doesn't exist
+        3. Return existing property if it does exist (no duplicate)
+
+        Args:
+            record: Normalized PropertyRecord with apn_hash
+
+        Returns:
+            Tuple of (property_id: str, created: bool)
+            - property_id: UUID of the persisted property
+            - created: True if new record, False if duplicate found
+
+        Raises:
+            ValueError: If db_repository is not configured
+        """
+        if not self.db_repository:
+            raise ValueError("Database repository not configured for this resolver")
+
+        property_obj, created = self.db_repository.create_property(
+            record=record,
+            tenant_id=str(self.tenant_id)
+        )
+
+        self.logger.info(
+            f"Property {'created' if created else 'found (duplicate)'}: "
+            f"id={property_obj.id}, apn={record.apn}, apn_hash={record.apn_hash}"
+        )
+
+        return (str(property_obj.id), created)
+
+    def process_and_persist(
+        self,
+        raw_data: dict[str, Any],
+        source: str,
+        source_id: str
+    ) -> tuple[IntakeResult, Optional[str]]:
+        """
+        Process intake data and persist to database in one operation.
+
+        This combines normalization, duplicate detection, and database persistence
+        with proper idempotency guarantees.
+
+        Args:
+            raw_data: Raw scraped data
+            source: Source identifier
+            source_id: Source-specific unique ID
+
+        Returns:
+            Tuple of (IntakeResult, property_id: Optional[str])
+            - IntakeResult: Status of intake processing
+            - property_id: UUID of persisted property (None if rejected/duplicate)
+        """
+        # Step 1: Normalize and validate
+        result = self.process_intake(raw_data, source, source_id)
+
+        # Step 2: If valid, persist to database
+        property_id = None
+        if result.status == IntakeStatus.NEW and result.property_record:
+            try:
+                if self.db_repository:
+                    # Database will handle duplicate detection via apn_hash
+                    db_id, created = self.persist_property(result.property_record)
+                    property_id = db_id
+
+                    # Update result status if database found duplicate
+                    if not created:
+                        result.status = IntakeStatus.DUPLICATE
+                        result.reason = f"Duplicate APN hash {result.apn_hash} found in database"
+            except Exception as e:
+                self.logger.error(f"Failed to persist property: {e}")
+                result.status = IntakeStatus.REJECTED
+                result.reason = f"Database persistence failed: {str(e)}"
+
+        return (result, property_id)

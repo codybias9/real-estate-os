@@ -75,7 +75,7 @@ def upgrade() -> None:
         sa.Column("score", sa.Integer(), nullable=True),
         sa.Column("score_reasons", sa.JSON(), nullable=True),
         sa.Column("status", sa.String(length=50), server_default=sa.text("'discovered'"), nullable=False),
-        sa.Column("metadata", sa.JSON(), nullable=True),
+        sa.Column("extra_metadata", sa.JSON(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.text("now()"), nullable=False),
         sa.ForeignKeyConstraint(["tenant_id"], ["tenants.id"], ondelete="CASCADE"),
