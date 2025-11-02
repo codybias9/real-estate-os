@@ -1,0 +1,21 @@
+{
+  "features": {
+    "property_id": "DEMO123",
+    "lot_size_sqft": 7500,
+    "building_sqft": 2400,
+    "bedrooms": 4,
+    "bathrooms": 3.0,
+    "condition_score": 7.5,
+    "market_temperature": 0.65
+  },
+  "trace": {
+    "entity_id": "DEMO123",
+    "feature_views": ["property_features", "market_features"],
+    "feature_count": 53,
+    "latency_ms": 28.43,
+    "timestamp": "2024-11-02T10:00:00Z",
+    "redis_url": "redis://localhost:6379",
+    "p95_target_ms": 50,
+    "meets_target": true
+  }
+}

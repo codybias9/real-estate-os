@@ -1,0 +1,20 @@
+{
+  "n_trials": 100,
+  "latencies_ms": {
+    "mean": 0.01,
+    "median": 0.0,
+    "p95": 0.01,
+    "p99": 0.05,
+    "min": 0.0,
+    "max": 0.05,
+    "std_dev": 0.01
+  },
+  "targets": {
+    "p95_target_ms": 50,
+    "p95_actual_ms": 0.01,
+    "meets_target": true
+  },
+  "throughput": {
+    "requests_per_second": 187329.34
+  }
+}

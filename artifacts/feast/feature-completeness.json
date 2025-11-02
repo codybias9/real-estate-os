@@ -1,0 +1,15 @@
+{
+  "expected_total": 54,
+  "found_total": 54,
+  "property_features": {
+    "expected": 41,
+    "found": 41,
+    "missing": []
+  },
+  "market_features": {
+    "expected": 13,
+    "found": 13,
+    "missing": []
+  },
+  "is_complete": true
+}
