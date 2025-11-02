@@ -436,15 +436,16 @@ Working from reality-aligned P0-P1-P2 plan with 21 PRs total.
 - [x] Committed and pushed (commit: ba2dd24)
 - **Status**: ✅ **DELIVERED** - Database foundation secure
 
-**P0.2: API Skeleton + JWT/OIDC + Rate Limits** ⏳ **NEXT**
-- [ ] Real FastAPI endpoints (auth, properties CRUD, prospects, offers, valuation, negotiation, analytics)
-- [ ] JWT/OIDC middleware (Keycloak integration)
-- [ ] RBAC (admin/analyst/operator/user)
-- [ ] Rate limits per route (Redis sliding window)
-- [ ] Evidence: authz test transcripts, rate-limits proof
-- **Status**: 🔜 **PENDING** - Next priority
+**P0.2: API Skeleton + JWT/OIDC + Rate Limits** ✅ **COMPLETE**
+- [x] Real FastAPI endpoints (29 endpoints: auth, properties, prospects, offers, ML, analytics)
+- [x] JWT/OIDC middleware (Keycloak integration with RS256)
+- [x] RBAC (admin/analyst/operator/user with @require_roles decorator)
+- [x] Rate limits per route (Redis sliding window + burst protection)
+- [x] Evidence: authorization-tests.txt (28 tests), rate-limit-tests.txt (21 tests)
+- [x] Committed and pushed (commit: 91836e6, 5,439 LOC)
+- **Status**: ✅ **DELIVERED** - Complete API layer with auth/authz
 
-**P0.3: Enable Qdrant + MinIO + Redis (Remove Mocks)** ⏳ **PENDING**
+**P0.3: Enable Qdrant + MinIO + Redis (Remove Mocks)** ⏳ **NEXT**
 - [ ] Qdrant collections with tenant_id filters
 - [ ] MinIO with {tenant_id}/... prefixes
 - [ ] Redis for rate-limits, caching, coordination
@@ -484,6 +485,6 @@ These provide valuable reference implementations and test data, but require real
 ---
 
 **Report Generated**: 2024-11-02
-**Last Updated**: After P0.1 completion
-**Current Status**: 🚧 **IN PROGRESS** - 1 of 21 PRs complete (4.8%)
-**Next Priority**: P0.2 - API Skeleton + JWT/OIDC + Rate Limits
+**Last Updated**: After P0.2 completion
+**Current Status**: 🚧 **IN PROGRESS** - 2 of 21 PRs complete (9.5%)
+**Next Priority**: P0.3 - Enable Qdrant + MinIO + Redis (Remove Mocks)
