@@ -1,0 +1,226 @@
+================================================================================
+ARV Calculator - Basic Fix-and-Flip Analysis
+================================================================================
+
+PROPERTY DETAILS:
+  Purchase Price:    $180,000
+  Current Value:     $200,000
+  Square Footage:    1,800 sqft
+  Price per sqft:    $111/sqft
+
+CURRENT CONDITION:
+  Overall:           Fair (5.5/10)
+  Kitchen:           4.0/10
+  Bathrooms:         4.5/10
+  Paint:             4.0/10
+  Year Built:        1975
+
+RENOVATION PLAN:
+  1. Kitchen Remodel (Major)
+     Cost: $35,000
+     Value Add: 59% ($20,650)
+     Duration: 21 days
+
+  2. Bathroom Remodel (Major)
+     Cost: $18,000
+     Value Add: 56% ($10,080)
+     Duration: 14 days
+
+  3. Bathroom Remodel (Minor)
+     Cost: $8,000
+     Value Add: 67% ($5,360)
+     Duration: 7 days
+
+  4. Paint (Interior)
+     Cost: $4,000
+     Value Add: 100% ($4,000)
+     Duration: 5 days
+
+  5. Flooring
+     Cost: $12,000
+     Value Add: 70% ($8,400)
+     Duration: 7 days
+
+  6. Landscaping
+     Cost: $5,000
+     Value Add: 80% ($4,000)
+     Duration: 5 days
+
+  7. Garage Door Replacement
+     Cost: $2,500
+     Value Add: 94% ($2,350)
+     Duration: 1 days
+
+  Subtotal:          $84,500
+  Contingency (10%): $8,450.000000000015
+  TOTAL COST:        $92,950.00000000001
+  Expected Value Add: $54,840.0
+  Total Duration:    60 days
+
+================================================================================
+ARV ANALYSIS RESULTS
+================================================================================
+
+VALUATION:
+  Current Value:     $200,000
+  Expected Value Add: $54,840.0
+  ARV:               $254,840.0
+  Method:            Cost-Based
+  Confidence:        70%
+
+INVESTMENT:
+  Purchase Price:    $180,000
+  Renovation Cost:   $92,950.00000000001
+  Total Investment:  $272,950.0
+
+GROSS PROFIT:
+  ARV:               $254,840.0
+  - Investment:      $272,950.0
+  = Gross Profit:    $-18,110.0
+  Gross ROI:         -6.6%
+
+COSTS:
+  Holding Costs (6 mo):  $14,548.0
+  Selling Costs (8%):  $20,387.2
+  Total Costs:       $34,935.2
+
+NET PROFIT:
+  Gross Profit:      $-18,110.0
+  - Holding Costs:   $14,548.0
+  - Selling Costs:   $20,387.2
+  = NET PROFIT:      $-53,045.2
+  NET ROI:           -19.4%
+
+RENOVATION ROI:
+  Renovation Cost:   $92,950.00000000001
+  Value Add:         $54,840.0
+  ROI:               59.0%
+
+RISK ASSESSMENT:
+  Risk Level:        Medium
+  Risk Factors:
+    - Low ROI (<10%)
+    - Moderate renovation value recovery (50-70%)
+    - Fair property condition
+
+VERDICT: ✗ WEAK DEAL
+
+
+
+
+================================================================================
+Quick Fix-and-Flip ROI Calculator
+================================================================================
+
+Conservative Deal:
+  Purchase:  $150,000
+  Renovation: $40,000
+  ARV:       $240,000
+
+  Results:
+    Total Investment:   $190,000
+    Gross Profit:       $50,000
+    Holding Costs:      $11,050.0
+    Selling Costs:      $19,200.0
+    Net Profit:         $19,750.0
+    ROI:                10.4%
+
+    ○ Decent ROI (10-20%)
+
+--------------------------------------------------------------------------------
+
+Aggressive Deal:
+  Purchase:  $200,000
+  Renovation: $80,000
+  ARV:       $350,000
+
+  Results:
+    Total Investment:   $280,000
+    Gross Profit:       $70,000
+    Holding Costs:      $14,950.0
+    Selling Costs:      $28,000.0
+    Net Profit:         $27,050.0
+    ROI:                9.7%
+
+    ✗ Weak ROI (<10%)
+
+--------------------------------------------------------------------------------
+
+Marginal Deal:
+  Purchase:  $180,000
+  Renovation: $50,000
+  ARV:       $250,000
+
+  Results:
+    Total Investment:   $230,000
+    Gross Profit:       $20,000
+    Holding Costs:      $12,830.0
+    Selling Costs:      $20,000.0
+    Net Profit:         $-12,830.0
+    ROI:                -5.6%
+
+    ✗ Weak ROI (<10%)
+
+--------------------------------------------------------------------------------
+
+
+
+
+================================================================================
+Industry-Standard Value Add Factors
+================================================================================
+
+Based on Remodeling Magazine Cost vs Value Report
+
+HIGH ROI (≥75% cost recovery):
+  Paint (Interior)                100%
+  Garage Door Replacement         94%
+  Landscaping                     80%
+  Paint (Exterior)                75%
+  Entry Door Replacement          75%
+
+MEDIUM ROI (60-74% cost recovery):
+  Kitchen Remodel (Minor)         72%
+  Flooring                        70%
+  Basement Finish                 70%
+  Siding Replacement              68%
+  Window Replacement              68%
+  Bathroom Remodel (Minor)        67%
+  Deck Addition                   66%
+  Plumbing                        65%
+  Electrical                      65%
+  Attic Conversion                65%
+  Roof Replacement                60%
+  HVAC Replacement                60%
+
+LOWER ROI (<60% cost recovery):
+  Kitchen Remodel (Major)         59%
+  Bathroom Remodel (Major)        56%
+  Bathroom Addition               52%
+  Master Suite Addition           51%
+  Foundation Repair               50%
+
+Key Insights:
+  ✓ Garage door replacement has highest ROI (94%)
+  ✓ Interior paint delivers 100% cost recovery
+  ✓ Major additions (master suite, bathrooms) have lower ROI
+  ✓ Focus on cosmetic updates for best returns
+
+================================================================================
+ARV Calculator Demo Complete
+================================================================================
+
+Key Capabilities:
+  ✓ Complete ARV calculation (cost-based, comp-based, hybrid)
+  ✓ Renovation ROI analysis by category
+  ✓ Fix-and-flip profit calculation (gross and net)
+  ✓ Holding costs and selling costs
+  ✓ Risk assessment
+  ✓ Industry-standard value add factors
+
+API Endpoints:
+  POST /api/v1/arv/calculate - Full ARV analysis
+  POST /api/v1/arv/quick-flip-roi - Quick ROI calculator
+  POST /api/v1/arv/renovation-budget - Budget calculator
+  GET  /api/v1/arv/value-add-factors - Standard factors
+

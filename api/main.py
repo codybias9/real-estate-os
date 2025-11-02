@@ -20,7 +20,7 @@ from api.models import HealthCheckResponse, ServiceHealth, ErrorResponse
 # Import routers
 from api.routers import (
     auth, properties, prospects, offers, ml, analytics,
-    leases, ownership, documents, hazards, graph, twins
+    leases, ownership, documents, hazards, graph, twins, arv
 )
 
 # Configure logging
@@ -271,6 +271,7 @@ app.include_router(documents.router, prefix=settings.api_prefix)
 app.include_router(hazards.router, prefix=settings.api_prefix)
 app.include_router(graph.router, prefix=settings.api_prefix)
 app.include_router(twins.router, prefix=settings.api_prefix)
+app.include_router(arv.router, prefix=settings.api_prefix)
 app.include_router(ml.router, prefix=settings.api_prefix)
 app.include_router(analytics.router, prefix=settings.api_prefix)
 
