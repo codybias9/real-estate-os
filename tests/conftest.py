@@ -148,6 +148,26 @@ def mock_minio():
         yield client
 
 
+@pytest.fixture
+def temp_file():
+    """Create temporary file for tests."""
+    import tempfile
+    import os
+
+    # Create temp file
+    fd, path = tempfile.mkstemp(suffix='.pdf')
+    os.write(fd, b'Test file content')
+    os.close(fd)
+
+    yield path
+
+    # Cleanup
+    try:
+        os.unlink(path)
+    except OSError:
+        pass
+
+
 # ============================================================================
 # Test Data Fixtures
 # ============================================================================
