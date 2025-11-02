@@ -1,0 +1,74 @@
+Generated offer packet:
+================================================================================
+                                  OFFER PACKET                                  
+================================================================================
+
+                                 456 Oak Avenue                                 
+                            San Francisco, CA 94102                             
+
+                          Generated: November 02, 2025                          
+
+================================================================================
+
+
+EXECUTIVE SUMMARY
+--------------------------------------------------------------------------------
+
+Property Type:        Multifamily
+Address:              456 Oak Avenue
+Building Size:        12,000 sqft
+Lot Size:             8,000 sqft
+Year Built:           1985
+
+OFFER TERMS
+----------------------------------------
+Offer Price:          $3,200,000
+Earnest Money:        $32,000 (1.0%)
+Due Diligence:        21 days
+Closing:              45 days
+Financing:            Required
+Inspection:           Contingent
+
+
+FINANCIAL ANALYSIS
+--------------------------------------------------------------------------------
+
+Investment Structure:
+  Purchase Price:     $3,200,000
+  Down Payment:       $800,000 (25%)
+  Loan Amount:        $2,400,000
+  Interest Rate:      6.50%
+
+DCF Analysis:
+  IRR:                14.20%
+  NPV:                $450,000
+  DSCR:               1.35x
+  Exit Value (5yr):   $4,200,000
+
+
+Comp-Critic Valuation:
+  Estimated Value:    $3,150,000
+  Value Range:        $3,000,000 - $3,300,000
+  Offer vs Value:     +1.6%
+
+HAZARD ASSESSMENT
+--------------------------------------------------------------------------------
+
+Composite Hazard Score:     0.45 / 1.0
+
+Risk Level:                 MODERATE RISK
+Value Adjustment:           $-80,000 (-2.5%)
+Annual Hazard Costs:        $18,000
+
+
+
+
+BUYER SIGNATURE
+--------------------------------------------------------------------------------
+
+Signed: _________________________________    Date: ______________
+
+
+This offer is valid until specified date
+
+

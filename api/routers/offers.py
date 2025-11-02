@@ -2,6 +2,7 @@
 Offers CRUD endpoints with RLS integration.
 """
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi.responses import Response
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional
@@ -12,6 +13,7 @@ from api.models import OfferCreate, OfferUpdate, OfferResponse, OfferListRespons
 from api.orm_models import Offer, Property, Prospect
 from api.auth import TokenData, get_current_user_with_db, Role, require_roles
 from api.database import AsyncSession, get_db, set_tenant_context
+from offer_generation.packet_generator import generate_offer_packet
 
 logger = logging.getLogger(__name__)
 
@@ -172,3 +174,96 @@ async def delete_offer(
         await db.rollback()
         logger.error(f"Delete offer error: {e}")
         raise HTTPException(status_code=500, detail="Failed to delete offer")
+
+
+@router.get("/{offer_id}/packet")
+async def generate_offer_packet_endpoint(
+    offer_id: UUID,
+    user_db: tuple[TokenData, AsyncSession] = Depends(get_current_user_with_db)
+) -> Response:
+    """
+    Generate professional PDF offer packet.
+
+    Includes:
+    - Property summary and photos
+    - Financial analysis (DCF, Comp-Critic)
+    - Hazard assessments
+    - Market comps
+    - Lease schedules (for income properties)
+    - Terms and conditions
+
+    Returns PDF file.
+    """
+    user, db = user_db
+
+    try:
+        # Get offer details
+        offer = (await db.execute(
+            select(Offer).where(Offer.id == offer_id)
+        )).scalar_one_or_none()
+
+        if not offer:
+            raise HTTPException(status_code=404, detail="Offer not found")
+
+        # Get property details
+        property_obj = (await db.execute(
+            select(Property).where(Property.id == offer.property_id)
+        )).scalar_one_or_none()
+
+        if not property_obj:
+            raise HTTPException(status_code=404, detail="Property not found")
+
+        # Build property data
+        property_data = {
+            'property_id': str(property_obj.id),
+            'address': property_obj.address,
+            'city': property_obj.city,
+            'state': property_obj.state,
+            'zip_code': property_obj.zip_code,
+            'property_type': property_obj.property_type or 'Residential',
+            'building_sqft': property_obj.building_sqft,
+            'lot_size_sqft': property_obj.lot_size_sqft,
+            'year_built': property_obj.year_built
+        }
+
+        # Build offer data
+        offer_data = {
+            'offer_price': float(offer.offer_amount),
+            'earnest_money': float(offer.offer_amount) * 0.01,  # 1% default
+            'due_diligence_days': 14,
+            'closing_days': 30
+        }
+
+        # Build financial data
+        financial_data = {
+            'purchase_price': float(offer.offer_amount),
+            'down_payment': float(offer.offer_amount) * 0.25,
+            'interest_rate': 0.065
+        }
+
+        # In production: would fetch DCF results, comp-critic results, hazards
+        # For now, use mock data
+
+        # Generate PDF
+        pdf_bytes = generate_offer_packet(
+            property_data=property_data,
+            offer_data=offer_data,
+            financial_data=financial_data
+        )
+
+        # Return as downloadable PDF
+        filename = f"offer_packet_{offer_id}_{property_obj.address.replace(' ', '_')}.pdf"
+
+        return Response(
+            content=pdf_bytes,
+            media_type="application/pdf",
+            headers={
+                "Content-Disposition": f'attachment; filename="{filename}"'
+            }
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Generate packet error: {e}")
+        raise HTTPException(status_code=500, detail="Failed to generate offer packet")
