@@ -75,7 +75,7 @@ class Property(Base):
     # Additional fields
     hazards = Column(JSONB)
     status = Column(String(50), default="active")
-    metadata = Column(JSONB, default={})
+    property_metadata = Column(JSONB, default={})  # Renamed from 'metadata' to avoid SQLAlchemy conflict
     description = Column(Text)
 
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
@@ -137,7 +137,7 @@ class Prospect(Base):
 
     # Notes and metadata
     notes = Column(Text)
-    metadata = Column(JSONB, default={})
+    prospect_metadata = Column(JSONB, default={})  # Renamed from 'metadata' to avoid SQLAlchemy conflict
 
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
@@ -204,7 +204,7 @@ class Document(Base):
     # Indexing
     ocr_text = Column(Text)  # Extracted text from OCR
     tags = Column(JSONB, default=[])
-    metadata = Column(JSONB, default={})
+    document_metadata = Column(JSONB, default={})  # Renamed from 'metadata' to avoid SQLAlchemy conflict
 
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
@@ -297,7 +297,7 @@ class EventAudit(Base):
     # Changes
     old_values = Column(JSONB)
     new_values = Column(JSONB)
-    metadata = Column(JSONB, default={})
+    event_metadata = Column(JSONB, default={})  # Renamed from 'metadata' to avoid SQLAlchemy conflict
 
     created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
 

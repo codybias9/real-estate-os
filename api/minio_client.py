@@ -648,3 +648,62 @@ class MinIOClient:
 
 # Global MinIO client instance
 minio_client = MinIOClient()
+
+
+def upload_file(
+    bucket: str,
+    object_name: str,
+    file_path: str,
+    tenant_id: str,
+    content_type: str = "application/octet-stream"
+) -> dict:
+    """
+    Wrapper function for uploading files.
+    
+    Args:
+        bucket: Bucket name
+        object_name: Object name (relative to tenant prefix)
+        file_path: Path to file to upload
+        tenant_id: Tenant UUID
+        content_type: Content type
+        
+    Returns:
+        dict with upload result
+    """
+    full_object_name = minio_client._build_object_path(tenant_id, object_name)
+    result = minio_client.put_object_from_path(
+        bucket_name=bucket,
+        object_name=full_object_name,
+        file_path=file_path,
+        tenant_id=tenant_id,
+        content_type=content_type
+    )
+    return result
+
+
+def download_file(
+    bucket: str,
+    object_name: str,
+    file_path: str,
+    tenant_id: str
+) -> dict:
+    """
+    Wrapper function for downloading files.
+    
+    Args:
+        bucket: Bucket name
+        object_name: Object name (relative to tenant prefix)
+        file_path: Local path to save file
+        tenant_id: Tenant UUID
+        
+    Returns:
+        dict with download result
+    """
+    full_object_name = minio_client._build_object_path(tenant_id, object_name)
+    result = minio_client.get_object_to_path(
+        bucket_name=bucket,
+        object_name=full_object_name,
+        file_path=file_path,
+        tenant_id=tenant_id
+    )
+    return result

@@ -133,7 +133,7 @@ class LenderFitResponse(BaseModel):
     summary="Score lender fit",
     description="Match deal with appropriate lenders based on fit score"
 )
-@rate_limit(requests=30, window=60)
+@rate_limit(requests_per_minute=30)
 async def score_lender_fit(
     request: LenderFitRequest,
     user: TokenData = Depends(get_current_user)
@@ -278,7 +278,7 @@ async def score_lender_fit(
     summary="List available loan programs",
     description="Get list of all available lenders and loan programs"
 )
-@rate_limit(requests=60, window=60)
+@rate_limit(requests_per_minute=60)
 async def list_loan_programs(
     user: TokenData = Depends(get_current_user)
 ):
@@ -318,7 +318,7 @@ async def list_loan_programs(
     summary="Get lender requirements",
     description="Get detailed requirements for a specific lender"
 )
-@rate_limit(requests=60, window=60)
+@rate_limit(requests_per_minute=60)
 async def get_lender_requirements(
     lender_id: str,
     user: TokenData = Depends(get_current_user)

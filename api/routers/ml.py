@@ -47,7 +47,7 @@ async def get_valuation(
     user, db = user_db
 
     # Apply burst protection
-    await check_burst_limit(user.tenant_id, user.sub, limit=10, window_seconds=5)
+    await check_burst_limit(user.tenant_id, user.sub, limit=10)
 
     try:
         # Get property

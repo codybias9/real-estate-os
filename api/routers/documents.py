@@ -16,7 +16,7 @@ from enum import Enum
 import logging
 import uuid
 
-from api.auth import get_current_user, User
+from api.auth import get_current_user, TokenData
 from api.rate_limit import rate_limit
 from api.minio_client import upload_file, download_file
 
@@ -87,12 +87,12 @@ class DocumentUpdate(BaseModel):
 
 
 @router.post("/upload", response_model=DocumentUploadResponse, status_code=201)
-@rate_limit(max_requests=20, window_seconds=60)
+@rate_limit(requests_per_minute=20)
 async def upload_document(
     file: UploadFile = File(...),
     document_type: DocumentType = Query(...),
     property_id: Optional[int] = Query(None),
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Upload a document to MinIO storage.
@@ -172,13 +172,13 @@ async def upload_document(
 
 
 @router.get("/", response_model=List[DocumentMetadata])
-@rate_limit(max_requests=100, window_seconds=60)
+@rate_limit(requests_per_minute=100)
 async def list_documents(
     property_id: Optional[int] = None,
     document_type: Optional[DocumentType] = None,
     skip: int = 0,
     limit: int = 100,
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     List documents with optional filters.
@@ -197,10 +197,10 @@ async def list_documents(
 
 
 @router.get("/{document_id}", response_model=DocumentMetadata)
-@rate_limit(max_requests=100, window_seconds=60)
+@rate_limit(requests_per_minute=100)
 async def get_document_metadata(
     document_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """Get document metadata by ID."""
     logger.info(f"Get document metadata: {document_id}")
@@ -214,10 +214,10 @@ async def get_document_metadata(
 
 
 @router.get("/{document_id}/download")
-@rate_limit(max_requests=50, window_seconds=60)
+@rate_limit(requests_per_minute=50)
 async def download_document_file(
     document_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Download document file from storage.
@@ -239,11 +239,11 @@ async def download_document_file(
 
 
 @router.put("/{document_id}", response_model=DocumentMetadata)
-@rate_limit(max_requests=20, window_seconds=60)
+@rate_limit(requests_per_minute=20)
 async def update_document_metadata(
     document_id: str,
     update: DocumentUpdate,
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Update document metadata.
@@ -261,10 +261,10 @@ async def update_document_metadata(
 
 
 @router.delete("/{document_id}", status_code=204)
-@rate_limit(max_requests=10, window_seconds=60)
+@rate_limit(requests_per_minute=10)
 async def delete_document(
     document_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Delete document and its file from storage.
@@ -292,10 +292,10 @@ async def delete_document(
 
 
 @router.post("/{document_id}/reprocess", status_code=202)
-@rate_limit(max_requests=10, window_seconds=60)
+@rate_limit(requests_per_minute=10)
 async def reprocess_document(
     document_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Reprocess document (re-run OCR/text extraction).

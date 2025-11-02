@@ -147,7 +147,7 @@ class TwinSearchSummaryResponse(BaseModel):
     summary="Search for property twins",
     description="Find similar properties using vector similarity search"
 )
-@rate_limit(requests=20, window=60)
+@rate_limit(requests_per_minute=20)
 async def search_property_twins(
     request: TwinSearchRequest,
     user: TokenData = Depends(get_current_user)
@@ -264,7 +264,7 @@ async def search_property_twins(
     summary="Index a property for twin search",
     description="Add a property to the twin search index"
 )
-@rate_limit(requests=100, window=60)
+@rate_limit(requests_per_minute=100)
 async def index_property(
     request: IndexPropertyRequest,
     user: TokenData = Depends(get_current_user)
@@ -336,7 +336,7 @@ async def index_property(
     summary="Get twin search index status",
     description="Get status and statistics of the twin search index"
 )
-@rate_limit(requests=60, window=60)
+@rate_limit(requests_per_minute=60)
 async def get_index_status(
     user: TokenData = Depends(get_current_user)
 ):

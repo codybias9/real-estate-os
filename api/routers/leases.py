@@ -6,7 +6,7 @@ Provides endpoints for:
 - Retrieving lease data
 - Managing lease records
 """
-from fastapi import APIRouter, UploadFile, File, Depends, HTTPException, BackgroundTasks
+from fastapi import APIRouter, UploadFile, File, Form, Body, Depends, HTTPException, BackgroundTasks
 from fastapi.responses import JSONResponse
 from typing import List, Optional
 from pydantic import BaseModel, Field
@@ -16,7 +16,7 @@ import uuid
 import tempfile
 import os
 
-from api.auth import get_current_user, User
+from api.auth import get_current_user, TokenData
 from api.rate_limit import rate_limit
 from api.minio_client import upload_file
 from document_processing.lease_parser import lease_parser
@@ -120,12 +120,12 @@ def process_lease_document_async(
 
 
 @router.post("/upload", response_model=LeaseUploadResponse)
-@rate_limit(max_requests=20, window_seconds=60)
+@rate_limit(requests_per_minute=20)
 async def upload_lease_document(
     file: UploadFile = File(...),
-    property_address: str = Field(..., description="Property address for this lease"),
+    property_address: str = Form(..., description="Property address for this lease"),
     background_tasks: BackgroundTasks = None,
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Upload a lease document for processing.
@@ -212,12 +212,12 @@ async def upload_lease_document(
 
 
 @router.post("/parse", response_model=LeaseProcessingResult)
-@rate_limit(max_requests=10, window_seconds=60)
+@rate_limit(requests_per_minute=10)
 async def parse_lease_text(
-    text: str = Field(..., description="Raw lease document text"),
-    property_address: str = Field(..., description="Property address"),
+    text: str = Body(..., description="Raw lease document text"),
+    property_address: str = Body(..., description="Property address"),
     document_id: Optional[str] = None,
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Parse lease data from raw text.
@@ -281,10 +281,10 @@ async def parse_lease_text(
 
 
 @router.get("/{document_id}", response_model=LeaseResponse)
-@rate_limit(max_requests=100, window_seconds=60)
+@rate_limit(requests_per_minute=100)
 async def get_lease(
     document_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Get lease data by document ID.
@@ -300,12 +300,12 @@ async def get_lease(
 
 
 @router.get("/", response_model=List[LeaseResponse])
-@rate_limit(max_requests=100, window_seconds=60)
+@rate_limit(requests_per_minute=100)
 async def list_leases(
     property_address: Optional[str] = None,
     skip: int = 0,
     limit: int = 100,
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     List leases with optional filtering.
@@ -320,10 +320,10 @@ async def list_leases(
 
 
 @router.delete("/{document_id}")
-@rate_limit(max_requests=10, window_seconds=60)
+@rate_limit(requests_per_minute=10)
 async def delete_lease(
     document_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Delete a lease record.

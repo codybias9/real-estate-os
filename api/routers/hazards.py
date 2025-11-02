@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from datetime import datetime
 import logging
 
-from api.auth import get_current_user, User
+from api.auth import get_current_user, TokenData
 from api.rate_limit import rate_limit
 
 logger = logging.getLogger(__name__)
@@ -91,10 +91,10 @@ class HazardAssessmentResponse(BaseModel):
 
 
 @router.post("/assess", response_model=HazardAssessmentResponse, status_code=200)
-@rate_limit(max_requests=50, window_seconds=60)
+@rate_limit(requests_per_minute=50)
 async def assess_property_hazards(
     request: HazardAssessmentRequest,
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Perform complete hazard assessment for a property.
@@ -123,10 +123,10 @@ async def assess_property_hazards(
 
 
 @router.get("/property/{property_id}", response_model=HazardAssessmentResponse)
-@rate_limit(max_requests=100, window_seconds=60)
+@rate_limit(requests_per_minute=100)
 async def get_property_hazards(
     property_id: int,
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Get cached hazard assessment for a property.
@@ -145,10 +145,10 @@ async def get_property_hazards(
 
 
 @router.post("/batch-assess", status_code=202)
-@rate_limit(max_requests=10, window_seconds=60)
+@rate_limit(requests_per_minute=10)
 async def batch_assess_hazards(
     property_ids: List[int] = Query(..., description="List of property IDs to assess"),
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Trigger batch hazard assessment for multiple properties.
@@ -179,9 +179,9 @@ async def batch_assess_hazards(
 
 
 @router.get("/summary", status_code=200)
-@rate_limit(max_requests=50, window_seconds=60)
+@rate_limit(requests_per_minute=50)
 async def get_portfolio_hazard_summary(
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Get hazard summary across all properties in portfolio.
@@ -206,12 +206,12 @@ async def get_portfolio_hazard_summary(
 
 
 @router.get("/zones/flood", status_code=200)
-@rate_limit(max_requests=100, window_seconds=60)
+@rate_limit(requests_per_minute=100)
 async def get_flood_zones_in_area(
     latitude: float = Query(..., ge=-90, le=90),
     longitude: float = Query(..., ge=-180, le=180),
     radius_miles: float = Query(10, ge=0.1, le=50),
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Get flood zones within radius of a location.
@@ -232,12 +232,12 @@ async def get_flood_zones_in_area(
 
 
 @router.get("/zones/wildfire", status_code=200)
-@rate_limit(max_requests=100, window_seconds=60)
+@rate_limit(requests_per_minute=100)
 async def get_wildfire_risk_in_area(
     latitude: float = Query(..., ge=-90, le=90),
     longitude: float = Query(..., ge=-180, le=180),
     radius_miles: float = Query(10, ge=0.1, le=50),
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Get wildfire hazard potential within radius of a location.

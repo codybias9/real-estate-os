@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field
 from datetime import date, datetime
 import logging
 
-from api.auth import get_current_user, User
+from api.auth import get_current_user, TokenData
 from api.rate_limit import rate_limit
 
 logger = logging.getLogger(__name__)
@@ -60,10 +60,10 @@ class OwnershipResponse(BaseModel):
 
 
 @router.post("/", response_model=OwnershipResponse, status_code=201)
-@rate_limit(max_requests=20, window_seconds=60)
+@rate_limit(requests_per_minute=20)
 async def create_ownership(
     ownership: OwnershipCreate,
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Create a new ownership record.
@@ -83,10 +83,10 @@ async def create_ownership(
 
 
 @router.get("/property/{property_id}", response_model=List[OwnershipResponse])
-@rate_limit(max_requests=100, window_seconds=60)
+@rate_limit(requests_per_minute=100)
 async def list_property_owners(
     property_id: int,
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     List all owners of a specific property.
@@ -105,10 +105,10 @@ async def list_property_owners(
 
 
 @router.get("/{ownership_id}", response_model=OwnershipResponse)
-@rate_limit(max_requests=100, window_seconds=60)
+@rate_limit(requests_per_minute=100)
 async def get_ownership(
     ownership_id: int,
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """Get ownership record by ID."""
     logger.info(f"Get ownership {ownership_id}")
@@ -122,11 +122,11 @@ async def get_ownership(
 
 
 @router.put("/{ownership_id}", response_model=OwnershipResponse)
-@rate_limit(max_requests=20, window_seconds=60)
+@rate_limit(requests_per_minute=20)
 async def update_ownership(
     ownership_id: int,
     ownership: OwnershipUpdate,
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Update ownership record.
@@ -145,10 +145,10 @@ async def update_ownership(
 
 
 @router.delete("/{ownership_id}", status_code=204)
-@rate_limit(max_requests=10, window_seconds=60)
+@rate_limit(requests_per_minute=10)
 async def delete_ownership(
     ownership_id: int,
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Delete ownership record.
@@ -173,13 +173,13 @@ async def delete_ownership(
 
 
 @router.post("/transfer", status_code=200)
-@rate_limit(max_requests=10, window_seconds=60)
+@rate_limit(requests_per_minute=10)
 async def transfer_ownership(
     from_ownership_id: int = Query(..., description="Source ownership record"),
     to_owner_name: str = Query(..., description="New owner name"),
     percentage: float = Query(..., ge=0, le=100, description="Percentage to transfer"),
     effective_date: date = Query(..., description="Transfer effective date"),
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Transfer ownership from one owner to another.

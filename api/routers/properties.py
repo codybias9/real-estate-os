@@ -12,7 +12,7 @@ from api.models import (
     PropertyCreate, PropertyUpdate, PropertyResponse, PropertyListResponse
 )
 from api.orm_models import Property
-from api.auth import TokenData, get_current_user_with_db, Role, require_roles
+from api.auth import TokenData, get_current_user, get_current_user_with_db, Role, require_roles
 from api.database import AsyncSession, get_db, set_tenant_context
 from api.redis_client import redis_client
 

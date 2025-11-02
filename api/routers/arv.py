@@ -172,7 +172,7 @@ class RenovationBudgetResponse(BaseModel):
     summary="Calculate ARV",
     description="Calculate After Repair Value with complete ROI analysis"
 )
-@rate_limit(requests=30, window=60)
+@rate_limit(requests_per_minute=30)
 async def calculate_arv(
     request: ARVCalculationRequest,
     user: TokenData = Depends(get_current_user)
@@ -299,7 +299,7 @@ async def calculate_arv(
     summary="Quick fix-and-flip ROI",
     description="Quick ROI calculator for fix-and-flip analysis"
 )
-@rate_limit(requests=60, window=60)
+@rate_limit(requests_per_minute=60)
 async def quick_flip_roi(
     request: QuickFlipROIRequest,
     user: TokenData = Depends(get_current_user)
@@ -357,7 +357,7 @@ async def quick_flip_roi(
     summary="Calculate renovation budget",
     description="Calculate total renovation budget with contingency and ROI"
 )
-@rate_limit(requests=60, window=60)
+@rate_limit(requests_per_minute=60)
 async def calculate_renovation_budget(
     items: List[RenovationItemRequest],
     contingency_percent: float = 0.10,
@@ -436,7 +436,7 @@ async def calculate_renovation_budget(
     summary="Get standard value add factors",
     description="Get industry-standard value add factors by renovation category"
 )
-@rate_limit(requests=60, window=60)
+@rate_limit(requests_per_minute=60)
 async def get_value_add_factors(
     user: TokenData = Depends(get_current_user)
 ):

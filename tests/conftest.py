@@ -14,7 +14,7 @@ from api.main import app
 from api.database import Base, get_db, set_tenant_context
 from api.config import settings
 from api.qdrant_client import QdrantClient
-from api.minio_client import MinioClient
+from api.minio_client import MinIOClient
 from api.redis_client import RedisClient
 
 

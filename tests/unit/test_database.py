@@ -10,7 +10,7 @@ from api.database import (
     get_db,
     set_tenant_context,
     clear_tenant_context,
-    get_current_tenant_id
+    get_current_tenant_context
 )
 from api.orm_models import Property, Prospect, Offer
 
@@ -52,25 +52,25 @@ class TestTenantContext:
 
     @pytest.mark.asyncio
     @pytest.mark.requires_db
-    async def test_get_current_tenant_id(self, db_session, tenant_id):
+    async def test_get_current_tenant_context(self, db_session, tenant_id):
         """Test retrieving current tenant ID."""
         # Set context
         await set_tenant_context(db_session, tenant_id)
 
         # Get current tenant ID
-        current_id = await get_current_tenant_id(db_session)
+        current_id = await get_current_tenant_context(db_session)
 
         assert current_id == tenant_id
 
     @pytest.mark.asyncio
     @pytest.mark.requires_db
-    async def test_get_current_tenant_id_not_set(self, db_session):
+    async def test_get_current_tenant_context_not_set(self, db_session):
         """Test getting tenant ID when not set."""
         # Clear any existing context
         await clear_tenant_context(db_session)
 
         # Should return None or raise exception
-        current_id = await get_current_tenant_id(db_session)
+        current_id = await get_current_tenant_context(db_session)
         assert current_id is None or current_id == ""
 
 
@@ -265,7 +265,7 @@ class TestDatabaseConnection:
             break
 
         # Session2 should not have tenant context from session1
-        current_tenant = await get_current_tenant_id(session2)
+        current_tenant = await get_current_tenant_context(session2)
         assert current_tenant != tenant_id or current_tenant is None
 
 

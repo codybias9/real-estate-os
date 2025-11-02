@@ -42,7 +42,7 @@ async def login(
     Login endpoint - exchange username/password for JWT tokens.
     """
     # Apply IP-based rate limiting (stricter for login)
-    await check_ip_rate_limit(request, limit=10, window_seconds=60)
+    await check_ip_rate_limit(request, limit=10)
 
     try:
         # Exchange credentials for token via Keycloak
@@ -105,7 +105,7 @@ async def refresh_token(
     Refresh token endpoint - get new access token using refresh token.
     """
     # Apply IP-based rate limiting
-    await check_ip_rate_limit(request, limit=20, window_seconds=60)
+    await check_ip_rate_limit(request, limit=20)
 
     try:
         # Refresh token via Keycloak

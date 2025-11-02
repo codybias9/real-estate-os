@@ -6,7 +6,7 @@ from unittest.mock import Mock, patch, MagicMock
 from uuid import uuid4
 from io import BytesIO
 
-from api.minio_client import MinioClient
+from api.minio_client import MinIOClient
 
 
 class TestMinIOPrefixValidation:
@@ -14,7 +14,7 @@ class TestMinIOPrefixValidation:
 
     def test_validate_tenant_prefix_valid(self, mock_minio, tenant_id):
         """Test valid tenant prefix passes validation."""
-        client = MinioClient()
+        client = MinIOClient()
         client._client = mock_minio
 
         # Should not raise
@@ -23,7 +23,7 @@ class TestMinIOPrefixValidation:
 
     def test_validate_tenant_prefix_invalid(self, mock_minio, tenant_id):
         """Test invalid tenant prefix raises ValueError."""
-        client = MinioClient()
+        client = MinIOClient()
         client._client = mock_minio
 
         # Wrong tenant prefix
@@ -36,7 +36,7 @@ class TestMinIOPrefixValidation:
 
     def test_validate_tenant_prefix_missing(self, mock_minio, tenant_id):
         """Test missing tenant prefix raises ValueError."""
-        client = MinioClient()
+        client = MinIOClient()
         client._client = mock_minio
 
         # No tenant prefix
@@ -53,7 +53,7 @@ class TestMinIOUpload:
 
     def test_upload_file_with_valid_prefix(self, mock_minio, tenant_id):
         """Test uploading file with valid tenant prefix."""
-        client = MinioClient()
+        client = MinIOClient()
         client._client = mock_minio
 
         bucket_name = "documents"
@@ -77,7 +77,7 @@ class TestMinIOUpload:
 
     def test_upload_file_with_invalid_prefix_raises_error(self, mock_minio, tenant_id):
         """Test uploading file with invalid prefix raises ValueError."""
-        client = MinioClient()
+        client = MinIOClient()
         client._client = mock_minio
 
         object_name = "other_tenant/leases/lease_001.pdf"
@@ -92,7 +92,7 @@ class TestMinIOUpload:
 
     def test_upload_file_with_content_type(self, mock_minio, tenant_id):
         """Test uploading file with content type."""
-        client = MinioClient()
+        client = MinIOClient()
         client._client = mock_minio
 
         object_name = f"{tenant_id}/images/property.jpg"
@@ -110,7 +110,7 @@ class TestMinIOUpload:
 
     def test_upload_bytes_with_valid_prefix(self, mock_minio, tenant_id):
         """Test uploading bytes data."""
-        client = MinioClient()
+        client = MinIOClient()
         client._client = mock_minio
 
         object_name = f"{tenant_id}/reports/report_001.pdf"
@@ -137,7 +137,7 @@ class TestMinIODownload:
 
     def test_download_file_with_valid_prefix(self, mock_minio, tenant_id):
         """Test downloading file with valid tenant prefix."""
-        client = MinioClient()
+        client = MinIOClient()
         client._client = mock_minio
 
         object_name = f"{tenant_id}/leases/lease_001.pdf"
@@ -158,7 +158,7 @@ class TestMinIODownload:
 
     def test_download_file_with_invalid_prefix_raises_error(self, mock_minio, tenant_id):
         """Test downloading file with invalid prefix raises ValueError."""
-        client = MinioClient()
+        client = MinIOClient()
         client._client = mock_minio
 
         object_name = "other_tenant/leases/lease_001.pdf"
@@ -173,7 +173,7 @@ class TestMinIODownload:
 
     def test_download_bytes_with_valid_prefix(self, mock_minio, tenant_id):
         """Test downloading file as bytes."""
-        client = MinioClient()
+        client = MinIOClient()
         client._client = mock_minio
 
         object_name = f"{tenant_id}/reports/report_001.pdf"
@@ -201,7 +201,7 @@ class TestMinIOList:
 
     def test_list_objects_with_tenant_prefix(self, mock_minio, tenant_id):
         """Test listing objects filters by tenant prefix."""
-        client = MinioClient()
+        client = MinIOClient()
         client._client = mock_minio
 
         # Mock objects
@@ -226,7 +226,7 @@ class TestMinIOList:
 
     def test_list_objects_tenant_isolation(self, mock_minio, tenant_id):
         """Test list objects are isolated by tenant."""
-        client = MinioClient()
+        client = MinIOClient()
         client._client = mock_minio
 
         # Should only list objects with tenant prefix
@@ -244,7 +244,7 @@ class TestMinIODelete:
 
     def test_delete_object_with_valid_prefix(self, mock_minio, tenant_id):
         """Test deleting object with valid tenant prefix."""
-        client = MinioClient()
+        client = MinIOClient()
         client._client = mock_minio
 
         object_name = f"{tenant_id}/docs/old_file.pdf"
@@ -262,7 +262,7 @@ class TestMinIODelete:
 
     def test_delete_object_with_invalid_prefix_raises_error(self, mock_minio, tenant_id):
         """Test deleting object with invalid prefix raises ValueError."""
-        client = MinioClient()
+        client = MinIOClient()
         client._client = mock_minio
 
         object_name = "other_tenant/docs/file.pdf"
@@ -280,7 +280,7 @@ class TestMinIOPresignedURLs:
 
     def test_get_presigned_url_with_valid_prefix(self, mock_minio, tenant_id):
         """Test generating presigned URL with valid prefix."""
-        client = MinioClient()
+        client = MinIOClient()
         client._client = mock_minio
 
         object_name = f"{tenant_id}/docs/file.pdf"
@@ -298,7 +298,7 @@ class TestMinIOPresignedURLs:
 
     def test_get_presigned_url_with_invalid_prefix_raises_error(self, mock_minio, tenant_id):
         """Test generating presigned URL with invalid prefix raises ValueError."""
-        client = MinioClient()
+        client = MinIOClient()
         client._client = mock_minio
 
         object_name = "other_tenant/docs/file.pdf"
@@ -316,7 +316,7 @@ class TestMinIOBucketOperations:
 
     def test_bucket_exists_true(self, mock_minio):
         """Test bucket exists returns True."""
-        client = MinioClient()
+        client = MinIOClient()
         client._client = mock_minio
 
         mock_minio.bucket_exists.return_value = True
@@ -328,7 +328,7 @@ class TestMinIOBucketOperations:
 
     def test_bucket_exists_false(self, mock_minio):
         """Test bucket exists returns False."""
-        client = MinioClient()
+        client = MinIOClient()
         client._client = mock_minio
 
         mock_minio.bucket_exists.return_value = False
@@ -339,7 +339,7 @@ class TestMinIOBucketOperations:
 
     def test_create_bucket(self, mock_minio):
         """Test bucket creation."""
-        client = MinioClient()
+        client = MinIOClient()
         client._client = mock_minio
 
         client.create_bucket("new-bucket")

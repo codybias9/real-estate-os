@@ -11,7 +11,7 @@ import logging
 
 from api.models import OfferCreate, OfferUpdate, OfferResponse, OfferListResponse
 from api.orm_models import Offer, Property, Prospect
-from api.auth import TokenData, get_current_user_with_db, Role, require_roles
+from api.auth import TokenData, get_current_user, get_current_user_with_db, Role, require_roles
 from api.database import AsyncSession, get_db, set_tenant_context
 from offer_generation.packet_generator import generate_offer_packet
 

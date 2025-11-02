@@ -14,7 +14,7 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 import logging
 
-from api.auth import get_current_user, User
+from api.auth import get_current_user, TokenData
 from api.rate_limit import rate_limit
 from graph_analytics.relationship_graph import RelationshipGraph, sync_postgresql_to_neo4j
 
@@ -74,9 +74,9 @@ class PortfolioMetrics(BaseModel):
 
 
 @router.post("/sync", status_code=202)
-@rate_limit(max_requests=5, window_seconds=3600)  # Once per hour
+@rate_limit(requests_per_minute=5)  # Once per hour
 async def sync_graph(
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Sync PostgreSQL data to Neo4j graph database.
@@ -116,10 +116,10 @@ async def sync_graph(
 
 
 @router.get("/owner/{owner_id}/properties", response_model=List[dict])
-@rate_limit(max_requests=100, window_seconds=60)
+@rate_limit(requests_per_minute=100)
 async def get_owner_properties(
     owner_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Get all properties owned by an owner.
@@ -135,10 +135,10 @@ async def get_owner_properties(
 
 
 @router.get("/property/{property_id}/owners", response_model=List[dict])
-@rate_limit(max_requests=100, window_seconds=60)
+@rate_limit(requests_per_minute=100)
 async def get_property_owners(
     property_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Get all owners of a property.
@@ -154,10 +154,10 @@ async def get_property_owners(
 
 
 @router.get("/owner/{owner_id}/coowners", response_model=List[dict])
-@rate_limit(max_requests=100, window_seconds=60)
+@rate_limit(requests_per_minute=100)
 async def get_coowners(
     owner_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Find co-owners who own properties together with this owner.
@@ -174,10 +174,10 @@ async def get_coowners(
 
 
 @router.get("/tenant/{tenant_id}/history", response_model=List[dict])
-@rate_limit(max_requests=100, window_seconds=60)
+@rate_limit(requests_per_minute=100)
 async def get_tenant_history(
     tenant_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Get rental history for a tenant.
@@ -193,11 +193,11 @@ async def get_tenant_history(
 
 
 @router.get("/property/{property_id}/network", response_model=NetworkResponse)
-@rate_limit(max_requests=50, window_seconds=60)
+@rate_limit(requests_per_minute=50)
 async def get_property_network(
     property_id: str,
     max_hops: int = Query(2, ge=1, le=5),
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Get network of related entities around a property.
@@ -222,10 +222,10 @@ async def get_property_network(
 
 
 @router.get("/owner/{owner_id}/metrics", response_model=PortfolioMetrics)
-@rate_limit(max_requests=100, window_seconds=60)
+@rate_limit(requests_per_minute=100)
 async def get_owner_metrics(
     owner_id: str,
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Calculate portfolio metrics for an owner.
@@ -246,9 +246,9 @@ async def get_owner_metrics(
 
 
 @router.get("/clusters", response_model=List[dict])
-@rate_limit(max_requests=20, window_seconds=60)
+@rate_limit(requests_per_minute=20)
 async def get_investment_clusters(
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Find clusters of interconnected investors.
@@ -270,10 +270,10 @@ async def get_investment_clusters(
 
 
 @router.get("/influential-owners", response_model=List[dict])
-@rate_limit(max_requests=20, window_seconds=60)
+@rate_limit(requests_per_minute=20)
 async def get_influential_owners(
     limit: int = Query(10, ge=1, le=50),
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Find most influential owners using network centrality metrics.
@@ -295,11 +295,11 @@ async def get_influential_owners(
 
 
 @router.get("/visualize", response_model=dict)
-@rate_limit(max_requests=20, window_seconds=60)
+@rate_limit(requests_per_minute=20)
 async def get_graph_visualization(
     center_node_id: Optional[str] = None,
     max_nodes: int = Query(100, ge=10, le=500),
-    current_user: User = Depends(get_current_user)
+    current_user: TokenData = Depends(get_current_user)
 ):
     """
     Export graph data for visualization.

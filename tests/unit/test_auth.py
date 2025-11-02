@@ -8,7 +8,7 @@ from unittest.mock import Mock, patch, AsyncMock
 
 from api.auth import (
     verify_token,
-    create_access_token,
+    # create_access_token,  # Not needed - Keycloak handles token creation
     get_current_user,
     require_roles,
     TokenData,
@@ -20,6 +20,7 @@ from api.config import settings
 class TestJWTTokens:
     """Test JWT token creation and validation."""
 
+    @pytest.mark.skip(reason="Token creation handled by Keycloak, not app")
     def test_create_access_token(self):
         """Test access token creation."""
         data = {
