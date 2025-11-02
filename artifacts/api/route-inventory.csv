@@ -1,0 +1,84 @@
+Router,Method,Path,Function
+analytics.py,GET,/portfolio,get_portfolio_summary
+analytics.py,GET,/pipeline,get_pipeline_metrics
+arv.py,POST,/calculate,calculate_arv
+arv.py,POST,/quick-flip-roi,quick_flip_roi
+arv.py,POST,/renovation-budget,calculate_renovation_budget
+arv.py,GET,/value-add-factors,get_value_add_factors
+auth.py,POST,/login,login
+auth.py,POST,/refresh,refresh_token
+auth.py,POST,/logout,logout
+auth.py,GET,/me,get_me
+auth.py,GET,/verify,verify_token_endpoint
+documents.py,POST,/upload,upload_document
+documents.py,GET,/,list_documents
+documents.py,GET,/{document_id},get_document_metadata
+documents.py,GET,/{document_id}/download,download_document_file
+documents.py,PUT,/{document_id},update_document_metadata
+documents.py,DELETE,/{document_id},delete_document
+documents.py,POST,/{document_id}/reprocess,reprocess_document
+graph.py,POST,/sync,sync_graph
+graph.py,GET,/owner/{owner_id}/properties,get_owner_properties
+graph.py,GET,/property/{property_id}/owners,get_property_owners
+graph.py,GET,/owner/{owner_id}/coowners,get_coowners
+graph.py,GET,/tenant/{tenant_id}/history,get_tenant_history
+graph.py,GET,/property/{property_id}/network,get_property_network
+graph.py,GET,/owner/{owner_id}/metrics,get_owner_metrics
+graph.py,GET,/clusters,get_investment_clusters
+graph.py,GET,/influential-owners,get_influential_owners
+graph.py,GET,/visualize,get_graph_visualization
+hazards.py,POST,/assess,assess_property_hazards
+hazards.py,GET,/property/{property_id},get_property_hazards
+hazards.py,POST,/batch-assess,batch_assess_hazards
+hazards.py,GET,/summary,get_portfolio_hazard_summary
+hazards.py,GET,/zones/flood,get_flood_zones_in_area
+hazards.py,GET,/zones/wildfire,get_wildfire_risk_in_area
+leases.py,POST,/upload,upload_lease_document
+leases.py,POST,/parse,parse_lease_text
+leases.py,GET,/{document_id},get_lease
+leases.py,GET,/,list_leases
+leases.py,DELETE,/{document_id},delete_lease
+lenders.py,POST,/score,score_lender_fit
+lenders.py,GET,/programs,list_loan_programs
+lenders.py,GET,/requirements/{lender_id},get_lender_requirements
+ml.py,POST,/valuation,get_valuation
+ml.py,POST,/comp-critic/{property_id},comp_critic_valuation
+ml.py,POST,/dcf/{property_id},dcf_valuation
+offers.py,GET,unknown,list_offers
+offers.py,GET,/{offer_id},get_offer
+offers.py,POST,unknown,create_offer
+offers.py,PATCH,/{offer_id},update_offer
+offers.py,DELETE,/{offer_id},delete_offer
+offers.py,GET,/{offer_id}/packet,generate_offer_packet_endpoint
+ownership.py,POST,/,create_ownership
+ownership.py,GET,/property/{property_id},list_property_owners
+ownership.py,GET,/{ownership_id},get_ownership
+ownership.py,PUT,/{ownership_id},update_ownership
+ownership.py,DELETE,/{ownership_id},delete_ownership
+ownership.py,POST,/transfer,transfer_ownership
+properties.py,GET,,
+    response_model=PropertyListResponse,
+    summary=,list_properties
+properties.py,GET,/{property_id},get_property
+properties.py,POST,,
+    response_model=PropertyResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary=,create_property
+properties.py,PATCH,/{property_id},update_property
+properties.py,DELETE,/{property_id},delete_property
+properties.py,GET,/nearby/{property_id},find_nearby_properties
+prospects.py,GET,,
+    response_model=ProspectListResponse,
+    summary=,list_prospects
+prospects.py,GET,/{prospect_id},get_prospect
+prospects.py,POST,,
+    response_model=ProspectResponse,
+    status_code=status.HTTP_201_CREATED,
+    summary=,create_prospect
+prospects.py,PATCH,/{prospect_id},update_prospect
+prospects.py,DELETE,/{prospect_id},delete_prospect
+twins.py,POST,/search,search_property_twins
+twins.py,POST,/index,index_property
+twins.py,GET,/status,get_index_status
+
+# Total endpoints: 71

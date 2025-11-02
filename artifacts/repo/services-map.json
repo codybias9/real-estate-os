@@ -1,0 +1,183 @@
+{
+  "platform": "Real Estate OS",
+  "audit_date": "2025-11-02",
+  "services": {
+    "api": {
+      "status": "code_exists_not_deployed",
+      "technology": "FastAPI",
+      "port": 8000,
+      "routers": 14,
+      "endpoints": 71,
+      "dependencies": ["postgresql", "redis", "keycloak", "qdrant", "neo4j", "minio"],
+      "files": [
+        "api/main.py",
+        "api/routers/*.py"
+      ],
+      "deployment": "NOT DEPLOYED"
+    },
+    "postgresql": {
+      "status": "configured_not_deployed",
+      "technology": "PostgreSQL 13 + PostGIS",
+      "port": 5432,
+      "migrations": 3,
+      "tables_planned": 10,
+      "features": ["RLS", "PostGIS", "Triggers"],
+      "deployment": "NOT DEPLOYED"
+    },
+    "redis": {
+      "status": "configured_not_deployed",
+      "technology": "Redis 7.2",
+      "port": 6379,
+      "use_cases": ["rate_limiting", "caching", "feast_online_store"],
+      "deployment": "NOT DEPLOYED"
+    },
+    "airflow": {
+      "status": "configured_not_deployed",
+      "technology": "Apache Airflow 3.0.2",
+      "port": 8080,
+      "dags_total": 17,
+      "dags_real": 7,
+      "dags_stub": 6,
+      "deployment": "NOT DEPLOYED"
+    },
+    "keycloak": {
+      "status": "referenced_not_configured",
+      "technology": "Keycloak 24+",
+      "port": 8080,
+      "purpose": "JWT/OIDC authentication",
+      "deployment": "NOT CONFIGURED"
+    },
+    "qdrant": {
+      "status": "code_exists_not_deployed",
+      "technology": "Qdrant Vector DB",
+      "port": 6333,
+      "purpose": "property_twin_search",
+      "vector_dimensions": 128,
+      "deployment": "NOT DEPLOYED"
+    },
+    "neo4j": {
+      "status": "code_exists_not_deployed",
+      "technology": "Neo4j Graph DB",
+      "port": 7474,
+      "purpose": "relationship_graphs",
+      "deployment": "NOT DEPLOYED"
+    },
+    "minio": {
+      "status": "code_exists_not_deployed",
+      "technology": "MinIO Object Storage",
+      "port": 9000,
+      "purpose": "document_storage",
+      "deployment": "NOT DEPLOYED"
+    },
+    "prometheus": {
+      "status": "not_configured",
+      "technology": "Prometheus",
+      "port": 9090,
+      "purpose": "metrics",
+      "deployment": "NOT CONFIGURED"
+    },
+    "grafana": {
+      "status": "not_configured",
+      "technology": "Grafana",
+      "port": 3000,
+      "purpose": "dashboards",
+      "deployment": "NOT CONFIGURED"
+    },
+    "marquez": {
+      "status": "code_references_not_deployed",
+      "technology": "Marquez",
+      "port": 5000,
+      "purpose": "data_lineage_visualization",
+      "deployment": "NOT DEPLOYED"
+    },
+    "sentry": {
+      "status": "code_references_not_configured",
+      "technology": "Sentry",
+      "purpose": "error_tracking",
+      "deployment": "NOT CONFIGURED"
+    },
+    "mlflow": {
+      "status": "not_referenced",
+      "technology": "MLflow",
+      "purpose": "model_registry",
+      "deployment": "NOT CONFIGURED"
+    },
+    "feast": {
+      "status": "not_configured",
+      "technology": "Feast Feature Store",
+      "purpose": "feature_serving",
+      "deployment": "NOT CONFIGURED"
+    }
+  },
+  "ml_engines": {
+    "dcf_engine": {
+      "status": "code_only",
+      "file": "ml/models/dcf_engine.py",
+      "type": "rule_based",
+      "trained_artifacts": false
+    },
+    "comp_critic": {
+      "status": "code_only",
+      "file": "ml/models/comp_critic.py",
+      "type": "rule_based",
+      "trained_artifacts": false
+    },
+    "property_twin_search": {
+      "status": "code_only",
+      "file": "ml/similarity/property_twin_search.py",
+      "type": "embedding_based",
+      "trained_artifacts": false,
+      "requires": "qdrant"
+    },
+    "arv_calculator": {
+      "status": "code_only",
+      "file": "ml/arv/arv_calculator.py",
+      "type": "rule_based",
+      "trained_artifacts": false
+    },
+    "lender_scoring": {
+      "status": "code_only",
+      "file": "ml/lender_fit/lender_scoring.py",
+      "type": "rule_based",
+      "trained_artifacts": false
+    },
+    "reserve_calculator": {
+      "status": "code_only",
+      "file": "ml/reserves/reserve_calculator.py",
+      "type": "rule_based",
+      "trained_artifacts": false
+    }
+  },
+  "data_pipelines": {
+    "real": [
+      "address_normalization_dag.py",
+      "hazards_etl_pipeline.py",
+      "lease_processing_pipeline.py",
+      "minimal_e2e_pipeline.py",
+      "property_ingestion_with_gx_gates.py",
+      "property_pipeline_with_lineage.py",
+      "property_pipeline_with_provenance.py"
+    ],
+    "minimal": [
+      "discovery_dag.py",
+      "example_hello_world.py",
+      "example_test_dag.py",
+      "scrape_listings_dag.py"
+    ],
+    "stub": [
+      "discovery_offmarket.py",
+      "docgen_packet.py",
+      "enrichment_property.py",
+      "property_processing_pipeline.py",
+      "score_master.py",
+      "sys_heartbeat.py"
+    ]
+  },
+  "deployment_status": {
+    "infrastructure_deployed": 0,
+    "infrastructure_total": 14,
+    "deployment_ready": false,
+    "production_ready": false,
+    "estimated_deployment_effort_days": 30
+  }
+}

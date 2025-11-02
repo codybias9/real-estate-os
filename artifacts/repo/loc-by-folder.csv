@@ -1,0 +1,9 @@
+Directory,Python_LOC,SQL_LOC,YAML_LOC,MD_LOC,Total_Files
+api,8264,,,,28
+ml,4508,,,,24
+dags,3310,,,,17
+document_processing,350,,,,2
+graph_analytics,724,,,,2
+offer_generation,442,,,,1
+evidence,1616,,,1088,22
+docs,,,,3032,14

@@ -1,0 +1,20 @@
+161:ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+163:CREATE POLICY users_tenant_isolation
+167:CREATE POLICY users_tenant_isolation_insert
+304:ALTER TABLE properties ENABLE ROW LEVEL SECURITY;
+306:CREATE POLICY properties_tenant_isolation
+310:CREATE POLICY properties_tenant_isolation_insert
+379:ALTER TABLE ownership ENABLE ROW LEVEL SECURITY;
+381:CREATE POLICY ownership_tenant_isolation
+385:CREATE POLICY ownership_tenant_isolation_insert
+464:ALTER TABLE prospects ENABLE ROW LEVEL SECURITY;
+466:CREATE POLICY prospects_tenant_isolation
+470:CREATE POLICY prospects_tenant_isolation_insert
+583:ALTER TABLE leases ENABLE ROW LEVEL SECURITY;
+585:CREATE POLICY leases_tenant_isolation
+589:CREATE POLICY leases_tenant_isolation_insert
+667:ALTER TABLE documents ENABLE ROW LEVEL SECURITY;
+669:CREATE POLICY documents_tenant_isolation
+673:CREATE POLICY documents_tenant_isolation_insert
+755:ALTER TABLE scores ENABLE ROW LEVEL SECURITY;
+757:CREATE POLICY scores_tenant_isolation
