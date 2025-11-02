@@ -18,7 +18,10 @@ from api.rate_limit import RateLimitMiddleware
 from api.models import HealthCheckResponse, ServiceHealth, ErrorResponse
 
 # Import routers
-from api.routers import auth, properties, prospects, offers, ml, analytics
+from api.routers import (
+    auth, properties, prospects, offers, ml, analytics,
+    leases, ownership, documents, hazards
+)
 
 # Configure logging
 logging.basicConfig(
@@ -262,6 +265,10 @@ app.include_router(auth.router, prefix=settings.api_prefix)
 app.include_router(properties.router, prefix=settings.api_prefix)
 app.include_router(prospects.router, prefix=settings.api_prefix)
 app.include_router(offers.router, prefix=settings.api_prefix)
+app.include_router(leases.router, prefix=settings.api_prefix)
+app.include_router(ownership.router, prefix=settings.api_prefix)
+app.include_router(documents.router, prefix=settings.api_prefix)
+app.include_router(hazards.router, prefix=settings.api_prefix)
 app.include_router(ml.router, prefix=settings.api_prefix)
 app.include_router(analytics.router, prefix=settings.api_prefix)
 
