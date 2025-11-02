@@ -11,6 +11,7 @@ Features:
 - Lease structures (NN, NNN, Gross) with reimbursements
 - Monte Carlo simulation mode (seeded)
 - Low-N API mode for low latency
+- HAZARD INTEGRATION: Flood, wildfire, heat risks factored into opex, cap rates, and cash flows
 """
 
 import json
@@ -50,6 +51,11 @@ class Lease:
 class DCFEngine:
     """
     Discounted Cash Flow engine for real estate valuation
+
+    Now includes hazard integration:
+    - Hazard costs added to opex (insurance, mitigation)
+    - Exit cap rates adjusted for hazard risk
+    - Discount rates adjusted for increased risk
     """
 
     def __init__(self, seed: int = 42):
@@ -58,14 +64,90 @@ class DCFEngine:
         self.default_exit_cap = 0.055
         self.default_hold_period = 5
 
+    def _calculate_hazard_adjustments(
+        self,
+        property_value: float,
+        hazard_data: Dict[str, Any] = None
+    ) -> Dict[str, float]:
+        """
+        Calculate hazard-based adjustments for DCF inputs
+
+        Args:
+            property_value: Current property value
+            hazard_data: Dictionary with hazard scores and impacts
+                        Expected keys: composite_hazard_score, total_annual_cost_impact,
+                                      flood_risk_score, wildfire_risk_score, heat_risk_score
+
+        Returns:
+            Dictionary with adjustments:
+            - hazard_opex_annual: Additional annual opex from hazards
+            - exit_cap_adjustment: Basis points to add to exit cap
+            - discount_rate_adjustment: Basis points to add to discount rate
+            - insurance_annual: Annual insurance costs
+            - mitigation_annual: Annual mitigation costs
+        """
+        if not hazard_data:
+            return {
+                'hazard_opex_annual': 0.0,
+                'exit_cap_adjustment': 0.0,
+                'discount_rate_adjustment': 0.0,
+                'insurance_annual': 0.0,
+                'mitigation_annual': 0.0
+            }
+
+        composite_score = hazard_data.get('composite_hazard_score', 0.0)
+        annual_cost_impact = hazard_data.get('total_annual_cost_impact', 0.0)
+
+        # Insurance costs (based on hazard severity)
+        # Low hazard (0-0.3): 0.1% of value
+        # Medium hazard (0.3-0.6): 0.2% of value
+        # High hazard (0.6-1.0): 0.4% of value
+        if composite_score < 0.3:
+            insurance_rate = 0.001
+        elif composite_score < 0.6:
+            insurance_rate = 0.002
+        else:
+            insurance_rate = 0.004
+
+        insurance_annual = property_value * insurance_rate
+
+        # Mitigation costs (preventive measures)
+        # Scales with hazard score: 0-0.15% of property value
+        mitigation_annual = property_value * (composite_score * 0.0015)
+
+        # Total hazard opex
+        hazard_opex = insurance_annual + mitigation_annual + annual_cost_impact
+
+        # Exit cap rate adjustment (higher hazards = higher cap rate = lower exit value)
+        # Add 5-50 basis points based on composite score
+        exit_cap_adjustment = composite_score * 0.0050  # 0 to 50 bps
+
+        # Discount rate adjustment (higher hazards = higher required return)
+        # Add 10-100 basis points based on composite score
+        discount_rate_adjustment = composite_score * 0.0100  # 0 to 100 bps
+
+        return {
+            'hazard_opex_annual': hazard_opex,
+            'exit_cap_adjustment': exit_cap_adjustment,
+            'discount_rate_adjustment': discount_rate_adjustment,
+            'insurance_annual': insurance_annual,
+            'mitigation_annual': mitigation_annual
+        }
+
     def model_mf(
         self,
         property_data: Dict[str, Any],
         unit_mix: List[UnitMix],
-        params: Dict[str, Any] = None
+        params: Dict[str, Any] = None,
+        hazard_data: Dict[str, Any] = None
     ) -> Dict[str, Any]:
         """
         Multifamily DCF with unit-mix modeling
+
+        Now includes hazard integration:
+        - Hazard costs factored into annual opex
+        - Exit cap adjusted for hazard risk
+        - Discount rate adjusted for hazard risk
         """
         start_time = time.time()
 
@@ -81,6 +163,13 @@ class DCFEngine:
         loan_amount = purchase_price * 0.75
         interest_rate = 0.045
         loan_term = 30
+
+        # Calculate hazard adjustments
+        hazard_adjustments = self._calculate_hazard_adjustments(purchase_price, hazard_data)
+
+        # Apply hazard adjustments to exit cap and discount rate
+        exit_cap_adjusted = exit_cap + hazard_adjustments['exit_cap_adjustment']
+        discount_rate_adjusted = discount_rate + hazard_adjustments['discount_rate_adjustment']
 
         # Annual projections
         cash_flows = []
@@ -104,8 +193,12 @@ class DCFEngine:
             # Operating expenses (approximation: 40% of EGI)
             opex = egi * 0.40
 
+            # Add hazard-related operating costs
+            hazard_opex = hazard_adjustments['hazard_opex_annual']
+            total_opex = opex + hazard_opex
+
             # Net operating income
-            noi = egi - opex
+            noi = egi - total_opex
             noi_history.append(noi)
 
             # Debt service
@@ -136,6 +229,8 @@ class DCFEngine:
                 "vacancy_loss": round(vacancy_loss, 2),
                 "egi": round(egi, 2),
                 "opex": round(opex, 2),
+                "hazard_opex": round(hazard_opex, 2),
+                "total_opex": round(total_opex, 2),
                 "noi": round(noi, 2),
                 "debt_service": round(debt_service, 2),
                 "capex_reserve": round(capex_reserve, 2),
@@ -144,8 +239,9 @@ class DCFEngine:
             })
 
         # Exit value (sale at end of hold period)
+        # Use hazard-adjusted exit cap rate
         exit_noi = noi_history[-1] * 1.03  # Assume 3% growth in final year
-        exit_value = exit_noi / exit_cap
+        exit_value = exit_noi / exit_cap_adjusted
 
         # Remaining loan balance
         remaining_balance = loan_amount * 0.85  # Simplified
@@ -157,13 +253,13 @@ class DCFEngine:
         # Calculate NPV and IRR
         equity_invested = purchase_price - loan_amount
 
-        # Discount cash flows
+        # Discount cash flows using hazard-adjusted discount rate
         pv_cash_flows = []
         for i, cf in enumerate(cash_flows):
-            pv = cf["cf_before_tax"] / ((1 + discount_rate) ** (i + 1))
+            pv = cf["cf_before_tax"] / ((1 + discount_rate_adjusted) ** (i + 1))
             pv_cash_flows.append(pv)
 
-        pv_reversion = net_proceeds / ((1 + discount_rate) ** hold_years)
+        pv_reversion = net_proceeds / ((1 + discount_rate_adjusted) ** hold_years)
 
         npv = sum(pv_cash_flows) + pv_reversion - equity_invested
 
@@ -179,6 +275,24 @@ class DCFEngine:
 
         elapsed = time.time() - start_time
 
+        # Prepare hazard impact summary
+        hazard_summary = {
+            "hazard_data_included": hazard_data is not None,
+            "composite_hazard_score": hazard_data.get("composite_hazard_score", 0.0) if hazard_data else 0.0,
+            "hazard_opex_annual": round(hazard_adjustments['hazard_opex_annual'], 2),
+            "hazard_insurance_annual": round(hazard_adjustments['insurance_annual'], 2),
+            "hazard_mitigation_annual": round(hazard_adjustments['mitigation_annual'], 2),
+            "exit_cap_base": exit_cap,
+            "exit_cap_adjusted": round(exit_cap_adjusted, 4),
+            "exit_cap_adjustment_bps": round(hazard_adjustments['exit_cap_adjustment'] * 10000, 1),
+            "discount_rate_base": discount_rate,
+            "discount_rate_adjusted": round(discount_rate_adjusted, 4),
+            "discount_rate_adjustment_bps": round(hazard_adjustments['discount_rate_adjustment'] * 10000, 1),
+            "total_hazard_impact_on_value": round(
+                (exit_noi / exit_cap - exit_noi / exit_cap_adjusted), 2
+            ) if hazard_data else 0.0
+        }
+
         return {
             "property_type": "MULTIFAMILY",
             "property_id": property_data.get("property_id", "MF-001"),
@@ -191,10 +305,12 @@ class DCFEngine:
             "dscr": round(dscr, 2),
             "exit_value": round(exit_value, 2),
             "exit_cap_rate": exit_cap,
+            "exit_cap_rate_adjusted": round(exit_cap_adjusted, 4),
             "net_proceeds": round(net_proceeds, 2),
             "equity_multiple": round((sum(pv_cash_flows) + pv_reversion) / equity_invested, 2),
             "cash_flows": cash_flows,
             "unit_mix_summary": [asdict(u) for u in unit_mix],
+            "hazard_analysis": hazard_summary,
             "computation_time_ms": round(elapsed * 1000, 2),
             "timestamp": datetime.utcnow().isoformat()
         }
@@ -203,10 +319,16 @@ class DCFEngine:
         self,
         property_data: Dict[str, Any],
         leases: List[Lease],
-        params: Dict[str, Any] = None
+        params: Dict[str, Any] = None,
+        hazard_data: Dict[str, Any] = None
     ) -> Dict[str, Any]:
         """
         Commercial Real Estate DCF with lease-by-lease analysis
+
+        Now includes hazard integration:
+        - Hazard costs factored into annual opex
+        - Exit cap adjusted for hazard risk
+        - Discount rate adjusted for hazard risk
         """
         start_time = time.time()
 
@@ -220,6 +342,13 @@ class DCFEngine:
         purchase_price = property_data.get("purchase_price", 8_000_000)
         loan_amount = purchase_price * 0.70
         interest_rate = 0.05
+
+        # Calculate hazard adjustments
+        hazard_adjustments = self._calculate_hazard_adjustments(purchase_price, hazard_data)
+
+        # Apply hazard adjustments
+        exit_cap_adjusted = exit_cap + hazard_adjustments['exit_cap_adjustment']
+        discount_rate_adjusted = discount_rate + hazard_adjustments['discount_rate_adjustment']
 
         # Project lease-by-lease income
         cash_flows = []
@@ -240,8 +369,12 @@ class DCFEngine:
             # Operating expenses
             opex = annual_rent * 0.35  # For NNN, this is mainly CAM
 
+            # Add hazard-related operating costs
+            hazard_opex = hazard_adjustments['hazard_opex_annual']
+            total_opex = opex + hazard_opex
+
             # NOI
-            noi = annual_rent - opex
+            noi = annual_rent - total_opex
 
             # Debt service (simplified)
             debt_service = loan_amount * interest_rate * 1.1  # Approximate annual payment
@@ -257,6 +390,8 @@ class DCFEngine:
                 "year": year,
                 "annual_rent": round(annual_rent, 2),
                 "opex": round(opex, 2),
+                "hazard_opex": round(hazard_opex, 2),
+                "total_opex": round(total_opex, 2),
                 "noi": round(noi, 2),
                 "debt_service": round(debt_service, 2),
                 "ti_reserve": round(ti_reserve, 2),
@@ -264,9 +399,9 @@ class DCFEngine:
                 "cf_before_tax": round(cf, 2)
             })
 
-        # Exit calculation
+        # Exit calculation - use hazard-adjusted exit cap
         exit_noi = cash_flows[-1]["noi"] * 1.02
-        exit_value = exit_noi / exit_cap
+        exit_value = exit_noi / exit_cap_adjusted
         remaining_balance = loan_amount * 0.65
         net_proceeds = exit_value - remaining_balance - (exit_value * 0.02)
 
@@ -282,6 +417,24 @@ class DCFEngine:
 
         elapsed = time.time() - start_time
 
+        # Prepare hazard impact summary
+        hazard_summary = {
+            "hazard_data_included": hazard_data is not None,
+            "composite_hazard_score": hazard_data.get("composite_hazard_score", 0.0) if hazard_data else 0.0,
+            "hazard_opex_annual": round(hazard_adjustments['hazard_opex_annual'], 2),
+            "hazard_insurance_annual": round(hazard_adjustments['insurance_annual'], 2),
+            "hazard_mitigation_annual": round(hazard_adjustments['mitigation_annual'], 2),
+            "exit_cap_base": exit_cap,
+            "exit_cap_adjusted": round(exit_cap_adjusted, 4),
+            "exit_cap_adjustment_bps": round(hazard_adjustments['exit_cap_adjustment'] * 10000, 1),
+            "discount_rate_base": discount_rate,
+            "discount_rate_adjusted": round(discount_rate_adjusted, 4),
+            "discount_rate_adjustment_bps": round(hazard_adjustments['discount_rate_adjustment'] * 10000, 1),
+            "total_hazard_impact_on_value": round(
+                (exit_noi / exit_cap - exit_noi / exit_cap_adjusted), 2
+            ) if hazard_data else 0.0
+        }
+
         return {
             "property_type": "COMMERCIAL",
             "property_id": property_data.get("property_id", "CRE-001"),
@@ -291,9 +444,12 @@ class DCFEngine:
             "irr": round(irr, 4),
             "dscr": round(dscr, 2),
             "exit_value": round(exit_value, 2),
+            "exit_cap_rate": exit_cap,
+            "exit_cap_rate_adjusted": round(exit_cap_adjusted, 4),
             "net_proceeds": round(net_proceeds, 2),
             "cash_flows": cash_flows,
             "lease_count": len(leases),
+            "hazard_analysis": hazard_summary,
             "computation_time_ms": round(elapsed * 1000, 2),
             "timestamp": datetime.utcnow().isoformat()
         }

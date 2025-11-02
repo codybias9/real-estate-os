@@ -3,6 +3,7 @@ Comp-Critic: 3-Stage Valuation System
 1. Retrieval (Gaussian distance/recency weights)
 2. Ranker (LambdaMART or LightGBM ranker)
 3. Hedonic Adjustment (Quantile regression with Huber robustness)
+4. HAZARD INTEGRATION: Adjusts values based on flood, wildfire, heat risks
 """
 
 import json
@@ -108,11 +109,22 @@ class CompCritic:
     def apply_hedonic_adjustments(
         self,
         subject: Dict[str, Any],
-        comps: List[Dict[str, Any]]
+        comps: List[Dict[str, Any]],
+        subject_hazards: Dict[str, Any] = None,
+        comp_hazards: Dict[str, Dict[str, Any]] = None
     ) -> Tuple[float, List[Dict[str, Any]]]:
         """
         Stage 3: Apply hedonic adjustments with quantile regression (Huber robust)
-        Returns estimated value and adjustment waterfall
+        Now includes hazard adjustments!
+
+        Args:
+            subject: Subject property data
+            comps: List of comparable properties
+            subject_hazards: Hazard data for subject property
+            comp_hazards: Dict mapping comp_id to hazard data
+
+        Returns:
+            Tuple of (estimated_value, adjustment_waterfall)
         """
         adjustments = []
 
@@ -161,6 +173,35 @@ class CompCritic:
                     "adjustment": int(condition_adj)
                 })
 
+            # HAZARD ADJUSTMENT (NEW!)
+            # If subject has lower hazard risk than comp, positive adjustment
+            # If subject has higher hazard risk than comp, negative adjustment
+            if subject_hazards and comp_hazards:
+                comp_hazard_data = comp_hazards.get(comp["comp_id"])
+                if comp_hazard_data:
+                    subject_hazard_score = subject_hazards.get("composite_hazard_score", 0.0)
+                    comp_hazard_score = comp_hazard_data.get("composite_hazard_score", 0.0)
+
+                    # Hazard score difference (subject - comp)
+                    # Negative diff = subject is safer = positive price adjustment
+                    # Positive diff = subject is riskier = negative price adjustment
+                    hazard_diff = subject_hazard_score - comp_hazard_score
+
+                    if abs(hazard_diff) > 0.05:  # Only adjust if > 5% difference
+                        # Hazard adjustment: -$50k to +$50k based on 0-1 hazard score diff
+                        # For a $500k property, this is -10% to +10%
+                        base_price = comp["sold_price"]
+                        hazard_adj = -hazard_diff * base_price * 0.10
+
+                        adjusted_price += hazard_adj
+                        adj_breakdown["adjustments"].append({
+                            "factor": "hazard_risk",
+                            "subject_score": round(subject_hazard_score, 3),
+                            "comp_score": round(comp_hazard_score, 3),
+                            "diff": round(hazard_diff, 3),
+                            "adjustment": int(hazard_adj)
+                        })
+
             # Age/depreciation adjustment
             # Simplified - in production would use more sophisticated model
 
@@ -176,10 +217,17 @@ class CompCritic:
 
     def value_property(
         self,
-        subject_property: Dict[str, Any]
+        subject_property: Dict[str, Any],
+        subject_hazards: Dict[str, Any] = None,
+        comp_hazards: Dict[str, Dict[str, Any]] = None
     ) -> Dict[str, Any]:
         """
-        Full 3-stage valuation pipeline
+        Full 3-stage valuation pipeline with hazard integration
+
+        Args:
+            subject_property: Subject property data
+            subject_hazards: Hazard assessment for subject property
+            comp_hazards: Dict mapping comp_id to hazard assessments
         """
         # Stage 1: Retrieve
         candidates = self.retrieve_candidates(subject_property, k=self.k_candidates)
@@ -187,11 +235,33 @@ class CompCritic:
         # Stage 2: Rank
         ranked_comps = self.rank_candidates(subject_property, candidates)
 
-        # Stage 3: Adjust
+        # Stage 3: Adjust (with hazards!)
         estimated_value, adjustments = self.apply_hedonic_adjustments(
             subject_property,
-            ranked_comps[:10]  # Use top 10 for final valuation
+            ranked_comps[:10],  # Use top 10 for final valuation
+            subject_hazards=subject_hazards,
+            comp_hazards=comp_hazards
         )
+
+        # Calculate hazard impact if data provided
+        hazard_impact_summary = None
+        if subject_hazards:
+            # Calculate how much hazards affected the valuation
+            hazard_adjustments_total = sum(
+                adj.get("adjustment", 0)
+                for adj_item in adjustments
+                for adj in adj_item.get("adjustments", [])
+                if adj.get("factor") == "hazard_risk"
+            )
+
+            hazard_impact_summary = {
+                "subject_composite_score": subject_hazards.get("composite_hazard_score", 0.0),
+                "subject_flood_score": subject_hazards.get("flood_risk_score", 0.0),
+                "subject_wildfire_score": subject_hazards.get("wildfire_risk_score", 0.0),
+                "subject_heat_score": subject_hazards.get("heat_risk_score", 0.0),
+                "total_hazard_adjustment": int(hazard_adjustments_total),
+                "hazard_adjustment_pct": round((hazard_adjustments_total / estimated_value) * 100, 2) if estimated_value > 0 else 0.0
+            }
 
         return {
             "subject_property_id": subject_property.get("property_id", "UNKNOWN"),
@@ -205,6 +275,7 @@ class CompCritic:
             "num_comps_adjusted": len(adjustments),
             "top_comps": ranked_comps[:5],  # Top 5 for review
             "adjustment_waterfall": adjustments,
+            "hazard_impact": hazard_impact_summary,
             "timestamp": datetime.utcnow().isoformat()
         }
 
