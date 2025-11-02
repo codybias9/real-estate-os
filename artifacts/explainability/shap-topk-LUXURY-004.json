@@ -1,0 +1,78 @@
+{
+  "prediction": 1,
+  "base_value": 0.5,
+  "top_k_features": [
+    {
+      "feature": "building_sqft",
+      "shap_value": 110.0,
+      "feature_value": 4200,
+      "impact": "positive",
+      "magnitude": 110.0
+    },
+    {
+      "feature": "lot_size_sqft",
+      "shap_value": 100.0,
+      "feature_value": 12000,
+      "impact": "positive",
+      "magnitude": 100.0
+    },
+    {
+      "feature": "walk_score",
+      "shap_value": 0.44,
+      "feature_value": 72,
+      "impact": "positive",
+      "magnitude": 0.44
+    },
+    {
+      "feature": "median_dom",
+      "shap_value": 0.36,
+      "feature_value": 22,
+      "impact": "positive",
+      "magnitude": 0.36
+    },
+    {
+      "feature": "school_district_rating",
+      "shap_value": 0.32,
+      "feature_value": 9,
+      "impact": "positive",
+      "magnitude": 0.32
+    },
+    {
+      "feature": "condition_score",
+      "shap_value": 0.3,
+      "feature_value": 9.0,
+      "impact": "positive",
+      "magnitude": 0.3
+    },
+    {
+      "feature": "property_age",
+      "shap_value": 0.3,
+      "feature_value": 5,
+      "impact": "positive",
+      "magnitude": 0.3
+    },
+    {
+      "feature": "bathrooms",
+      "shap_value": 0.2,
+      "feature_value": 4.5,
+      "impact": "positive",
+      "magnitude": 0.2
+    },
+    {
+      "feature": "bedrooms",
+      "shap_value": 0.16,
+      "feature_value": 5,
+      "impact": "positive",
+      "magnitude": 0.16
+    },
+    {
+      "feature": "inventory_level",
+      "shap_value": 0.144,
+      "feature_value": 1.8,
+      "impact": "positive",
+      "magnitude": 0.144
+    }
+  ],
+  "total_shap": 212.2884,
+  "timestamp": "2025-11-02T18:45:16.725565"
+}

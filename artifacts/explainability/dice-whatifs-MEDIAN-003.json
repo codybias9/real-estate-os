@@ -1,0 +1,196 @@
+{
+  "property_id": "MEDIAN-003",
+  "property_name": "Median Property",
+  "description": "Average property in balanced market, standard features",
+  "current_features": {
+    "building_sqft": 2400,
+    "lot_size_sqft": 7500,
+    "condition_score": 7.0,
+    "property_age": 18,
+    "bedrooms": 4,
+    "bathrooms": 3.0,
+    "inventory_level": 3.2,
+    "price_trend_30d": 1.01,
+    "median_dom": 45,
+    "market_temperature": 0.5,
+    "walk_score": 45,
+    "school_district_rating": 6,
+    "list_price": 425000,
+    "hoa_fee_monthly": 75,
+    "renovation_year": 2012
+  },
+  "desired_outcome": 0.7,
+  "counterfactuals": [
+    {
+      "counterfactual_id": 1,
+      "changes": [
+        {
+          "feature": "condition_score",
+          "from": 7.0,
+          "to": 8.5,
+          "change": 1.5
+        }
+      ],
+      "current_prediction": 0.8335,
+      "counterfactual_prediction": 0.9085,
+      "prediction_change": 0.075,
+      "proximity_score": 0.979,
+      "feasibility_score": 0.583,
+      "features": {
+        "building_sqft": 2400,
+        "lot_size_sqft": 7500,
+        "condition_score": 8.5,
+        "property_age": 18,
+        "bedrooms": 4,
+        "bathrooms": 3.0,
+        "inventory_level": 3.2,
+        "price_trend_30d": 1.01,
+        "median_dom": 45,
+        "market_temperature": 0.5,
+        "walk_score": 45,
+        "school_district_rating": 6,
+        "list_price": 425000,
+        "hoa_fee_monthly": 75,
+        "renovation_year": 2012
+      }
+    },
+    {
+      "counterfactual_id": 2,
+      "changes": [
+        {
+          "feature": "list_price",
+          "from": 425000,
+          "to": 403750.0,
+          "change": -21250.0
+        }
+      ],
+      "current_prediction": 0.8335,
+      "counterfactual_prediction": 0.8356,
+      "prediction_change": 0.0021,
+      "proximity_score": 0.999,
+      "feasibility_score": 0.75,
+      "features": {
+        "building_sqft": 2400,
+        "lot_size_sqft": 7500,
+        "condition_score": 7.0,
+        "property_age": 18,
+        "bedrooms": 4,
+        "bathrooms": 3.0,
+        "inventory_level": 3.2,
+        "price_trend_30d": 1.01,
+        "median_dom": 45,
+        "market_temperature": 0.5,
+        "walk_score": 45,
+        "school_district_rating": 6,
+        "list_price": 403750.0,
+        "hoa_fee_monthly": 75,
+        "renovation_year": 2012
+      }
+    },
+    {
+      "counterfactual_id": 3,
+      "changes": [
+        {
+          "feature": "renovation_year",
+          "from": 2012,
+          "to": 2023,
+          "change": 11
+        }
+      ],
+      "current_prediction": 0.8335,
+      "counterfactual_prediction": 0.8335,
+      "prediction_change": 0.0,
+      "proximity_score": 0.981,
+      "feasibility_score": 0.583,
+      "features": {
+        "building_sqft": 2400,
+        "lot_size_sqft": 7500,
+        "condition_score": 7.0,
+        "property_age": 18,
+        "bedrooms": 4,
+        "bathrooms": 3.0,
+        "inventory_level": 3.2,
+        "price_trend_30d": 1.01,
+        "median_dom": 45,
+        "market_temperature": 0.5,
+        "walk_score": 45,
+        "school_district_rating": 6,
+        "list_price": 425000,
+        "hoa_fee_monthly": 75,
+        "renovation_year": 2023
+      }
+    },
+    {
+      "counterfactual_id": 4,
+      "changes": [
+        {
+          "feature": "hoa_fee_monthly",
+          "from": 75,
+          "to": 45,
+          "change": -30
+        }
+      ],
+      "current_prediction": 0.8335,
+      "counterfactual_prediction": 0.8335,
+      "prediction_change": 0.0,
+      "proximity_score": 0.996,
+      "feasibility_score": 0.75,
+      "features": {
+        "building_sqft": 2400,
+        "lot_size_sqft": 7500,
+        "condition_score": 7.0,
+        "property_age": 18,
+        "bedrooms": 4,
+        "bathrooms": 3.0,
+        "inventory_level": 3.2,
+        "price_trend_30d": 1.01,
+        "median_dom": 45,
+        "market_temperature": 0.5,
+        "walk_score": 45,
+        "school_district_rating": 6,
+        "list_price": 425000,
+        "hoa_fee_monthly": 45,
+        "renovation_year": 2012
+      }
+    },
+    {
+      "counterfactual_id": 5,
+      "changes": [
+        {
+          "feature": "condition_score",
+          "from": 7.0,
+          "to": 8.0,
+          "change": 1.0
+        },
+        {
+          "feature": "list_price",
+          "from": 425000,
+          "to": 412250.0,
+          "change": -12750.0
+        }
+      ],
+      "current_prediction": 0.8335,
+      "counterfactual_prediction": 0.8848,
+      "prediction_change": 0.0513,
+      "proximity_score": 0.985,
+      "feasibility_score": 0.571,
+      "features": {
+        "building_sqft": 2400,
+        "lot_size_sqft": 7500,
+        "condition_score": 8.0,
+        "property_age": 18,
+        "bedrooms": 4,
+        "bathrooms": 3.0,
+        "inventory_level": 3.2,
+        "price_trend_30d": 1.01,
+        "median_dom": 45,
+        "market_temperature": 0.5,
+        "walk_score": 45,
+        "school_district_rating": 6,
+        "list_price": 412250.0,
+        "hoa_fee_monthly": 75,
+        "renovation_year": 2012
+      }
+    }
+  ]
+}

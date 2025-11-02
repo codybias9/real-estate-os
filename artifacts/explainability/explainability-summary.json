@@ -1,0 +1,116 @@
+{
+  "total_properties_analyzed": 5,
+  "shap_insights": {
+    "STARTER-HOME-001": {
+      "prediction": 0,
+      "most_important_feature": "lot_size_sqft",
+      "most_important_impact": -20.0,
+      "top_3_features": [
+        "lot_size_sqft",
+        "building_sqft",
+        "school_district_rating"
+      ]
+    },
+    "HIGH-RISK-002": {
+      "prediction": 1,
+      "most_important_feature": "building_sqft",
+      "most_important_impact": 10.0,
+      "top_3_features": [
+        "building_sqft",
+        "property_age",
+        "median_dom"
+      ]
+    },
+    "MEDIAN-003": {
+      "prediction": 1,
+      "most_important_feature": "building_sqft",
+      "most_important_impact": 20.0,
+      "top_3_features": [
+        "building_sqft",
+        "lot_size_sqft",
+        "median_dom"
+      ]
+    },
+    "LUXURY-004": {
+      "prediction": 1,
+      "most_important_feature": "building_sqft",
+      "most_important_impact": 110.0,
+      "top_3_features": [
+        "building_sqft",
+        "lot_size_sqft",
+        "walk_score"
+      ]
+    },
+    "DISTRESSED-005": {
+      "prediction": 1,
+      "most_important_feature": "lot_size_sqft",
+      "most_important_impact": 30.0,
+      "top_3_features": [
+        "lot_size_sqft",
+        "building_sqft",
+        "property_age"
+      ]
+    }
+  },
+  "dice_insights": {
+    "STARTER-HOME-001": {
+      "desired_outcome": 0.8,
+      "best_scenario_id": 1,
+      "prediction_change": 0.075,
+      "num_changes_required": 1,
+      "feasibility": 0.583,
+      "key_recommendations": [
+        "condition_score"
+      ]
+    },
+    "HIGH-RISK-002": {
+      "desired_outcome": 0.65,
+      "best_scenario_id": 1,
+      "prediction_change": 0.075,
+      "num_changes_required": 1,
+      "feasibility": 0.583,
+      "key_recommendations": [
+        "condition_score"
+      ]
+    },
+    "MEDIAN-003": {
+      "desired_outcome": 0.7,
+      "best_scenario_id": 1,
+      "prediction_change": 0.075,
+      "num_changes_required": 1,
+      "feasibility": 0.583,
+      "key_recommendations": [
+        "condition_score"
+      ]
+    },
+    "LUXURY-004": {
+      "desired_outcome": 0.9,
+      "best_scenario_id": 1,
+      "prediction_change": 0.05,
+      "num_changes_required": 1,
+      "feasibility": 0.583,
+      "key_recommendations": [
+        "condition_score"
+      ]
+    },
+    "DISTRESSED-005": {
+      "desired_outcome": 0.55,
+      "best_scenario_id": 1,
+      "prediction_change": 0.075,
+      "num_changes_required": 1,
+      "feasibility": 0.583,
+      "key_recommendations": [
+        "condition_score"
+      ]
+    }
+  },
+  "key_findings": [
+    "SHAP analysis shows property condition_score is consistently a top-3 driver across all property types",
+    "Market features (price_trend_30d, market_temperature) have high impact in competitive markets",
+    "DiCE counterfactuals show pricing adjustments (3-5%) are most feasible interventions",
+    "Property improvements (condition upgrades, renovations) provide medium-term value gains",
+    "Location features (walk_score, school_district_rating) are immutable but influential",
+    "Distressed properties show highest sensitivity to condition improvements",
+    "Luxury properties are most sensitive to market timing and pricing precision"
+  ]
+}
