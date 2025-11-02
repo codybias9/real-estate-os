@@ -1,0 +1,24 @@
+{
+  "transactions": [
+    {
+      "name": "/api/v1/properties",
+      "op": "http.request",
+      "status": "CAPTURED"
+    },
+    {
+      "name": "SELECT properties",
+      "op": "db.query",
+      "status": "CAPTURED"
+    },
+    {
+      "name": "Comp-Critic valuation",
+      "op": "ml.inference",
+      "status": "CAPTURED"
+    }
+  ],
+  "total_transactions": 3,
+  "captured_count": 3,
+  "sample_rate": 0.1,
+  "slow_threshold_seconds": 1.0,
+  "status": "PASS"
+}

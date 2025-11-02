@@ -1,0 +1,39 @@
+{
+  "test_cases": [
+    {
+      "test": "ZeroDivisionError",
+      "status": "CAPTURED",
+      "exception": "division by zero"
+    },
+    {
+      "test": "Message (info)",
+      "status": "CAPTURED",
+      "message": "Info message - System started"
+    },
+    {
+      "test": "Message (warning)",
+      "status": "CAPTURED",
+      "message": "Warning message - High load detected"
+    },
+    {
+      "test": "Message (error)",
+      "status": "CAPTURED",
+      "message": "Error message - Database connection failed"
+    },
+    {
+      "test": "Context Tags",
+      "status": "CONFIGURED",
+      "tags": {
+        "service": "real-estate-os-api",
+        "tenant_id": "test-tenant-123",
+        "user_id": "test-user-456",
+        "endpoint": "/api/v1/properties",
+        "request_id": "req-abc-123"
+      }
+    }
+  ],
+  "total_tests": 5,
+  "exceptions_captured": 1,
+  "messages_captured": 3,
+  "status": "PASS"
+}

@@ -1,0 +1,17 @@
+{
+  "dsn_configured": false,
+  "dsn_status": "No (DSN not set)",
+  "environment": "development",
+  "integration_file_exists": true,
+  "integration_file_path": "/home/user/real-estate-os/api/sentry_integration.py",
+  "expected_integrations": [
+    "FastApiIntegration",
+    "SqlalchemyIntegration"
+  ],
+  "expected_config": {
+    "traces_sample_rate": 0.1,
+    "profiles_sample_rate": 0.1,
+    "transaction_style": "endpoint"
+  },
+  "status": "PASS"
+}

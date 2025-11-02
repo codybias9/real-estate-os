@@ -1,0 +1,22 @@
+{
+  "event_id": "test-event-123",
+  "timestamp": "2025-11-02T18:52:25.556161",
+  "level": "error",
+  "message": "Sample Sentry event - Real Estate OS integration test",
+  "exception": {
+    "type": "ZeroDivisionError",
+    "value": "division by zero",
+    "stacktrace": "..."
+  },
+  "tags": {
+    "service": "real-estate-os-api",
+    "environment": "staging",
+    "tenant_id": "test-tenant-123"
+  },
+  "contexts": {
+    "runtime": {
+      "name": "CPython",
+      "version": "3.11"
+    }
+  }
+}

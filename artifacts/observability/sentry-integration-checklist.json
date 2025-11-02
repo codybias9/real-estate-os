@@ -1,0 +1,44 @@
+{
+  "checklist": {
+    "Environment Setup": [
+      "Set SENTRY_DSN environment variable",
+      "Set ENVIRONMENT variable (development/staging/production)",
+      "Verify Sentry project created in Sentry.io"
+    ],
+    "Code Integration": [
+      "Initialize Sentry SDK in api/main.py",
+      "FastAPI integration enabled",
+      "SQLAlchemy integration enabled",
+      "Custom before_send handler configured",
+      "Transaction filtering configured"
+    ],
+    "Error Capture": [
+      "Uncaught exceptions are captured",
+      "Manual exception capture via capture_exception()",
+      "Manual messages via capture_message()",
+      "Context tags added (service, tenant_id, etc.)"
+    ],
+    "Performance Monitoring": [
+      "Transactions enabled (10% sample rate)",
+      "Slow transaction threshold (>1s)",
+      "Database query tracing",
+      "HTTP request tracing",
+      "ML inference tracing"
+    ],
+    "Testing": [
+      "Test error captured successfully",
+      "Test transaction captured successfully",
+      "Verify events appear in Sentry dashboard",
+      "Check alerts are configured"
+    ],
+    "Production Readiness": [
+      "Release tracking configured",
+      "Source maps uploaded (if applicable)",
+      "Alert rules created for critical errors",
+      "Team notifications configured",
+      "Rate limits reviewed"
+    ]
+  },
+  "total_items": 26,
+  "categories": 6
+}
