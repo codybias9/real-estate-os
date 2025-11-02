@@ -1,0 +1,39 @@
+{
+  "config_file": "/home/user/real-estate-os/ops/prometheus/prometheus.yml",
+  "status": "PASS",
+  "scrape_configs": {
+    "total_jobs": 10,
+    "expected_jobs": 10,
+    "found_jobs": [
+      "api",
+      "postgres",
+      "redis",
+      "airflow",
+      "prometheus",
+      "qdrant",
+      "minio",
+      "neo4j",
+      "grafana",
+      "keycloak"
+    ],
+    "missing_jobs": []
+  },
+  "global_settings": {
+    "scrape_interval": "15s",
+    "evaluation_interval": "15s",
+    "cluster": "real-estate-os-staging",
+    "environment": "staging"
+  },
+  "scrape_intervals": {
+    "api": "10s",
+    "postgres": "30s",
+    "redis": "30s",
+    "airflow": "30s",
+    "prometheus": "15s",
+    "qdrant": "30s",
+    "minio": "30s",
+    "neo4j": "30s",
+    "grafana": "30s",
+    "keycloak": "30s"
+  }
+}

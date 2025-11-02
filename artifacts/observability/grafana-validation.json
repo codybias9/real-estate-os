@@ -1,0 +1,56 @@
+{
+  "artifact_file": "/home/user/real-estate-os/artifacts/observability/grafana-dashboards.json",
+  "status": "PASS",
+  "dashboards": {
+    "total": 2,
+    "summaries": [
+      {
+        "id": "real-estate-os-overview",
+        "title": "Real Estate OS - Overview",
+        "panel_count": 12,
+        "panel_types": {
+          "graph": 7,
+          "stat": 4,
+          "table": 1
+        },
+        "refresh": "30s",
+        "tags": [
+          "real-estate-os",
+          "overview"
+        ]
+      },
+      {
+        "id": "ml-performance",
+        "title": "Real Estate OS - ML Performance",
+        "panel_count": 3,
+        "panel_types": {
+          "graph": 2,
+          "stat": 1
+        },
+        "refresh": "",
+        "tags": []
+      }
+    ]
+  },
+  "panels": {
+    "total": 15,
+    "expected_minimum": 10
+  },
+  "datasources": {
+    "total": 2,
+    "summaries": [
+      {
+        "name": "Prometheus",
+        "type": "prometheus",
+        "url": "http://prometheus:9090",
+        "is_default": true
+      },
+      {
+        "name": "Tempo",
+        "type": "tempo",
+        "url": "http://tempo:3100",
+        "is_default": false
+      }
+    ]
+  }
+}

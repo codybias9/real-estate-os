@@ -1,0 +1,45 @@
+{
+  "categories": {
+    "API Metrics": [
+      "http_requests_total (counter) - Total HTTP requests by method, endpoint, status",
+      "http_request_duration_seconds (histogram) - Request latency distribution",
+      "http_requests_in_progress (gauge) - Active requests",
+      "authentication_attempts_total (counter) - Auth attempts by status",
+      "rate_limit_exceeded_total (counter) - Rate limit violations"
+    ],
+    "ML Metrics": [
+      "model_inference_duration_seconds (histogram) - Model inference latency",
+      "comp_critic_duration_seconds (histogram) - Comp-Critic valuation time",
+      "dcf_engine_duration_seconds (histogram) - DCF computation time",
+      "feast_online_fetch_duration_seconds (histogram) - Feature fetch latency",
+      "shap_compute_duration_seconds (histogram) - SHAP computation time",
+      "offer_optimizer_status (counter) - Optimization status by result",
+      "offer_optimizer_total (counter) - Total optimization runs"
+    ],
+    "Airflow Metrics": [
+      "airflow_dag_run_status (counter) - DAG run outcomes",
+      "airflow_dag_run_last_success_timestamp (gauge) - Last successful run",
+      "airflow_task_duration_seconds (histogram) - Task execution time",
+      "airflow_dag_run_duration_seconds (histogram) - End-to-end DAG time"
+    ],
+    "Database Metrics": [
+      "pg_stat_database_tup_fetched (gauge) - Rows read",
+      "pg_stat_database_tup_inserted (gauge) - Rows inserted",
+      "pg_stat_database_connections (gauge) - Active connections",
+      "pg_stat_database_blks_hit_ratio (gauge) - Cache hit ratio"
+    ],
+    "Vector Store Metrics": [
+      "qdrant_search_duration_seconds (histogram) - Vector search latency",
+      "qdrant_searches_total (counter) - Total searches",
+      "qdrant_filter_hits_total (counter) - Filtered searches",
+      "qdrant_collection_points (gauge) - Points in collections"
+    ]
+  },
+  "total_metrics": 24,
+  "notes": [
+    "All metrics should follow Prometheus naming conventions",
+    "Histograms should use appropriate buckets for latency (e.g., .001, .005, .01, .05, .1, .5, 1, 5)",
+    "Labels should be low-cardinality (avoid user IDs, use aggregates)",
+    "Rate limits and errors should be counters, not gauges"
+  ]
+}

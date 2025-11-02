@@ -1,0 +1,259 @@
+{
+  "dashboards": [
+    {
+      "id": "real-estate-os-overview",
+      "title": "Real Estate OS - Overview",
+      "panels": [
+        {
+          "id": 1,
+          "title": "API Request Rate",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "rate(http_requests_total{job=\"api\"}[5m])",
+              "legendFormat": "{{method}} {{endpoint}}"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "API p95 Latency",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=\"api\"}[5m]))",
+              "legendFormat": "{{endpoint}}"
+            }
+          ],
+          "thresholds": [
+            {
+              "value": 0.5,
+              "color": "yellow",
+              "label": "Warning: >500ms"
+            },
+            {
+              "value": 1.0,
+              "color": "red",
+              "label": "Critical: >1s"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "API Error Rate by Route",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "rate(http_requests_total{job=\"api\", status=~\"5..\"}[5m])",
+              "legendFormat": "{{endpoint}}"
+            }
+          ]
+        },
+        {
+          "id": 4,
+          "title": "Vector Search p95 (Qdrant)",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, rate(qdrant_search_duration_seconds_bucket[5m]))",
+              "legendFormat": "Vector Search"
+            }
+          ],
+          "thresholds": [
+            {
+              "value": 0.1,
+              "color": "yellow"
+            }
+          ]
+        },
+        {
+          "id": 5,
+          "title": "ANN Filter Hit Ratio",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "rate(qdrant_filter_hits_total[5m]) / rate(qdrant_searches_total[5m])",
+              "legendFormat": "Hit Ratio"
+            }
+          ]
+        },
+        {
+          "id": 6,
+          "title": "Pipeline Freshness (Minutes)",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "(time() - max(airflow_dag_run_last_success_timestamp{dag_id=\"property_processing_pipeline\"})) / 60",
+              "legendFormat": "Minutes Since Last Success"
+            }
+          ],
+          "thresholds": [
+            {
+              "value": 60,
+              "color": "yellow"
+            },
+            {
+              "value": 120,
+              "color": "red"
+            }
+          ]
+        },
+        {
+          "id": 7,
+          "title": "DAG Success Rate (24h)",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "sum(rate(airflow_dag_run_status{status=\"success\"}[24h])) / sum(rate(airflow_dag_run_status[24h]))",
+              "legendFormat": "Success Rate"
+            }
+          ]
+        },
+        {
+          "id": 8,
+          "title": "Feast Online Feature Fetch Latency",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, rate(feast_online_fetch_duration_seconds_bucket[5m]))",
+              "legendFormat": "p95"
+            }
+          ],
+          "thresholds": [
+            {
+              "value": 0.05,
+              "color": "yellow",
+              "label": "Target: <50ms"
+            }
+          ]
+        },
+        {
+          "id": 9,
+          "title": "Comp-Critic Latency",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, rate(comp_critic_duration_seconds_bucket[5m]))",
+              "legendFormat": "p95"
+            }
+          ],
+          "thresholds": [
+            {
+              "value": 0.4,
+              "color": "yellow",
+              "label": "Target: <400ms"
+            }
+          ]
+        },
+        {
+          "id": 10,
+          "title": "Offer Optimizer Success Rate",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "rate(offer_optimizer_status{status=\"OPTIMAL\"}[1h]) / rate(offer_optimizer_total[1h])",
+              "legendFormat": "Success Rate"
+            }
+          ]
+        },
+        {
+          "id": 11,
+          "title": "DCF Engine Latency (API Mode)",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, rate(dcf_engine_duration_seconds_bucket{mode=\"api\"}[5m]))",
+              "legendFormat": "p95"
+            }
+          ],
+          "thresholds": [
+            {
+              "value": 0.5,
+              "color": "yellow",
+              "label": "Target: <500ms"
+            }
+          ]
+        },
+        {
+          "id": 12,
+          "title": "Regime Monitoring - Active Markets",
+          "type": "table",
+          "targets": [
+            {
+              "expr": "regime_monitor_last_update",
+              "format": "table",
+              "legendFormat": "{{market_id}}: {{regime}}"
+            }
+          ]
+        }
+      ],
+      "refresh": "30s",
+      "time": {
+        "from": "now-1h",
+        "to": "now"
+      },
+      "tags": ["real-estate-os", "overview"]
+    },
+    {
+      "id": "ml-performance",
+      "title": "Real Estate OS - ML Performance",
+      "panels": [
+        {
+          "id": 1,
+          "title": "Model Inference Latencies (p95)",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, rate(model_inference_duration_seconds_bucket[5m]))",
+              "legendFormat": "{{model_name}}"
+            }
+          ]
+        },
+        {
+          "id": 2,
+          "title": "Feature Store Cache Hit Rate",
+          "type": "stat",
+          "targets": [
+            {
+              "expr": "rate(feast_cache_hits_total[5m]) / rate(feast_requests_total[5m])",
+              "legendFormat": "Cache Hit Rate"
+            }
+          ]
+        },
+        {
+          "id": 3,
+          "title": "SHAP Computation Time",
+          "type": "graph",
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, rate(shap_compute_duration_seconds_bucket[5m]))",
+              "legendFormat": "p95"
+            }
+          ],
+          "thresholds": [
+            {
+              "value": 0.25,
+              "color": "yellow",
+              "label": "Target: <250ms"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "data_sources": [
+    {
+      "name": "Prometheus",
+      "type": "prometheus",
+      "url": "http://prometheus:9090",
+      "access": "proxy",
+      "isDefault": true
+    },
+    {
+      "name": "Tempo",
+      "type": "tempo",
+      "url": "http://tempo:3100",
+      "access": "proxy"
+    }
+  ]
+}

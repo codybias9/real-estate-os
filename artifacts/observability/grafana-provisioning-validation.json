@@ -1,0 +1,13 @@
+{
+  "datasource_provisioning": {
+    "status": "PASS",
+    "config_file": "/home/user/real-estate-os/ops/grafana/provisioning/datasources/prometheus.yml",
+    "datasource_count": 2
+  },
+  "dashboard_provisioning": {
+    "status": "PASS",
+    "config_file": "/home/user/real-estate-os/ops/grafana/provisioning/dashboards/default.yml",
+    "provider_count": 1
+  },
+  "overall_status": "PASS"
+}
