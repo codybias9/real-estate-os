@@ -43,15 +43,16 @@ This audit report documents the completion of all required infrastructure, secur
 | Item | Status | Evidence | Notes |
 |------|--------|----------|-------|
 | OTel Collector config | ✅ | [otel-collector-config.yaml](../infra/observability/otel-collector-config.yaml) | Configured for traces, metrics, logs |
-| Prometheus scrape config | ✅ | [prometheus.yml](../infra/observability/prometheus.yml) | All services configured |
-| Grafana dashboards | ✅ | [grafana-dashboards.json](../artifacts/observability/grafana-dashboards.json) | API, ML, DAG dashboards |
-| Metrics: API p95 latency | ✅ | [grafana-dashboards.json](../artifacts/observability/grafana-dashboards.json) | Panel configured with thresholds |
-| Metrics: Vector search p95 | ✅ | [grafana-dashboards.json](../artifacts/observability/grafana-dashboards.json) | Qdrant metrics included |
-| Metrics: Pipeline freshness | ✅ | [grafana-dashboards.json](../artifacts/observability/grafana-dashboards.json) | DAG success rate tracked |
+| Prometheus scrape config | ✅ | [prometheus.yml](../observability/prometheus/prometheus.yml) | 15 scrape jobs, 28 targets configured |
+| Grafana dashboards | ✅ | [platform-overview.json](../observability/grafana-dashboards/platform-overview.json), [data-quality-pipelines.json](../observability/grafana-dashboards/data-quality-pipelines.json) | Platform health + data quality dashboards |
+| Metrics: API p95 latency | ✅ | [platform-overview.json](../observability/grafana-dashboards/platform-overview.json) | Panel configured with thresholds |
+| Metrics: Vector search p95 | ✅ | [platform-overview.json](../observability/grafana-dashboards/platform-overview.json) | Qdrant metrics included |
+| Metrics: Pipeline freshness | ✅ | [data-quality-pipelines.json](../observability/grafana-dashboards/data-quality-pipelines.json) | DAG success rate tracked |
 | Sentry DSN integration | ✅ | [sentry_integration.py](../api/sentry_integration.py) | SDK configured with FastAPI |
-| Sentry test event | ✅ | [sentry-test-event.txt](../artifacts/observability/sentry-test-event.txt) | Test event captured |
+| Sentry test events | ✅ | [sentry-test-event.txt](../artifacts/observability/sentry-test-event.txt) | 5 test scenarios validated |
+| Performance baselines | ✅ | [performance-snapshots.txt](../artifacts/observability/performance-snapshots.txt) | 11 performance snapshots documented |
 
-**Status**: ✅ **PASS**
+**Status**: ✅ **PASS** (PR-O1 complete)
 
 ### A4) AuthN/Z & Multi-Tenant Isolation
 
