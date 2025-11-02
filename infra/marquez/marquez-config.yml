@@ -1,0 +1,68 @@
+# Marquez API Configuration
+server:
+  applicationConnectors:
+    - type: http
+      port: 5000
+  adminConnectors:
+    - type: http
+      port: 5001
+
+# Database configuration
+database:
+  driverClass: org.postgresql.Driver
+  url: jdbc:postgresql://marquez-db:5432/marquez
+  user: marquez
+  password: marquez
+  properties:
+    charSet: UTF-8
+  maxWaitForConnection: 1s
+  validationQuery: SELECT 1
+  validationQueryTimeout: 3s
+  minSize: 8
+  maxSize: 32
+  checkConnectionWhileIdle: true
+  checkConnectionOnBorrow: true
+
+# Logging configuration
+logging:
+  level: INFO
+  appenders:
+    - type: console
+      threshold: ALL
+      timeZone: UTC
+      target: stdout
+      logFormat: "%-5p [%d{ISO8601}] %c: %m%n%rEx"
+
+# Flyway migration configuration
+flyway:
+  locations:
+    - classpath:marquez/db/migration
+  baselineOnMigrate: true
+  baselineVersion: 1
+
+# GraphQL configuration
+graphql:
+  enabled: true
+
+# CORS configuration
+cors:
+  allowedOrigins:
+    - "*"
+  allowedMethods:
+    - GET
+    - POST
+    - PUT
+    - DELETE
+    - OPTIONS
+  allowedHeaders:
+    - "*"
+  exposedHeaders:
+    - Content-Type
+    - Authorization
+
+# Metrics configuration
+metrics:
+  reporters:
+    - type: log
+      logger: metrics
+      markerName: metrics
