@@ -1,0 +1,4 @@
+Traceback (most recent call last):
+  File "/home/user/real-estate-os/graph_analytics/relationship_graph.py", line 16, in <module>
+    from graph_analytics.neo4j_client import neo4j_client
+ModuleNotFoundError: No module named 'graph_analytics'
