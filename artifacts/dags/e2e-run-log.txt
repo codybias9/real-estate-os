@@ -1,0 +1,56 @@
+============================================================
+MINIMAL E2E PIPELINE - EXECUTION LOG
+============================================================
+
+Run ID: manual_2025-11-02T18-18-09-950503
+Execution Date: 2025-11-02T18:18:09.950506
+DAG ID: minimal_e2e_pipeline
+
+Pipeline Stages:
+  INGEST:
+    Task: ingest_properties
+    Source: demo_ingestion
+    Records: 3
+    Timestamp: 2025-11-02T18:18:09.950503
+
+  NORMALIZE:
+    Task: normalize_addresses
+    Records: 3
+    Timestamp: 2025-11-02T18:18:09.950503
+
+  HAZARDS:
+    Task: enrich_hazards
+    Sources: FEMA_NFHL, USGS_WHP, NOAA_Climate
+    Records: 3
+    Timestamp: 2025-11-02T18:18:09.950503
+
+  SCORING:
+    Task: score_valuations
+    Models: comp_critic, dcf, ensemble
+    Records: 3
+    Timestamp: 2025-11-02T18:18:09.950503
+
+  PROVENANCE:
+    Task: track_provenance
+    Records: 3
+    Timestamp: 2025-11-02T18:18:09.950503
+
+Overall Trust Score: 0.928
+Properties Processed: 3
+
+Summary:
+  - prop_demo_001: 123 Main St, Austin, TX 78701
+    Hazard Risk: 0.143
+    Valuation: $473,925
+    Confidence: 0.88
+
+  - prop_demo_002: 456 Oak Ave, Austin, TX 78704
+    Hazard Risk: 0.093
+    Valuation: $1,428,838
+    Confidence: 0.88
+
+  - prop_demo_003: 789 Elm Rd, Austin, TX 78702
+    Hazard Risk: 0.143
+    Valuation: $961,425
+    Confidence: 0.88
+

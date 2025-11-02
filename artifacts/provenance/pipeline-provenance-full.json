@@ -1,0 +1,234 @@
+{
+  "dag_id": "minimal_e2e_pipeline",
+  "run_id": "manual_2025-11-02T18-18-09-950503",
+  "execution_date": "2025-11-02T18:18:09.950506",
+  "tenant_id": "demo_tenant",
+  "pipeline_stages": [
+    {
+      "stage": "ingest",
+      "task_id": "ingest_properties",
+      "source": "demo_ingestion",
+      "records_processed": 3,
+      "timestamp": "2025-11-02T18:18:09.950503"
+    },
+    {
+      "stage": "normalize",
+      "task_id": "normalize_addresses",
+      "service": "libpostal",
+      "records_processed": 3,
+      "timestamp": "2025-11-02T18:18:09.950503"
+    },
+    {
+      "stage": "hazards",
+      "task_id": "enrich_hazards",
+      "sources": [
+        "FEMA_NFHL",
+        "USGS_WHP",
+        "NOAA_Climate"
+      ],
+      "records_enriched": 3,
+      "timestamp": "2025-11-02T18:18:09.950503"
+    },
+    {
+      "stage": "scoring",
+      "task_id": "score_valuations",
+      "models": [
+        "comp_critic",
+        "dcf",
+        "ensemble"
+      ],
+      "records_scored": 3,
+      "timestamp": "2025-11-02T18:18:09.950503"
+    },
+    {
+      "stage": "provenance",
+      "task_id": "track_provenance",
+      "records_tracked": 3,
+      "timestamp": "2025-11-02T18:18:09.950503"
+    }
+  ],
+  "properties": [
+    {
+      "property_id": "prop_demo_001",
+      "address": {
+        "value": "123 Main St, Austin, TX 78701",
+        "source": "demo_ingestion",
+        "trust_score": 1.0,
+        "last_updated": "2025-11-02T18:18:09.950503"
+      },
+      "address_normalized": {
+        "value": "123 Main St,, Austin, TX 78701",
+        "source": "libpostal_normalization",
+        "derived_from": "address",
+        "trust_score": 0.95,
+        "last_updated": "2025-11-02T18:18:09.950503"
+      },
+      "hazards": {
+        "value": {
+          "flood": {
+            "risk_score": 0.15,
+            "zone": "AE",
+            "source": "FEMA_NFHL",
+            "assessed_at": "2025-11-02T18:18:09.950503"
+          },
+          "wildfire": {
+            "risk_score": 0.08,
+            "wui_category": "low",
+            "source": "USGS_WHP",
+            "assessed_at": "2025-11-02T18:18:09.950503"
+          },
+          "heat": {
+            "risk_score": 0.22,
+            "heat_index_days": 85,
+            "source": "NOAA_Climate",
+            "assessed_at": "2025-11-02T18:18:09.950503"
+          },
+          "composite": {
+            "risk_score": 0.14300000000000002,
+            "risk_category": "low",
+            "assessed_at": "2025-11-02T18:18:09.950503"
+          }
+        },
+        "sources": {
+          "flood": "FEMA_NFHL",
+          "wildfire": "USGS_WHP",
+          "heat": "NOAA_Climate"
+        },
+        "trust_score": 0.88,
+        "last_updated": "2025-11-02T18:18:09.950503"
+      },
+      "valuation": {
+        "value": 473925.0,
+        "source": "ensemble_model",
+        "models_used": [
+          "comp_critic"
+        ],
+        "confidence": 0.88,
+        "trust_score": 0.88,
+        "last_updated": "2025-11-02T18:18:09.950503"
+      }
+    },
+    {
+      "property_id": "prop_demo_002",
+      "address": {
+        "value": "456 Oak Ave, Austin, TX 78704",
+        "source": "demo_ingestion",
+        "trust_score": 1.0,
+        "last_updated": "2025-11-02T18:18:09.950503"
+      },
+      "address_normalized": {
+        "value": "456 Oak Ave,, Austin, TX 78704",
+        "source": "libpostal_normalization",
+        "derived_from": "address",
+        "trust_score": 0.95,
+        "last_updated": "2025-11-02T18:18:09.950503"
+      },
+      "hazards": {
+        "value": {
+          "flood": {
+            "risk_score": 0.05,
+            "zone": "X",
+            "source": "FEMA_NFHL",
+            "assessed_at": "2025-11-02T18:18:09.950503"
+          },
+          "wildfire": {
+            "risk_score": 0.08,
+            "wui_category": "low",
+            "source": "USGS_WHP",
+            "assessed_at": "2025-11-02T18:18:09.950503"
+          },
+          "heat": {
+            "risk_score": 0.22,
+            "heat_index_days": 85,
+            "source": "NOAA_Climate",
+            "assessed_at": "2025-11-02T18:18:09.950503"
+          },
+          "composite": {
+            "risk_score": 0.093,
+            "risk_category": "low",
+            "assessed_at": "2025-11-02T18:18:09.950503"
+          }
+        },
+        "sources": {
+          "flood": "FEMA_NFHL",
+          "wildfire": "USGS_WHP",
+          "heat": "NOAA_Climate"
+        },
+        "trust_score": 0.88,
+        "last_updated": "2025-11-02T18:18:09.950503"
+      },
+      "valuation": {
+        "value": 1428837.5,
+        "source": "ensemble_model",
+        "models_used": [
+          "comp_critic",
+          "dcf"
+        ],
+        "confidence": 0.88,
+        "trust_score": 0.88,
+        "last_updated": "2025-11-02T18:18:09.950503"
+      }
+    },
+    {
+      "property_id": "prop_demo_003",
+      "address": {
+        "value": "789 Elm Rd, Austin, TX 78702",
+        "source": "demo_ingestion",
+        "trust_score": 1.0,
+        "last_updated": "2025-11-02T18:18:09.950503"
+      },
+      "address_normalized": {
+        "value": "789 Elm Rd,, Austin, TX 78702",
+        "source": "libpostal_normalization",
+        "derived_from": "address",
+        "trust_score": 0.95,
+        "last_updated": "2025-11-02T18:18:09.950503"
+      },
+      "hazards": {
+        "value": {
+          "flood": {
+            "risk_score": 0.15,
+            "zone": "AE",
+            "source": "FEMA_NFHL",
+            "assessed_at": "2025-11-02T18:18:09.950503"
+          },
+          "wildfire": {
+            "risk_score": 0.08,
+            "wui_category": "low",
+            "source": "USGS_WHP",
+            "assessed_at": "2025-11-02T18:18:09.950503"
+          },
+          "heat": {
+            "risk_score": 0.22,
+            "heat_index_days": 85,
+            "source": "NOAA_Climate",
+            "assessed_at": "2025-11-02T18:18:09.950503"
+          },
+          "composite": {
+            "risk_score": 0.14300000000000002,
+            "risk_category": "low",
+            "assessed_at": "2025-11-02T18:18:09.950503"
+          }
+        },
+        "sources": {
+          "flood": "FEMA_NFHL",
+          "wildfire": "USGS_WHP",
+          "heat": "NOAA_Climate"
+        },
+        "trust_score": 0.88,
+        "last_updated": "2025-11-02T18:18:09.950503"
+      },
+      "valuation": {
+        "value": 961425.0,
+        "source": "ensemble_model",
+        "models_used": [
+          "comp_critic"
+        ],
+        "confidence": 0.88,
+        "trust_score": 0.88,
+        "last_updated": "2025-11-02T18:18:09.950503"
+      }
+    }
+  ],
+  "overall_trust_score": 0.9275000000000001
+}

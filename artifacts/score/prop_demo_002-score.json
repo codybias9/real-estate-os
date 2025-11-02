@@ -1,0 +1,32 @@
+{
+  "property_id": "prop_demo_002",
+  "address": "456 Oak Ave, Austin, TX 78704",
+  "scores": {
+    "comp_critic": {
+      "estimated_value": 1357675.0,
+      "confidence": 0.85,
+      "methodology": "comparable_sales_analysis",
+      "adjustments": {
+        "sqft": 110000,
+        "hazards": -2325.0
+      },
+      "computed_at": "2025-11-02T18:18:09.950503"
+    },
+    "dcf": {
+      "estimated_value": 1500000.0,
+      "confidence": 0.78,
+      "methodology": "discounted_cash_flow",
+      "computed_at": "2025-11-02T18:18:09.950503"
+    },
+    "ensemble": {
+      "estimated_value": 1428837.5,
+      "confidence": 0.88,
+      "models_used": [
+        "comp_critic",
+        "dcf"
+      ],
+      "computed_at": "2025-11-02T18:18:09.950503"
+    }
+  },
+  "computed_at": "2025-11-02T18:18:09.950503"
+}

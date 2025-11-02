@@ -1,0 +1,26 @@
+{
+  "property_id": "prop_demo_003",
+  "address": "789 Elm Rd, Austin, TX 78702",
+  "scores": {
+    "comp_critic": {
+      "estimated_value": 961425.0,
+      "confidence": 0.85,
+      "methodology": "comparable_sales_analysis",
+      "adjustments": {
+        "sqft": 75000,
+        "hazards": -3575.0
+      },
+      "computed_at": "2025-11-02T18:18:09.950503"
+    },
+    "dcf": null,
+    "ensemble": {
+      "estimated_value": 961425.0,
+      "confidence": 0.88,
+      "models_used": [
+        "comp_critic"
+      ],
+      "computed_at": "2025-11-02T18:18:09.950503"
+    }
+  },
+  "computed_at": "2025-11-02T18:18:09.950503"
+}
