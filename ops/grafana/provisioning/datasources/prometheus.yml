@@ -1,0 +1,37 @@
+# Grafana Datasource Provisioning
+# Auto-configures Prometheus as the primary data source
+
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    isDefault: true
+    editable: true
+    jsonData:
+      timeInterval: "15s"
+      httpMethod: POST
+      prometheusType: Prometheus
+      prometheusVersion: "2.40.0"
+      incrementalQuerying: true
+      disableRecordingRules: false
+      customQueryParameters: ""
+    version: 1
+
+  # PostgreSQL datasource for direct database queries
+  - name: PostgreSQL
+    type: postgres
+    access: proxy
+    url: postgres:5432
+    database: ${POSTGRES_DB}
+    user: ${POSTGRES_USER}
+    secureJsonData:
+      password: ${POSTGRES_PASSWORD}
+    jsonData:
+      sslmode: "disable"
+      postgresVersion: 1300
+      timescaledb: false
+    editable: true
+    version: 1

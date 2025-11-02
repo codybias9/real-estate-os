@@ -1,0 +1,36 @@
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY api/requirements.txt /app/api/requirements.txt
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r /app/api/requirements.txt
+
+# Copy application code
+COPY api/ /app/api/
+COPY ml/ /app/ml/
+COPY document_processing/ /app/document_processing/
+COPY graph_analytics/ /app/graph_analytics/
+COPY offer_generation/ /app/offer_generation/
+
+# Create prometheus metrics directory
+RUN mkdir -p /tmp/prometheus
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD curl -f http://localhost:8000/health || exit 1
+
+# Expose port
+EXPOSE 8000
+
+# Run API
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "4"]

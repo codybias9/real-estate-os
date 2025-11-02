@@ -1,0 +1,108 @@
+# Prometheus Configuration for Real Estate OS
+# Scrapes metrics from API, Airflow, PostgreSQL, Redis, and system exporters
+
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'real-estate-os-staging'
+    environment: 'staging'
+
+# Alertmanager configuration (optional - commented out by default)
+# alerting:
+#   alertmanagers:
+#     - static_configs:
+#         - targets:
+#           - alertmanager:9093
+
+# Rule files (optional - for alerting rules)
+# rule_files:
+#   - "alerts/*.yml"
+
+scrape_configs:
+  # ========================================
+  # API Service (FastAPI)
+  # ========================================
+  - job_name: 'api'
+    static_configs:
+      - targets: ['api:8000']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+
+  # ========================================
+  # PostgreSQL Exporter
+  # ========================================
+  - job_name: 'postgres'
+    static_configs:
+      - targets: ['postgres-exporter:9187']
+    scrape_interval: 30s
+
+  # ========================================
+  # Redis Exporter
+  # ========================================
+  - job_name: 'redis'
+    static_configs:
+      - targets: ['redis-exporter:9121']
+    scrape_interval: 30s
+
+  # ========================================
+  # Airflow (Webserver metrics endpoint)
+  # ========================================
+  - job_name: 'airflow'
+    static_configs:
+      - targets: ['airflow-webserver:8081']
+    metrics_path: '/admin/metrics'
+    scrape_interval: 30s
+
+  # ========================================
+  # Prometheus Self-Monitoring
+  # ========================================
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # ========================================
+  # Qdrant (Vector Database)
+  # ========================================
+  - job_name: 'qdrant'
+    static_configs:
+      - targets: ['qdrant:6333']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # ========================================
+  # MinIO (Object Storage)
+  # ========================================
+  - job_name: 'minio'
+    static_configs:
+      - targets: ['minio:9000']
+    metrics_path: '/minio/v2/metrics/cluster'
+    scrape_interval: 30s
+    bearer_token: 'MINIO_PROMETHEUS_TOKEN'  # Configure in MinIO admin
+
+  # ========================================
+  # Neo4j (Graph Database)
+  # ========================================
+  - job_name: 'neo4j'
+    static_configs:
+      - targets: ['neo4j:2004']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # ========================================
+  # Grafana Self-Monitoring
+  # ========================================
+  - job_name: 'grafana'
+    static_configs:
+      - targets: ['grafana:3000']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
+
+  # ========================================
+  # Keycloak (Auth Service)
+  # ========================================
+  - job_name: 'keycloak'
+    static_configs:
+      - targets: ['keycloak:8080']
+    metrics_path: '/metrics'
+    scrape_interval: 30s
