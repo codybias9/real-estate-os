@@ -96,6 +96,217 @@ curl http://localhost:8000/healthz
 
 ---
 
+## Multi-Tenant Configuration
+
+### Overview
+Real Estate OS enforces tenant isolation at four layers:
+1. **API Layer**: JWT claims include `tenant_id`, all endpoints filter by it
+2. **Database Layer**: PostgreSQL RLS with `app.tenant_id` session variable
+3. **Vector Store Layer**: Qdrant payload filters with mandatory `tenant_id`
+4. **Object Storage Layer**: MinIO prefix-based isolation (`<tenant_id>/...`)
+
+### Initial Tenant Setup
+
+#### 1. Database Setup (RLS)
+
+Run the tenant isolation migration:
+```bash
+# Apply RLS migration
+poetry run alembic upgrade head
+
+# Or manually apply
+psql -U postgres -d real_estate -f db/migrations/001_enable_rls_tenant_isolation.sql
+```
+
+Verify RLS is enabled:
+```sql
+SELECT tablename, relrowsecurity
+FROM pg_class c
+JOIN pg_namespace n ON n.oid = c.relnamespace
+WHERE relname IN ('properties', 'ownership', 'prospects', 'leases', 'offers');
+
+-- All should show relrowsecurity = t
+```
+
+#### 2. Create New Tenant
+
+```python
+from api.db import engine, set_tenant_context
+import uuid
+
+# Generate tenant ID
+tenant_id = uuid.uuid4()
+print(f"New Tenant ID: {tenant_id}")
+
+# In your application, associate this with your user/org
+# JWT should include this tenant_id in claims
+```
+
+#### 3. Configure Qdrant Collection
+
+```python
+from api.qdrant_client import TenantQdrantClient
+
+client = TenantQdrantClient(host="localhost", port=6333)
+
+# Create tenant-aware collection (done once per collection)
+client.create_tenant_aware_collection(
+    collection_name="properties",
+    vector_size=384,
+    distance="Cosine"
+)
+```
+
+#### 4. Verify Isolation
+
+Run negative tests to ensure no cross-tenant access:
+```bash
+# Run isolation test suite
+pytest tests/backend/test_tenant_isolation.py -v
+
+# All tests should pass ✅
+```
+
+### Tenant Operations
+
+#### Setting Tenant Context (Database)
+
+```python
+from api.db import get_db_with_tenant
+
+# All database operations within this context are scoped to tenant
+with get_db_with_tenant(tenant_id="aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa") as db:
+    properties = db.execute(text("SELECT * FROM properties")).fetchall()
+    # Only returns properties for this tenant
+```
+
+#### Uploading Tenant-Scoped Documents
+
+```python
+from api.storage import storage_client
+import io
+
+# Upload document
+data = io.BytesIO(b"Document content")
+full_path = storage_client.put_object(
+    tenant_id="aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    object_path="documents/lease.pdf",
+    data=data,
+    length=len(b"Document content"),
+    content_type="application/pdf"
+)
+
+# Stored at: aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/documents/lease.pdf
+```
+
+#### Vector Search with Tenant Filter
+
+```python
+from api.qdrant_client import TenantQdrantClient
+
+client = TenantQdrantClient()
+
+# Search automatically filtered to tenant
+results = client.search_with_tenant(
+    collection_name="properties",
+    query_vector=[0.1] * 384,
+    tenant_id="aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+    limit=10
+)
+
+# Only returns vectors belonging to this tenant
+```
+
+### Tenant Isolation Verification
+
+#### Verify Database Isolation
+```sql
+-- Set context to Tenant A
+SELECT set_tenant_context('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid);
+
+-- Try to query Tenant B's data (should return 0 rows)
+SELECT * FROM properties WHERE tenant_id = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb'::uuid;
+-- Result: 0 rows (RLS filters them out)
+```
+
+#### Verify Qdrant Isolation
+```bash
+# Check that all searches include tenant filter
+curl -X POST http://localhost:6333/collections/properties/points/search \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "vector": [0.1, 0.2, ...],
+    "filter": {
+      "must": [{"key": "tenant_id", "match": {"value": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"}}]
+    },
+    "limit": 10
+  }'
+```
+
+#### Verify MinIO Isolation
+```bash
+# List objects for Tenant A (should only see A's objects)
+mc ls --recursive minio/real-estate-os/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/
+
+# Attempt to access Tenant B's object as Tenant A (should fail)
+mc cp minio/real-estate-os/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/documents/b_doc.pdf /tmp/
+# Error: Object does not exist
+```
+
+### Troubleshooting Tenant Issues
+
+#### Symptom: Cross-tenant data leakage detected
+
+**Diagnosis**:
+```bash
+# Check RLS policies
+psql -U postgres -d real_estate -c "SELECT * FROM pg_policies WHERE tablename='properties';"
+
+# Verify tenant_id in JWT claims
+# Inspect JWT at https://jwt.io and check for "tenant_id" claim
+```
+
+**Resolution**:
+1. Verify RLS migration applied: Check `SELECT relrowsecurity FROM pg_class WHERE relname='properties';`
+2. Ensure API sets tenant context from JWT on every request
+3. Run negative tests to identify breach point
+
+#### Symptom: User cannot access their own data
+
+**Diagnosis**:
+```bash
+# Check tenant_id in JWT matches data
+# Verify tenant context is set correctly
+```
+
+**Resolution**:
+1. Verify JWT includes correct `tenant_id` claim
+2. Check that API extracts and sets tenant context
+3. Verify user's data has correct `tenant_id` column value
+
+#### Symptom: Qdrant search returns no results
+
+**Diagnosis**:
+```python
+# Check if vectors have tenant_id in payload
+from api.qdrant_client import TenantQdrantClient
+client = TenantQdrantClient()
+
+# Verify tenant isolation stats
+stats = client.verify_tenant_isolation(
+    collection_name="properties",
+    tenant_id="aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+)
+print(stats)
+```
+
+**Resolution**:
+1. Ensure vectors were uploaded with `upsert_with_tenant()` (adds tenant_id automatically)
+2. Re-index vectors if tenant_id missing from payloads
+3. Verify tenant_id filter is included in search query
+
+---
+
 ## Health Checks
 
 ### API Health

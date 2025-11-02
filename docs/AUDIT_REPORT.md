@@ -58,11 +58,14 @@ This audit report documents the completion of all required infrastructure, secur
 | Item | Status | Evidence | Notes |
 |------|--------|----------|-------|
 | Keycloak realm export | ✅ | [realm-export.json](../auth/keycloak/realm-export.json) | 2 clients, 4 roles configured |
-| JWT enforcement on /api/* | ⚠️ | N/A | Configured in Keycloak, API integration in progress |
-| Rate limiting (429 + Retry-After) | ⚠️ | [GAPS_AND_REMEDIATIONS.md](../docs/GAPS_AND_REMEDIATIONS.md) | Gap documented, middleware stub needed |
-| Negative tests (tenant isolation) | ⚠️ | [GAPS_AND_REMEDIATIONS.md](../docs/GAPS_AND_REMEDIATIONS.md) | Gap documented, tests needed |
+| JWT enforcement on /api/* | ✅ | [api/auth.py](../api/auth.py), [authz-test-transcripts.txt](../artifacts/security/authz-test-transcripts.txt) | RS256 verification, role-based access |
+| Rate limiting (429 + Retry-After) | ✅ | [api/rate_limit.py](../api/rate_limit.py), [rate-limits-proof.txt](../artifacts/security/rate-limits-proof.txt) | Sliding window, per-route limits |
+| DB RLS tenant isolation | ✅ | [001_enable_rls_tenant_isolation.sql](../db/migrations/001_enable_rls_tenant_isolation.sql), [rls-explain.txt](../artifacts/isolation/rls-explain.txt) | PostgreSQL RLS on 7 tables |
+| Qdrant tenant filtering | ✅ | [api/qdrant_client.py](../api/qdrant_client.py), [qdrant-filter-proof.json](../artifacts/isolation/qdrant-filter-proof.json) | Mandatory tenant_id payload filters |
+| MinIO prefix isolation | ✅ | [api/storage.py](../api/storage.py), [minio-prefix-proof.txt](../artifacts/isolation/minio-prefix-proof.txt) | Prefix: `<tenant_id>/<object_path>` |
+| Negative tests (tenant isolation) | ✅ | [test_tenant_isolation.py](../tests/backend/test_tenant_isolation.py), [negative-tests.txt](../artifacts/isolation/negative-tests.txt) | 23 tests across 4 layers |
 
-**Status**: ⚠️ **PARTIAL** (Core configs done, integration tests needed)
+**Status**: ✅ **PASS** (Multi-tenant isolation complete with defense-in-depth)
 
 ### A5) Smoke Verification Script
 
