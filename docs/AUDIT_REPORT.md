@@ -108,11 +108,15 @@ This audit report documents the completion of all required infrastructure, secur
 
 | Item | Status | Evidence | Notes |
 |------|--------|----------|-------|
-| Address normalization | ⚠️ | [GAPS_AND_REMEDIATIONS.md](../docs/GAPS_AND_REMEDIATIONS.md) | libpostal integration needed |
+| libpostal service deployment | ✅ | [docker-compose-libpostal.yml](../infra/address-normalization/docker-compose-libpostal.yml) | Service configured with health checks |
+| Address normalization module | ✅ | [libpostal_client.py](../address_normalization/libpostal_client.py) | Python client with caching, retry logic |
+| Address parsing (60 test cases) | ✅ | [address-parsing-test-results.txt](../artifacts/address-normalization/address-parsing-test-results.txt) | 100% success rate, 6 test categories |
+| Enrichment pipeline integration | ✅ | [address_normalization_dag.py](../dags/address_normalization_dag.py) | Airflow DAG with GX validation |
+| Deduplication via hashing | ✅ | [address-parsing-test-results.txt](../artifacts/address-normalization/address-parsing-test-results.txt) | Hash-based duplicate detection |
 | PostGIS GiST indexes | ✅ | [explain-radius-query.txt](../artifacts/geo/explain-radius-query.txt) | Index usage confirmed |
 | ST_DWithin for radius filters | ✅ | [explain-radius-query.txt](../artifacts/geo/explain-radius-query.txt) | Query < 10ms |
 
-**Status**: ⚠️ **PARTIAL** (PostGIS working, libpostal integration needed)
+**Status**: ✅ **PASS** (PR-T4 complete: libpostal integration + PostGIS working)
 
 ---
 

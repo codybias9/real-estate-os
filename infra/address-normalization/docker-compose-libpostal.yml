@@ -1,0 +1,38 @@
+version: '3.8'
+
+services:
+  libpostal:
+    image: openvenues/libpostal-rest-docker:latest
+    container_name: real-estate-os-libpostal
+    ports:
+      - "8181:8080"
+    environment:
+      - LIBPOSTAL_DATA_DIR=/libpostal/data
+    volumes:
+      - libpostal-data:/libpostal/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+    networks:
+      - real-estate-network
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 4G
+        reservations:
+          cpus: '1.0'
+          memory: 2G
+
+volumes:
+  libpostal-data:
+    driver: local
+
+networks:
+  real-estate-network:
+    external: true
+    name: real-estate-os_default
