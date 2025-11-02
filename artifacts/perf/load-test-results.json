@@ -1,0 +1,153 @@
+{
+  "overall": {
+    "total_requests": 2996,
+    "successful_requests": 2966,
+    "errors": 29,
+    "rate_limited": 1,
+    "success_rate_pct": 99.0,
+    "latencies_ms": {
+      "mean": 102.67,
+      "median": 50.71,
+      "p95": 444.72,
+      "p99": 610.16
+    }
+  },
+  "scenarios": [
+    {
+      "scenario": "Health Check",
+      "endpoint": "/health",
+      "method": "GET",
+      "total_requests": 441,
+      "errors": 2,
+      "rate_limited": 1,
+      "latencies_ms": {
+        "mean": 5.32,
+        "median": 5.02,
+        "p95": 8.11,
+        "p99": 14.95,
+        "max": 18.42
+      },
+      "target_p95_ms": 100,
+      "meets_target": true
+    },
+    {
+      "scenario": "List Properties",
+      "endpoint": "/api/v1/properties",
+      "method": "GET",
+      "total_requests": 882,
+      "errors": 5,
+      "rate_limited": 0,
+      "latencies_ms": {
+        "mean": 53.66,
+        "median": 52.11,
+        "p95": 64.5,
+        "p99": 139.25,
+        "max": 190.26
+      },
+      "target_p95_ms": 200,
+      "meets_target": true
+    },
+    {
+      "scenario": "Get Property",
+      "endpoint": "/api/v1/properties/{id}",
+      "method": "GET",
+      "total_requests": 705,
+      "errors": 9,
+      "rate_limited": 0,
+      "latencies_ms": {
+        "mean": 33.23,
+        "median": 30.44,
+        "p95": 63.38,
+        "p99": 95.42,
+        "max": 112.25
+      },
+      "target_p95_ms": 150,
+      "meets_target": true
+    },
+    {
+      "scenario": "ML Scoring",
+      "endpoint": "/api/v1/ml/score",
+      "method": "POST",
+      "total_requests": 264,
+      "errors": 2,
+      "rate_limited": 0,
+      "latencies_ms": {
+        "mean": 232.59,
+        "median": 205.98,
+        "p95": 518.03,
+        "p99": 663.3,
+        "max": 679.36
+      },
+      "target_p95_ms": 500,
+      "meets_target": false
+    },
+    {
+      "scenario": "Comp-Critic Valuation",
+      "endpoint": "/api/v1/ml/comp-critic",
+      "method": "POST",
+      "total_requests": 176,
+      "errors": 3,
+      "rate_limited": 0,
+      "latencies_ms": {
+        "mean": 429.01,
+        "median": 397.08,
+        "p95": 516.86,
+        "p99": 1346.34,
+        "max": 1538.27
+      },
+      "target_p95_ms": 600,
+      "meets_target": true
+    },
+    {
+      "scenario": "DCF Analysis",
+      "endpoint": "/api/v1/ml/dcf",
+      "method": "POST",
+      "total_requests": 88,
+      "errors": 1,
+      "rate_limited": 0,
+      "latencies_ms": {
+        "mean": 524.16,
+        "median": 492.56,
+        "p95": 649.3,
+        "p99": 1523.31,
+        "max": 1523.31
+      },
+      "target_p95_ms": 800,
+      "meets_target": true
+    },
+    {
+      "scenario": "Hazard Assessment",
+      "endpoint": "/api/v1/hazards/assess",
+      "method": "POST",
+      "total_requests": 176,
+      "errors": 3,
+      "rate_limited": 0,
+      "latencies_ms": {
+        "mean": 161.13,
+        "median": 151.4,
+        "p95": 211.87,
+        "p99": 480.93,
+        "max": 496.72
+      },
+      "target_p95_ms": 300,
+      "meets_target": true
+    },
+    {
+      "scenario": "Graph Query",
+      "endpoint": "/api/v1/graph/owner/{id}/properties",
+      "method": "GET",
+      "total_requests": 264,
+      "errors": 4,
+      "rate_limited": 0,
+      "latencies_ms": {
+        "mean": 87.52,
+        "median": 80.9,
+        "p95": 171.18,
+        "p99": 268.64,
+        "max": 303.29
+      },
+      "target_p95_ms": 200,
+      "meets_target": true
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "1 endpoints exceed p95 targets - optimize slow endpoints",
+    "Consider horizontal scaling for high-traffic endpoints",
+    "Review database connection pooling and query optimization",
+    "Implement caching for frequently accessed data"
+  ]
+}

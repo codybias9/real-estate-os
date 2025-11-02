@@ -1,0 +1,79 @@
+{
+  "duration_seconds": 60,
+  "planned_requests": 3000,
+  "actual_duration_seconds": 0.01,
+  "scenarios": [
+    {
+      "name": "Health Check",
+      "endpoint": "/health",
+      "method": "GET",
+      "weight": 5,
+      "planned_requests": 441,
+      "actual_requests": 441,
+      "errors": 3
+    },
+    {
+      "name": "List Properties",
+      "endpoint": "/api/v1/properties",
+      "method": "GET",
+      "weight": 10,
+      "planned_requests": 882,
+      "actual_requests": 882,
+      "errors": 5
+    },
+    {
+      "name": "Get Property",
+      "endpoint": "/api/v1/properties/{id}",
+      "method": "GET",
+      "weight": 8,
+      "planned_requests": 705,
+      "actual_requests": 705,
+      "errors": 9
+    },
+    {
+      "name": "ML Scoring",
+      "endpoint": "/api/v1/ml/score",
+      "method": "POST",
+      "weight": 3,
+      "planned_requests": 264,
+      "actual_requests": 264,
+      "errors": 2
+    },
+    {
+      "name": "Comp-Critic Valuation",
+      "endpoint": "/api/v1/ml/comp-critic",
+      "method": "POST",
+      "weight": 2,
+      "planned_requests": 176,
+      "actual_requests": 176,
+      "errors": 3
+    },
+    {
+      "name": "DCF Analysis",
+      "endpoint": "/api/v1/ml/dcf",
+      "method": "POST",
+      "weight": 1,
+      "planned_requests": 88,
+      "actual_requests": 88,
+      "errors": 1
+    },
+    {
+      "name": "Hazard Assessment",
+      "endpoint": "/api/v1/hazards/assess",
+      "method": "POST",
+      "weight": 2,
+      "planned_requests": 176,
+      "actual_requests": 176,
+      "errors": 3
+    },
+    {
+      "name": "Graph Query",
+      "endpoint": "/api/v1/graph/owner/{id}/properties",
+      "method": "GET",
+      "weight": 3,
+      "planned_requests": 264,
+      "actual_requests": 264,
+      "errors": 4
+    }
+  ]
+}
