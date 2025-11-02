@@ -1,0 +1,909 @@
+{
+  "provenance_report": {
+    "pipeline_run": "minimal_e2e_pipeline",
+    "execution_date": "2024-11-02T10:30:00",
+    "dag_id": "minimal_e2e_pipeline",
+    "run_id": "scheduled__2024-11-02T10:30:00+00:00",
+    "properties_processed": 3,
+    "total_fields_tracked": 847,
+    "lineage_graph_nodes": 156,
+    "lineage_graph_edges": 423,
+    "overall_trust_score": 0.87,
+    "generation_duration_seconds": 1.2
+  },
+  "properties": [
+    {
+      "property_id": "prop_demo_001",
+      "address": "123 Main St, Austin, TX 78701",
+      "overall_trust_score": 0.89,
+      "field_count": 47,
+      "provenance_fields": {
+        "address": {
+          "raw_value": "123 main street austin tx",
+          "normalized_value": "123 Main St, Austin, TX 78701",
+          "trust_score": 0.95,
+          "confidence": 0.92,
+          "lineage": [
+            {
+              "stage": "ingest",
+              "timestamp": "2024-11-02T10:30:01.234Z",
+              "source": "CSV Upload",
+              "source_type": "user_input",
+              "operator": "ingest_properties",
+              "operation": "read_csv",
+              "raw_value": "123 main street austin tx",
+              "trust_impact": 0.7,
+              "metadata": {
+                "filename": "properties_batch_001.csv",
+                "row_number": 1,
+                "column": "address",
+                "upload_user": "user_alpha_001",
+                "upload_timestamp": "2024-11-02T10:29:45.123Z"
+              }
+            },
+            {
+              "stage": "normalize",
+              "timestamp": "2024-11-02T10:30:02.456Z",
+              "source": "libpostal",
+              "source_type": "normalization_engine",
+              "operator": "normalize_addresses",
+              "operation": "parse_address",
+              "normalized_value": "123 Main St, Austin, TX 78701",
+              "trust_impact": 0.25,
+              "metadata": {
+                "libpostal_version": "1.1.0",
+                "parse_confidence": 0.92,
+                "components_extracted": {
+                  "house_number": "123",
+                  "road": "Main St",
+                  "city": "Austin",
+                  "state": "TX",
+                  "postcode": "78701"
+                },
+                "normalization_rules_applied": [
+                  "lowercase_to_titlecase",
+                  "street_abbreviation",
+                  "zip_validation"
+                ]
+              }
+            }
+          ],
+          "data_quality": {
+            "completeness": 1.0,
+            "accuracy_estimate": 0.92,
+            "freshness_days": 0,
+            "consistency_check": "passed",
+            "validation_rules_passed": 5,
+            "validation_rules_total": 5
+          },
+          "transformations": [
+            {
+              "type": "case_normalization",
+              "from": "123 main street austin tx",
+              "to": "123 Main Street Austin TX",
+              "rule": "titlecase_all_words"
+            },
+            {
+              "type": "abbreviation_expansion",
+              "from": "street",
+              "to": "St",
+              "rule": "usps_street_suffix_abbreviations"
+            },
+            {
+              "type": "zip_code_append",
+              "from": "Austin, TX",
+              "to": "Austin, TX 78701",
+              "source": "geocoder_reverse_lookup"
+            }
+          ]
+        },
+        "latitude": {
+          "value": 30.2672,
+          "trust_score": 0.94,
+          "confidence": 0.95,
+          "lineage": [
+            {
+              "stage": "normalize",
+              "timestamp": "2024-11-02T10:30:02.789Z",
+              "source": "Google Geocoding API",
+              "source_type": "external_api",
+              "operator": "normalize_addresses",
+              "operation": "geocode",
+              "value": 30.2672,
+              "trust_impact": 0.94,
+              "metadata": {
+                "api_endpoint": "https://maps.googleapis.com/maps/api/geocode/json",
+                "api_version": "v3",
+                "location_type": "ROOFTOP",
+                "place_id": "ChIJ3S-JXmauRIYRUcIaWtq7S4E",
+                "geocoder_confidence": 0.95,
+                "response_time_ms": 234
+              }
+            }
+          ],
+          "data_quality": {
+            "completeness": 1.0,
+            "precision_meters": 5,
+            "freshness_days": 0,
+            "validation_range_check": "passed"
+          }
+        },
+        "longitude": {
+          "value": -97.7431,
+          "trust_score": 0.94,
+          "confidence": 0.95,
+          "lineage": [
+            {
+              "stage": "normalize",
+              "timestamp": "2024-11-02T10:30:02.789Z",
+              "source": "Google Geocoding API",
+              "source_type": "external_api",
+              "operator": "normalize_addresses",
+              "operation": "geocode",
+              "value": -97.7431,
+              "trust_impact": 0.94,
+              "metadata": {
+                "api_endpoint": "https://maps.googleapis.com/maps/api/geocode/json",
+                "location_type": "ROOFTOP",
+                "geocoder_confidence": 0.95
+              }
+            }
+          ],
+          "data_quality": {
+            "completeness": 1.0,
+            "precision_meters": 5,
+            "freshness_days": 0,
+            "validation_range_check": "passed"
+          }
+        },
+        "hazards.flood.risk_score": {
+          "value": 0.15,
+          "trust_score": 0.92,
+          "confidence": 0.92,
+          "lineage": [
+            {
+              "stage": "enrich_hazards",
+              "timestamp": "2024-11-02T10:30:04.012Z",
+              "source": "FEMA NFHL",
+              "source_type": "authoritative_government_data",
+              "operator": "enrich_hazards",
+              "operation": "calculate_flood_risk",
+              "value": 0.15,
+              "trust_impact": 0.92,
+              "metadata": {
+                "api_endpoint": "https://hazards.fema.gov/gis/nfhl/rest/services",
+                "dataset_version": "2024-09-15",
+                "flood_zone": "AE",
+                "sfha": true,
+                "base_flood_elevation_ft": 485,
+                "annual_chance_pct": 1.0,
+                "data_currency_days": 48,
+                "api_response_time_ms": 456
+              }
+            },
+            {
+              "stage": "enrich_hazards",
+              "timestamp": "2024-11-02T10:30:04.234Z",
+              "source": "Internal Risk Model",
+              "source_type": "ml_model",
+              "operator": "enrich_hazards",
+              "operation": "normalize_risk_score",
+              "value": 0.15,
+              "trust_impact": 0.0,
+              "metadata": {
+                "model_name": "flood_risk_normalizer_v2",
+                "model_version": "2.3.0",
+                "normalization_method": "minmax_scaling",
+                "input_range": "0-100",
+                "output_range": "0-1"
+              }
+            }
+          ],
+          "data_quality": {
+            "completeness": 1.0,
+            "data_freshness_days": 48,
+            "authoritative_source": true,
+            "validation_check": "passed"
+          },
+          "dependencies": [
+            "latitude",
+            "longitude",
+            "hazards.flood.fema_data.flood_zone"
+          ]
+        },
+        "hazards.flood.fema_data.flood_zone": {
+          "value": "AE",
+          "trust_score": 0.95,
+          "confidence": 0.95,
+          "lineage": [
+            {
+              "stage": "enrich_hazards",
+              "timestamp": "2024-11-02T10:30:04.012Z",
+              "source": "FEMA NFHL",
+              "source_type": "authoritative_government_data",
+              "operator": "enrich_hazards",
+              "operation": "query_flood_zone",
+              "value": "AE",
+              "trust_impact": 0.95,
+              "metadata": {
+                "api_endpoint": "https://hazards.fema.gov/gis/nfhl/rest/services",
+                "dataset_version": "2024-09-15",
+                "query_method": "point_in_polygon",
+                "zone_description": "Special Flood Hazard Area with Base Flood Elevation",
+                "effective_date": "2024-09-15"
+              }
+            }
+          ],
+          "data_quality": {
+            "completeness": 1.0,
+            "authoritative_source": true,
+            "data_freshness_days": 48
+          }
+        },
+        "hazards.wildfire.risk_score": {
+          "value": 0.08,
+          "trust_score": 0.85,
+          "confidence": 0.85,
+          "lineage": [
+            {
+              "stage": "enrich_hazards",
+              "timestamp": "2024-11-02T10:30:04.567Z",
+              "source": "USGS WHP",
+              "source_type": "authoritative_government_data",
+              "operator": "enrich_hazards",
+              "operation": "calculate_wildfire_risk",
+              "value": 0.08,
+              "trust_impact": 0.85,
+              "metadata": {
+                "api_endpoint": "https://wildfire.usgs.gov/whp/rest/services",
+                "dataset_version": "2024-08-01",
+                "wui_category": "low",
+                "fuel_load": "moderate",
+                "slope_percent": 3,
+                "data_currency_days": 93
+              }
+            }
+          ],
+          "data_quality": {
+            "completeness": 1.0,
+            "data_freshness_days": 93,
+            "authoritative_source": true
+          },
+          "dependencies": [
+            "latitude",
+            "longitude"
+          ]
+        },
+        "hazards.heat.risk_score": {
+          "value": 0.22,
+          "trust_score": 0.88,
+          "confidence": 0.88,
+          "lineage": [
+            {
+              "stage": "enrich_hazards",
+              "timestamp": "2024-11-02T10:30:04.890Z",
+              "source": "NOAA Climate Data",
+              "source_type": "authoritative_government_data",
+              "operator": "enrich_hazards",
+              "operation": "calculate_heat_risk",
+              "value": 0.22,
+              "trust_impact": 0.88,
+              "metadata": {
+                "api_endpoint": "https://www.ncdc.noaa.gov/cdo-web/api/v2",
+                "dataset_version": "2024-10-01",
+                "heat_index_days_over_100": 85,
+                "heat_index_days_over_105": 42,
+                "avg_summer_temp_f": 96.5,
+                "data_currency_days": 32
+              }
+            }
+          ],
+          "data_quality": {
+            "completeness": 1.0,
+            "data_freshness_days": 32,
+            "authoritative_source": true
+          },
+          "dependencies": [
+            "latitude",
+            "longitude"
+          ]
+        },
+        "hazards.composite.overall_risk_score": {
+          "value": 0.145,
+          "trust_score": 0.88,
+          "confidence": 0.88,
+          "lineage": [
+            {
+              "stage": "enrich_hazards",
+              "timestamp": "2024-11-02T10:30:05.123Z",
+              "source": "Internal Risk Model",
+              "source_type": "ml_model",
+              "operator": "enrich_hazards",
+              "operation": "weighted_average_composite",
+              "value": 0.145,
+              "trust_impact": 0.88,
+              "metadata": {
+                "model_name": "composite_risk_aggregator_v1",
+                "model_version": "1.0.0",
+                "calculation_method": "weighted_average",
+                "weights": {
+                  "flood": 0.5,
+                  "wildfire": 0.3,
+                  "heat": 0.2
+                },
+                "formula": "(0.15 * 0.5) + (0.08 * 0.3) + (0.22 * 0.2) = 0.145"
+              }
+            }
+          ],
+          "data_quality": {
+            "completeness": 1.0,
+            "calculation_verified": true
+          },
+          "dependencies": [
+            "hazards.flood.risk_score",
+            "hazards.wildfire.risk_score",
+            "hazards.heat.risk_score"
+          ]
+        },
+        "valuation.comp_critic.comp_adjusted_value": {
+          "value": 487500,
+          "trust_score": 0.82,
+          "confidence": 0.78,
+          "lineage": [
+            {
+              "stage": "score_valuations",
+              "timestamp": "2024-11-02T10:30:06.234Z",
+              "source": "Comp-Critic Model",
+              "source_type": "ml_model",
+              "operator": "score_valuations",
+              "operation": "run_comp_critic",
+              "value": 487500,
+              "trust_impact": 0.82,
+              "metadata": {
+                "model_name": "comp_critic",
+                "model_version": "3.2.1",
+                "base_comp_value": 500000,
+                "adjustments_applied": [
+                  {
+                    "factor": "flood_zone_ae",
+                    "adjustment_pct": -2.5,
+                    "adjustment_amount": -12500,
+                    "confidence": 0.85
+                  }
+                ],
+                "comps_used": 5,
+                "comps_within_miles": 0.5,
+                "model_confidence": 0.78,
+                "execution_time_ms": 1234
+              }
+            }
+          ],
+          "data_quality": {
+            "completeness": 1.0,
+            "model_freshness_days": 0,
+            "comps_data_freshness_days": 7
+          },
+          "dependencies": [
+            "address",
+            "latitude",
+            "longitude",
+            "hazards.flood.fema_data.flood_zone",
+            "hazards.composite.overall_risk_score"
+          ]
+        },
+        "valuation.dcf.net_present_value": {
+          "value": 495000,
+          "trust_score": 0.75,
+          "confidence": 0.72,
+          "lineage": [
+            {
+              "stage": "score_valuations",
+              "timestamp": "2024-11-02T10:30:06.567Z",
+              "source": "DCF Model",
+              "source_type": "ml_model",
+              "operator": "score_valuations",
+              "operation": "run_dcf",
+              "value": 495000,
+              "trust_impact": 0.75,
+              "metadata": {
+                "model_name": "dcf_valuation",
+                "model_version": "2.1.0",
+                "discount_rate": 0.065,
+                "holding_period_years": 10,
+                "terminal_cap_rate": 0.055,
+                "annual_noi": 36000,
+                "model_confidence": 0.72,
+                "execution_time_ms": 890
+              }
+            }
+          ],
+          "data_quality": {
+            "completeness": 1.0,
+            "assumptions_documented": true,
+            "sensitivity_analysis_available": true
+          },
+          "dependencies": [
+            "address",
+            "hazards.composite.overall_risk_score"
+          ]
+        },
+        "valuation.ensemble.final_value": {
+          "value": 491250,
+          "trust_score": 0.85,
+          "confidence": 0.80,
+          "lineage": [
+            {
+              "stage": "score_valuations",
+              "timestamp": "2024-11-02T10:30:06.890Z",
+              "source": "Ensemble Aggregator",
+              "source_type": "ml_model",
+              "operator": "score_valuations",
+              "operation": "weighted_ensemble",
+              "value": 491250,
+              "trust_impact": 0.85,
+              "metadata": {
+                "model_name": "ensemble_valuation_v2",
+                "model_version": "2.0.0",
+                "aggregation_method": "weighted_average",
+                "weights": {
+                  "comp_critic": 0.5,
+                  "dcf": 0.5
+                },
+                "formula": "(487500 * 0.5) + (495000 * 0.5) = 491250",
+                "model_confidence": 0.80
+              }
+            }
+          ],
+          "data_quality": {
+            "completeness": 1.0,
+            "ensemble_diversity": 0.78,
+            "model_agreement": 0.85
+          },
+          "dependencies": [
+            "valuation.comp_critic.comp_adjusted_value",
+            "valuation.dcf.net_present_value"
+          ]
+        }
+      },
+      "trust_score_breakdown": {
+        "source_quality": 0.91,
+        "data_freshness": 0.88,
+        "transformation_quality": 0.87,
+        "model_confidence": 0.80,
+        "validation_pass_rate": 0.95
+      },
+      "lineage_graph": {
+        "nodes": 52,
+        "edges": 141,
+        "depth": 5,
+        "max_fan_in": 5,
+        "critical_path_length": 5,
+        "critical_path": [
+          "ingest_properties",
+          "normalize_addresses",
+          "enrich_hazards",
+          "score_valuations",
+          "track_provenance"
+        ]
+      }
+    },
+    {
+      "property_id": "prop_demo_002",
+      "address": "456 Oak Ave, Austin, TX 78704",
+      "overall_trust_score": 0.86,
+      "field_count": 39,
+      "provenance_fields": {
+        "address": {
+          "normalized_value": "456 Oak Ave, Austin, TX 78704",
+          "trust_score": 0.94,
+          "lineage": [
+            {
+              "stage": "ingest",
+              "timestamp": "2024-11-02T10:30:01.345Z",
+              "source": "CSV Upload",
+              "source_type": "user_input",
+              "trust_impact": 0.7
+            },
+            {
+              "stage": "normalize",
+              "timestamp": "2024-11-02T10:30:02.567Z",
+              "source": "libpostal",
+              "source_type": "normalization_engine",
+              "trust_impact": 0.24
+            }
+          ]
+        },
+        "latitude": {
+          "value": 30.2515,
+          "trust_score": 0.94,
+          "lineage": [
+            {
+              "stage": "normalize",
+              "timestamp": "2024-11-02T10:30:02.890Z",
+              "source": "Google Geocoding API",
+              "source_type": "external_api",
+              "trust_impact": 0.94
+            }
+          ]
+        },
+        "longitude": {
+          "value": -97.7548,
+          "trust_score": 0.94,
+          "lineage": [
+            {
+              "stage": "normalize",
+              "timestamp": "2024-11-02T10:30:02.890Z",
+              "source": "Google Geocoding API",
+              "source_type": "external_api",
+              "trust_impact": 0.94
+            }
+          ]
+        },
+        "hazards.flood.risk_score": {
+          "value": 0.05,
+          "trust_score": 0.94,
+          "lineage": [
+            {
+              "stage": "enrich_hazards",
+              "timestamp": "2024-11-02T10:30:04.123Z",
+              "source": "FEMA NFHL",
+              "source_type": "authoritative_government_data",
+              "trust_impact": 0.94,
+              "metadata": {
+                "flood_zone": "X",
+                "sfha": false
+              }
+            }
+          ]
+        },
+        "hazards.composite.overall_risk_score": {
+          "value": 0.085,
+          "trust_score": 0.88,
+          "lineage": [
+            {
+              "stage": "enrich_hazards",
+              "timestamp": "2024-11-02T10:30:05.234Z",
+              "source": "Internal Risk Model",
+              "source_type": "ml_model",
+              "trust_impact": 0.88
+            }
+          ],
+          "dependencies": [
+            "hazards.flood.risk_score",
+            "hazards.wildfire.risk_score",
+            "hazards.heat.risk_score"
+          ]
+        },
+        "valuation.ensemble.final_value": {
+          "value": 645000,
+          "trust_score": 0.85,
+          "lineage": [
+            {
+              "stage": "score_valuations",
+              "timestamp": "2024-11-02T10:30:07.012Z",
+              "source": "Ensemble Aggregator",
+              "source_type": "ml_model",
+              "trust_impact": 0.85
+            }
+          ],
+          "dependencies": [
+            "valuation.comp_critic.comp_adjusted_value",
+            "valuation.dcf.net_present_value"
+          ]
+        }
+      },
+      "trust_score_breakdown": {
+        "source_quality": 0.90,
+        "data_freshness": 0.87,
+        "transformation_quality": 0.86,
+        "model_confidence": 0.79,
+        "validation_pass_rate": 0.94
+      }
+    },
+    {
+      "property_id": "prop_demo_003",
+      "address": "789 Elm Rd, Austin, TX 78702",
+      "overall_trust_score": 0.87,
+      "field_count": 39,
+      "provenance_fields": {
+        "address": {
+          "normalized_value": "789 Elm Rd, Austin, TX 78702",
+          "trust_score": 0.93,
+          "lineage": [
+            {
+              "stage": "ingest",
+              "timestamp": "2024-11-02T10:30:01.456Z",
+              "source": "CSV Upload",
+              "source_type": "user_input",
+              "trust_impact": 0.7
+            },
+            {
+              "stage": "normalize",
+              "timestamp": "2024-11-02T10:30:02.678Z",
+              "source": "libpostal",
+              "source_type": "normalization_engine",
+              "trust_impact": 0.23
+            }
+          ]
+        },
+        "hazards.flood.risk_score": {
+          "value": 0.15,
+          "trust_score": 0.92,
+          "lineage": [
+            {
+              "stage": "enrich_hazards",
+              "timestamp": "2024-11-02T10:30:04.234Z",
+              "source": "FEMA NFHL",
+              "source_type": "authoritative_government_data",
+              "trust_impact": 0.92,
+              "metadata": {
+                "flood_zone": "AE",
+                "sfha": true
+              }
+            }
+          ]
+        },
+        "valuation.ensemble.final_value": {
+          "value": 558750,
+          "trust_score": 0.84,
+          "lineage": [
+            {
+              "stage": "score_valuations",
+              "timestamp": "2024-11-02T10:30:07.123Z",
+              "source": "Ensemble Aggregator",
+              "source_type": "ml_model",
+              "trust_impact": 0.84
+            }
+          ]
+        }
+      },
+      "trust_score_breakdown": {
+        "source_quality": 0.89,
+        "data_freshness": 0.87,
+        "transformation_quality": 0.85,
+        "model_confidence": 0.78,
+        "validation_pass_rate": 0.95
+      }
+    }
+  ],
+  "lineage_summary": {
+    "total_stages": 5,
+    "stages": [
+      {
+        "stage_name": "ingest_properties",
+        "stage_number": 1,
+        "timestamp_start": "2024-11-02T10:30:01.234Z",
+        "timestamp_end": "2024-11-02T10:30:01.567Z",
+        "duration_seconds": 0.333,
+        "fields_created": 9,
+        "trust_contribution": 0.70,
+        "data_sources": [
+          {
+            "source": "CSV Upload",
+            "source_type": "user_input",
+            "fields_contributed": 9,
+            "trust_score": 0.70
+          }
+        ]
+      },
+      {
+        "stage_name": "normalize_addresses",
+        "stage_number": 2,
+        "timestamp_start": "2024-11-02T10:30:02.456Z",
+        "timestamp_end": "2024-11-02T10:30:03.123Z",
+        "duration_seconds": 0.667,
+        "fields_created": 12,
+        "fields_transformed": 9,
+        "trust_contribution": 0.24,
+        "data_sources": [
+          {
+            "source": "libpostal",
+            "source_type": "normalization_engine",
+            "fields_contributed": 9,
+            "trust_score": 0.92
+          },
+          {
+            "source": "Google Geocoding API",
+            "source_type": "external_api",
+            "fields_contributed": 6,
+            "trust_score": 0.94
+          }
+        ]
+      },
+      {
+        "stage_name": "enrich_hazards",
+        "stage_number": 3,
+        "timestamp_start": "2024-11-02T10:30:04.012Z",
+        "timestamp_end": "2024-11-02T10:30:05.234Z",
+        "duration_seconds": 1.222,
+        "fields_created": 36,
+        "trust_contribution": 0.88,
+        "data_sources": [
+          {
+            "source": "FEMA NFHL",
+            "source_type": "authoritative_government_data",
+            "fields_contributed": 18,
+            "trust_score": 0.93,
+            "api_calls": 3,
+            "data_freshness_days": 48
+          },
+          {
+            "source": "USGS WHP",
+            "source_type": "authoritative_government_data",
+            "fields_contributed": 15,
+            "trust_score": 0.85,
+            "api_calls": 3,
+            "data_freshness_days": 93
+          },
+          {
+            "source": "NOAA Climate Data",
+            "source_type": "authoritative_government_data",
+            "fields_contributed": 12,
+            "trust_score": 0.88,
+            "api_calls": 3,
+            "data_freshness_days": 32
+          }
+        ]
+      },
+      {
+        "stage_name": "score_valuations",
+        "stage_number": 4,
+        "timestamp_start": "2024-11-02T10:30:06.234Z",
+        "timestamp_end": "2024-11-02T10:30:07.234Z",
+        "duration_seconds": 1.0,
+        "fields_created": 27,
+        "trust_contribution": 0.82,
+        "data_sources": [
+          {
+            "source": "Comp-Critic Model",
+            "source_type": "ml_model",
+            "fields_contributed": 9,
+            "trust_score": 0.82,
+            "model_version": "3.2.1",
+            "model_confidence": 0.78
+          },
+          {
+            "source": "DCF Model",
+            "source_type": "ml_model",
+            "fields_contributed": 9,
+            "trust_score": 0.75,
+            "model_version": "2.1.0",
+            "model_confidence": 0.72
+          },
+          {
+            "source": "Ensemble Aggregator",
+            "source_type": "ml_model",
+            "fields_contributed": 9,
+            "trust_score": 0.85,
+            "model_version": "2.0.0",
+            "model_confidence": 0.80
+          }
+        ]
+      },
+      {
+        "stage_name": "track_provenance",
+        "stage_number": 5,
+        "timestamp_start": "2024-11-02T10:30:07.345Z",
+        "timestamp_end": "2024-11-02T10:30:08.567Z",
+        "duration_seconds": 1.222,
+        "fields_created": 15,
+        "trust_contribution": 0.0,
+        "data_sources": [
+          {
+            "source": "Provenance Engine",
+            "source_type": "internal_system",
+            "fields_contributed": 15,
+            "trust_score": 1.0
+          }
+        ]
+      }
+    ],
+    "total_duration_seconds": 7.4,
+    "total_api_calls": 12,
+    "total_fields_created": 847,
+    "unique_data_sources": 8,
+    "authoritative_sources": 3,
+    "ml_models": 3,
+    "user_input_sources": 1
+  },
+  "trust_scoring_methodology": {
+    "version": "1.0.0",
+    "description": "Multi-factor trust scoring system that evaluates data quality across five dimensions",
+    "factors": [
+      {
+        "factor": "source_quality",
+        "weight": 0.30,
+        "description": "Authority and reliability of data source",
+        "scoring": {
+          "authoritative_government": 0.95,
+          "commercial_api_verified": 0.85,
+          "ml_model_validated": 0.75,
+          "user_input": 0.70,
+          "third_party_unverified": 0.50
+        }
+      },
+      {
+        "factor": "data_freshness",
+        "weight": 0.20,
+        "description": "Recency of source data",
+        "scoring": {
+          "0_30_days": 1.0,
+          "31_90_days": 0.85,
+          "91_180_days": 0.70,
+          "181_365_days": 0.50,
+          "over_365_days": 0.30
+        }
+      },
+      {
+        "factor": "transformation_quality",
+        "weight": 0.20,
+        "description": "Quality of data transformations applied",
+        "scoring": {
+          "lossless_transform": 1.0,
+          "validated_normalization": 0.90,
+          "statistical_imputation": 0.70,
+          "heuristic_estimate": 0.50
+        }
+      },
+      {
+        "factor": "model_confidence",
+        "weight": 0.20,
+        "description": "Confidence score from ML models (if applicable)",
+        "scoring": {
+          "direct_from_model_output": "model_confidence_score"
+        }
+      },
+      {
+        "factor": "validation_pass_rate",
+        "weight": 0.10,
+        "description": "Percentage of validation rules passed",
+        "scoring": {
+          "calculation": "rules_passed / rules_total"
+        }
+      }
+    ],
+    "aggregation_method": "weighted_sum",
+    "formula": "trust_score = Σ(factor_value * factor_weight)"
+  },
+  "data_quality_summary": {
+    "overall_completeness": 0.98,
+    "overall_accuracy_estimate": 0.87,
+    "average_data_freshness_days": 38,
+    "validation_rules_total": 156,
+    "validation_rules_passed": 149,
+    "validation_pass_rate": 0.96,
+    "data_issues_detected": 7,
+    "data_issues_resolved": 5
+  },
+  "lineage_graph_metadata": {
+    "total_nodes": 156,
+    "total_edges": 423,
+    "node_types": {
+      "source_data": 27,
+      "transformation": 45,
+      "enrichment": 36,
+      "model_output": 27,
+      "final_field": 21
+    },
+    "edge_types": {
+      "direct_dependency": 312,
+      "indirect_dependency": 89,
+      "model_inference": 22
+    },
+    "graph_depth": 5,
+    "average_fan_in": 2.7,
+    "average_fan_out": 2.7,
+    "critical_paths": 3
+  },
+  "compliance_audit_trail": {
+    "gdpr_compliant": true,
+    "data_retention_policy": "7_years",
+    "pii_fields_encrypted": true,
+    "audit_log_available": true,
+    "lineage_immutable": true,
+    "provenance_hash": "sha256:a3f5d8c9e2b1a4f6c8d9e2b1a4f6c8d9e2b1a4f6c8d9e2b1a4f6c8d9e2b1a4f6",
+    "generated_at": "2024-11-02T10:30:08.567Z",
+    "generated_by": "track_provenance operator",
+    "version": "1.0.0"
+  }
+}

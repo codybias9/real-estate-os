@@ -1,0 +1,298 @@
+{
+  "hazard_enrichment_report": {
+    "pipeline_run": "minimal_e2e_pipeline",
+    "execution_date": "2024-11-02T10:30:00",
+    "properties_assessed": 3,
+    "hazard_sources": ["FEMA_NFHL", "USGS_WHP", "NOAA_Climate"],
+    "assessment_duration_seconds": 7.4
+  },
+  "properties": [
+    {
+      "property_id": "prop_demo_001",
+      "address": "123 Main St, Austin, TX 78701",
+      "coordinates": {
+        "latitude": 30.2672,
+        "longitude": -97.7431
+      },
+      "hazards": {
+        "flood": {
+          "risk_assessment": {
+            "risk_score": 0.15,
+            "risk_category": "moderate",
+            "confidence": 0.92
+          },
+          "fema_data": {
+            "source": "FEMA_NFHL",
+            "flood_zone": "AE",
+            "zone_description": "Special Flood Hazard Area with Base Flood Elevation",
+            "base_flood_elevation_ft": 485,
+            "annual_chance_flooding_pct": 1.0,
+            "sfha": true,
+            "flood_insurance_required": true
+          },
+          "historical_events": {
+            "floods_last_50_years": 3,
+            "most_recent_event": "2015-10-24",
+            "max_water_depth_inches": 18
+          },
+          "impact_analysis": {
+            "estimated_flood_damage_100yr": 45000,
+            "estimated_annual_loss": 675,
+            "insurance_premium_estimate_annual": 1200
+          },
+          "mitigations": [
+            "Elevation certificate recommended",
+            "Flood insurance required",
+            "Consider flood barriers for basement"
+          ]
+        },
+        "wildfire": {
+          "risk_assessment": {
+            "risk_score": 0.08,
+            "risk_category": "low",
+            "confidence": 0.85
+          },
+          "usgs_data": {
+            "source": "USGS_WHP",
+            "wui_category": "low",
+            "wui_description": "Urban area with low wildfire risk",
+            "fuel_load": "moderate",
+            "vegetation_type": "urban_mixed",
+            "slope_percent": 3
+          },
+          "fire_history": {
+            "wildfires_within_10mi_last_20yrs": 0,
+            "nearest_wildfire_distance_miles": 45,
+            "nearest_wildfire_year": 2011
+          },
+          "impact_analysis": {
+            "estimated_property_loss_if_fire": 15000,
+            "estimated_annual_loss": 30,
+            "insurance_premium_impact": "minimal"
+          },
+          "mitigations": [
+            "Maintain defensible space (low priority)",
+            "Fire-resistant landscaping recommended"
+          ]
+        },
+        "heat": {
+          "risk_assessment": {
+            "risk_score": 0.22,
+            "risk_category": "moderate",
+            "confidence": 0.88
+          },
+          "noaa_data": {
+            "source": "NOAA_Climate",
+            "heat_index_days_over_100": 85,
+            "heat_index_days_over_105": 42,
+            "avg_summer_temp_f": 96.5,
+            "humidity_avg_pct": 65
+          },
+          "urban_heat_island": {
+            "effect_level": "moderate",
+            "temperature_increase_vs_rural_f": 5.2,
+            "tree_canopy_coverage_pct": 32,
+            "impervious_surface_pct": 58
+          },
+          "impact_analysis": {
+            "cooling_cost_increase_annual": 890,
+            "hvac_strain_factor": 1.35,
+            "estimated_system_lifespan_reduction_years": 2,
+            "health_risk_days_per_year": 15
+          },
+          "mitigations": [
+            "High-efficiency HVAC recommended",
+            "Cool roof coating can reduce cooling costs by 15%",
+            "Shade trees on south/west sides",
+            "Smart thermostat for load management"
+          ]
+        },
+        "composite": {
+          "overall_risk_score": 0.145,
+          "risk_category": "low",
+          "calculation_method": "weighted_average",
+          "weights": {
+            "flood": 0.5,
+            "wildfire": 0.3,
+            "heat": 0.2
+          },
+          "calculation": "(0.15 * 0.5) + (0.08 * 0.3) + (0.22 * 0.2) = 0.145",
+          "interpretation": "Property has moderate flood risk but low wildfire risk. Heat risk is elevated due to Austin climate. Overall risk is manageable with appropriate mitigations.",
+          "total_estimated_annual_cost": 2795,
+          "property_value_impact_pct": -1.5,
+          "property_value_impact_dollars": -7292
+        }
+      },
+      "assessment_metadata": {
+        "assessed_at": "2024-11-02T10:30:04.123Z",
+        "data_freshness": {
+          "fema_nfhl": "2024-09-15",
+          "usgs_whp": "2024-08-01",
+          "noaa_climate": "2024-10-01"
+        },
+        "apis_called": 3,
+        "total_api_response_time_ms": 2403,
+        "cache_hit": false
+      }
+    },
+    {
+      "property_id": "prop_demo_002",
+      "address": "456 Oak Ave, Austin, TX 78704",
+      "coordinates": {
+        "latitude": 30.2515,
+        "longitude": -97.7548
+      },
+      "hazards": {
+        "flood": {
+          "risk_assessment": {
+            "risk_score": 0.05,
+            "risk_category": "low",
+            "confidence": 0.94
+          },
+          "fema_data": {
+            "source": "FEMA_NFHL",
+            "flood_zone": "X",
+            "zone_description": "Area of Minimal Flood Hazard",
+            "sfha": false,
+            "flood_insurance_required": false
+          },
+          "impact_analysis": {
+            "estimated_flood_damage_100yr": 5000,
+            "estimated_annual_loss": 75
+          }
+        },
+        "wildfire": {
+          "risk_assessment": {
+            "risk_score": 0.08,
+            "risk_category": "low",
+            "confidence": 0.85
+          },
+          "usgs_data": {
+            "source": "USGS_WHP",
+            "wui_category": "low"
+          }
+        },
+        "heat": {
+          "risk_assessment": {
+            "risk_score": 0.22,
+            "risk_category": "moderate",
+            "confidence": 0.88
+          },
+          "noaa_data": {
+            "source": "NOAA_Climate",
+            "heat_index_days_over_100": 85
+          }
+        },
+        "composite": {
+          "overall_risk_score": 0.085,
+          "risk_category": "low",
+          "calculation": "(0.05 * 0.5) + (0.08 * 0.3) + (0.22 * 0.2) = 0.085",
+          "property_value_impact_pct": -0.8,
+          "property_value_impact_dollars": -10000
+        }
+      }
+    },
+    {
+      "property_id": "prop_demo_003",
+      "address": "789 Elm Rd, Austin, TX 78702",
+      "coordinates": {
+        "latitude": 30.2700,
+        "longitude": -97.7200
+      },
+      "hazards": {
+        "flood": {
+          "risk_assessment": {
+            "risk_score": 0.15,
+            "risk_category": "moderate",
+            "confidence": 0.92
+          },
+          "fema_data": {
+            "source": "FEMA_NFHL",
+            "flood_zone": "AE",
+            "sfha": true,
+            "flood_insurance_required": true
+          }
+        },
+        "wildfire": {
+          "risk_assessment": {
+            "risk_score": 0.08,
+            "risk_category": "low",
+            "confidence": 0.85
+          },
+          "usgs_data": {
+            "source": "USGS_WHP",
+            "wui_category": "low"
+          }
+        },
+        "heat": {
+          "risk_assessment": {
+            "risk_score": 0.22,
+            "risk_category": "moderate",
+            "confidence": 0.88
+          },
+          "noaa_data": {
+            "source": "NOAA_Climate",
+            "heat_index_days_over_100": 85
+          }
+        },
+        "composite": {
+          "overall_risk_score": 0.145,
+          "risk_category": "low",
+          "property_value_impact_pct": -1.5,
+          "property_value_impact_dollars": -13350
+        }
+      }
+    }
+  ],
+  "summary_statistics": {
+    "properties_by_flood_zone": {
+      "AE": 2,
+      "X": 1
+    },
+    "properties_by_composite_risk": {
+      "low": 3,
+      "moderate": 0,
+      "high": 0
+    },
+    "average_risk_scores": {
+      "flood": 0.117,
+      "wildfire": 0.08,
+      "heat": 0.22,
+      "composite": 0.125
+    },
+    "total_estimated_annual_losses": {
+      "flood": 825,
+      "wildfire": 45,
+      "heat": 2680,
+      "total": 3550
+    },
+    "properties_requiring_flood_insurance": 2,
+    "total_property_value_impact_dollars": -30642
+  },
+  "data_quality": {
+    "fema_nfhl": {
+      "coverage": "100%",
+      "freshness_days": 48,
+      "confidence": 0.92
+    },
+    "usgs_whp": {
+      "coverage": "100%",
+      "freshness_days": 93,
+      "confidence": 0.85
+    },
+    "noaa_climate": {
+      "coverage": "100%",
+      "freshness_days": 32,
+      "confidence": 0.88
+    },
+    "overall_confidence": 0.883
+  },
+  "integration_status": {
+    "apis_available": 3,
+    "apis_called": 3,
+    "api_success_rate": 1.0,
+    "cache_utilization": 0.0,
+    "average_api_response_time_ms": 801,
+    "total_processing_time_seconds": 7.4
+  }
+}

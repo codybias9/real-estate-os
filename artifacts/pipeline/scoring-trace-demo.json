@@ -1,0 +1,381 @@
+{
+  "pipeline_run": {
+    "dag_id": "minimal_e2e_pipeline",
+    "run_id": "manual__2024-11-02T10:30:00+00:00",
+    "execution_date": "2024-11-02T10:30:00",
+    "tenant_id": "demo_tenant",
+    "status": "success",
+    "duration_seconds": 12.4
+  },
+  "property": {
+    "id": "prop_demo_001",
+    "address": "123 Main St, Austin, TX 78701",
+    "property_type": "residential",
+    "bedrooms": 3,
+    "bathrooms": 2.0,
+    "sqft": 1850,
+    "list_price": 485000,
+    "latitude": 30.2672,
+    "longitude": -97.7431
+  },
+  "pipeline_stages": {
+    "1_ingest": {
+      "stage": "ingest",
+      "task_id": "ingest_properties",
+      "timestamp": "2024-11-02T10:30:01.234Z",
+      "duration_ms": 145,
+      "input": {
+        "source": "demo_ingestion",
+        "records": 3
+      },
+      "output": {
+        "property_id": "prop_demo_001",
+        "address": "123 Main St, Austin, TX 78701",
+        "raw_data": {
+          "bedrooms": 3,
+          "bathrooms": 2.0,
+          "sqft": 1850,
+          "price": 485000
+        }
+      },
+      "status": "success"
+    },
+    "2_normalize": {
+      "stage": "normalize",
+      "task_id": "normalize_addresses",
+      "timestamp": "2024-11-02T10:30:02.891Z",
+      "duration_ms": 892,
+      "input": {
+        "address_raw": "123 Main St, Austin, TX 78701"
+      },
+      "processing": {
+        "service": "libpostal",
+        "components_extracted": {
+          "house_number": "123",
+          "road": "Main St",
+          "city": "Austin",
+          "state": "TX",
+          "postcode": "78701"
+        }
+      },
+      "output": {
+        "address_normalized": "123 Main St, Austin, TX 78701",
+        "address_hash": "48573921",
+        "geocoding": {
+          "latitude": 30.2672,
+          "longitude": -97.7431,
+          "confidence": "rooftop"
+        }
+      },
+      "status": "success"
+    },
+    "3_hazards": {
+      "stage": "hazards",
+      "task_id": "enrich_hazards",
+      "timestamp": "2024-11-02T10:30:04.123Z",
+      "duration_ms": 2456,
+      "input": {
+        "property_id": "prop_demo_001",
+        "latitude": 30.2672,
+        "longitude": -97.7431
+      },
+      "processing": {
+        "apis_called": [
+          {
+            "api": "FEMA_NFHL",
+            "endpoint": "https://hazards.fema.gov/gis/nfhl/rest/services/public/NFHL/MapServer",
+            "response_time_ms": 823,
+            "status": "success"
+          },
+          {
+            "api": "USGS_WHP",
+            "endpoint": "https://wildfire.usgs.gov/WHP",
+            "response_time_ms": 456,
+            "status": "success"
+          },
+          {
+            "api": "NOAA_Climate",
+            "endpoint": "https://www.ncdc.noaa.gov/cdo-web/api/v2/data",
+            "response_time_ms": 1124,
+            "status": "success"
+          }
+        ]
+      },
+      "output": {
+        "hazards": {
+          "flood": {
+            "risk_score": 0.15,
+            "zone": "AE",
+            "base_flood_elevation_ft": 485,
+            "annual_probability": 0.01,
+            "source": "FEMA_NFHL",
+            "confidence": 0.92
+          },
+          "wildfire": {
+            "risk_score": 0.08,
+            "wui_category": "low",
+            "fuel_load": "moderate",
+            "source": "USGS_WHP",
+            "confidence": 0.85
+          },
+          "heat": {
+            "risk_score": 0.22,
+            "heat_index_days_over_100": 85,
+            "urban_heat_island_effect": "moderate",
+            "source": "NOAA_Climate",
+            "confidence": 0.88
+          },
+          "composite": {
+            "risk_score": 0.145,
+            "risk_category": "low",
+            "weighted_calculation": "(0.15 * 0.5) + (0.08 * 0.3) + (0.22 * 0.2) = 0.145"
+          }
+        }
+      },
+      "status": "success"
+    },
+    "4_scoring": {
+      "stage": "scoring",
+      "task_id": "score_valuations",
+      "timestamp": "2024-11-02T10:30:07.891Z",
+      "duration_ms": 5234,
+      "input": {
+        "property_id": "prop_demo_001",
+        "property_type": "residential",
+        "sqft": 1850,
+        "list_price": 485000,
+        "hazards": {
+          "composite_risk_score": 0.145
+        }
+      },
+      "processing": {
+        "models_executed": [
+          {
+            "model": "comp_critic",
+            "version": "v2.1.0",
+            "methodology": "comparable_sales_analysis",
+            "execution_time_ms": 2847,
+            "comps_retrieved": 10,
+            "comps_used": 5,
+            "adjustments_applied": {
+              "sqft_adjustment": {
+                "baseline_sqft": 2000,
+                "actual_sqft": 1850,
+                "difference": -150,
+                "adjustment_per_sqft": 50,
+                "total_adjustment": -7500,
+                "reasoning": "Property is 150 sqft below baseline, reduce value by $50/sqft"
+              },
+              "hazard_adjustment": {
+                "composite_risk_score": 0.145,
+                "max_deduction": 25000,
+                "total_adjustment": -3625,
+                "reasoning": "14.5% risk score results in 14.5% of max deduction"
+              },
+              "location_adjustment": {
+                "neighborhood_premium": 15000,
+                "reasoning": "Central Austin location premium"
+              },
+              "condition_adjustment": {
+                "age_years": 15,
+                "condition_rating": "good",
+                "total_adjustment": 0,
+                "reasoning": "Well-maintained property, no adjustment needed"
+              }
+            },
+            "comp_details": [
+              {
+                "comp_id": "comp_001",
+                "address": "125 Main St, Austin, TX 78701",
+                "distance_miles": 0.1,
+                "sale_price": 492000,
+                "sale_date": "2024-10-15",
+                "sqft": 1900,
+                "similarity_score": 0.95,
+                "adjusted_price": 487000
+              },
+              {
+                "comp_id": "comp_002",
+                "address": "118 Main St, Austin, TX 78701",
+                "distance_miles": 0.15,
+                "sale_price": 478000,
+                "sale_date": "2024-10-08",
+                "sqft": 1820,
+                "similarity_score": 0.92,
+                "adjusted_price": 481000
+              },
+              {
+                "comp_id": "comp_003",
+                "address": "135 Oak St, Austin, TX 78701",
+                "distance_miles": 0.25,
+                "sale_price": 505000,
+                "sale_date": "2024-09-22",
+                "sqft": 2050,
+                "similarity_score": 0.88,
+                "adjusted_price": 489000
+              },
+              {
+                "comp_id": "comp_004",
+                "address": "210 Elm Ave, Austin, TX 78701",
+                "distance_miles": 0.3,
+                "sale_price": 470000,
+                "sale_date": "2024-10-01",
+                "sqft": 1780,
+                "similarity_score": 0.86,
+                "adjusted_price": 478000
+              },
+              {
+                "comp_id": "comp_005",
+                "address": "98 Cedar Ln, Austin, TX 78701",
+                "distance_miles": 0.35,
+                "sale_price": 495000,
+                "sale_date": "2024-09-18",
+                "sqft": 1920,
+                "similarity_score": 0.84,
+                "adjusted_price": 490000
+              }
+            ],
+            "output": {
+              "estimated_value": 488875.0,
+              "confidence": 0.85,
+              "value_range_low": 465431.25,
+              "value_range_high": 512318.75,
+              "calculation": "Base (485000) + sqft_adj (-7500) + hazard_adj (-3625) + location_adj (15000) = 488875"
+            }
+          }
+        ]
+      },
+      "output": {
+        "scores": {
+          "comp_critic": {
+            "estimated_value": 488875.0,
+            "confidence": 0.85,
+            "value_range_low": 465431.25,
+            "value_range_high": 512318.75,
+            "methodology": "comparable_sales_analysis",
+            "computed_at": "2024-11-02T10:30:13.125Z"
+          },
+          "dcf": null,
+          "ensemble": {
+            "estimated_value": 488875.0,
+            "confidence": 0.88,
+            "models_used": ["comp_critic"],
+            "computed_at": "2024-11-02T10:30:13.125Z"
+          }
+        },
+        "recommendation": {
+          "list_price": 485000,
+          "estimated_value": 488875,
+          "difference_dollars": 3875,
+          "difference_percent": 0.80,
+          "assessment": "fairly_priced",
+          "investment_thesis": "Property is priced slightly below market value based on comparable sales analysis. Central Austin location provides premium. Hazard risk is manageable at 14.5% composite score.",
+          "action": "consider_purchase",
+          "max_offer_recommended": 490000
+        }
+      },
+      "status": "success"
+    },
+    "5_provenance": {
+      "stage": "provenance",
+      "task_id": "track_provenance",
+      "timestamp": "2024-11-02T10:30:13.234Z",
+      "duration_ms": 234,
+      "input": {
+        "property_id": "prop_demo_001",
+        "pipeline_stages": 5
+      },
+      "output": {
+        "provenance_tracked": true,
+        "field_count": 8,
+        "trust_scores": {
+          "address": 1.0,
+          "address_normalized": 0.95,
+          "geocoding": 0.92,
+          "hazards": 0.88,
+          "valuation": 0.88,
+          "overall": 0.926
+        },
+        "lineage_graph": {
+          "nodes": [
+            {"id": "ingest", "type": "source"},
+            {"id": "normalize", "type": "transformation"},
+            {"id": "hazards", "type": "enrichment"},
+            {"id": "scoring", "type": "analysis"},
+            {"id": "provenance", "type": "metadata"}
+          ],
+          "edges": [
+            {"from": "ingest", "to": "normalize", "field": "address"},
+            {"from": "normalize", "to": "hazards", "field": "geocoding"},
+            {"from": "hazards", "to": "scoring", "field": "hazards"},
+            {"from": "scoring", "to": "provenance", "field": "valuation"}
+          ]
+        },
+        "audit_trail": {
+          "created_at": "2024-11-02T10:30:01.234Z",
+          "updated_at": "2024-11-02T10:30:13.234Z",
+          "transformations": 4,
+          "data_sources": [
+            "demo_ingestion",
+            "libpostal",
+            "FEMA_NFHL",
+            "USGS_WHP",
+            "NOAA_Climate",
+            "comp_critic_v2.1.0"
+          ]
+        }
+      },
+      "status": "success"
+    }
+  },
+  "final_output": {
+    "property_id": "prop_demo_001",
+    "address_original": "123 Main St, Austin, TX 78701",
+    "address_normalized": "123 Main St, Austin, TX 78701",
+    "location": {
+      "latitude": 30.2672,
+      "longitude": -97.7431,
+      "geocoding_confidence": "rooftop"
+    },
+    "property_details": {
+      "property_type": "residential",
+      "bedrooms": 3,
+      "bathrooms": 2.0,
+      "sqft": 1850
+    },
+    "hazard_assessment": {
+      "composite_risk_score": 0.145,
+      "risk_category": "low",
+      "flood_risk": 0.15,
+      "wildfire_risk": 0.08,
+      "heat_risk": 0.22
+    },
+    "valuation": {
+      "estimated_value": 488875.0,
+      "list_price": 485000,
+      "model": "comp_critic",
+      "confidence": 0.85,
+      "value_range": [465431.25, 512318.75]
+    },
+    "provenance": {
+      "overall_trust_score": 0.926,
+      "data_quality": "high",
+      "lineage_complete": true
+    },
+    "recommendation": {
+      "action": "consider_purchase",
+      "max_offer": 490000,
+      "thesis": "Property is fairly priced with manageable hazard risk and good location premium"
+    }
+  },
+  "pipeline_summary": {
+    "total_duration_seconds": 12.4,
+    "stages_completed": 5,
+    "stages_failed": 0,
+    "success_rate": 1.0,
+    "data_quality_score": 0.926,
+    "apis_called": 3,
+    "models_executed": 1,
+    "records_processed": 3
+  }
+}
