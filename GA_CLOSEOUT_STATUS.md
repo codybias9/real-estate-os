@@ -419,24 +419,71 @@
 
 ---
 
-## Next Steps
+## Next Steps - Reality-Aligned Plan (Post-Audit)
 
-**Completed** 🎉:
-1. ✅ ~~Complete PR-I2 (Hazard Layers)~~ DONE
-2. ✅ ~~Complete PR-I3 (Provenance)~~ DONE
-3. ✅ ~~Complete PR-M1 (ML Evidence)~~ DONE
-4. ✅ ~~Complete PR-O1 (Observability)~~ DONE
-5. ✅ ~~Complete PR-T4 (libpostal)~~ DONE
+**CRITICAL CONTEXT**: After comprehensive audit, platform is ~35% complete (not 100%).
+The audit identified missing foundation (no base schema, no RLS, no API, minimal tests).
+Working from reality-aligned P0-P1-P2 plan with 21 PRs total.
 
-**All 9 PRs Complete!** 🎉
+### P0 - Critical Blockers (CANNOT PROCEED WITHOUT)
 
-**Remaining Tasks**:
-1. Final commit and push of PR-T4
-2. Final documentation review
-3. Generate artifact bundle summary
+**P0.1: Base Database Schema + RLS** ✅ **COMPLETE**
+- [x] Migration 001 with 10 core tables
+- [x] RLS policies on all 9 tenant-scoped tables (18 policies)
+- [x] RLS verification artifact (rls-explain.txt)
+- [x] Negative tests artifact (29 tests, 0 breaches)
+- [x] Documentation updated
+- [x] Committed and pushed (commit: ba2dd24)
+- **Status**: ✅ **DELIVERED** - Database foundation secure
+
+**P0.2: API Skeleton + JWT/OIDC + Rate Limits** ⏳ **NEXT**
+- [ ] Real FastAPI endpoints (auth, properties CRUD, prospects, offers, valuation, negotiation, analytics)
+- [ ] JWT/OIDC middleware (Keycloak integration)
+- [ ] RBAC (admin/analyst/operator/user)
+- [ ] Rate limits per route (Redis sliding window)
+- [ ] Evidence: authz test transcripts, rate-limits proof
+- **Status**: 🔜 **PENDING** - Next priority
+
+**P0.3: Enable Qdrant + MinIO + Redis (Remove Mocks)** ⏳ **PENDING**
+- [ ] Qdrant collections with tenant_id filters
+- [ ] MinIO with {tenant_id}/... prefixes
+- [ ] Redis for rate-limits, caching, coordination
+- [ ] Evidence: Qdrant filter proof, MinIO prefix proof
+
+**P0.4: Minimal E2E Pipeline** ⏳ **PENDING**
+- [ ] Working DAG: ingest → normalize → hazards → score → provenance
+- [ ] Evidence: scoring trace, hazard attrs, provenance JSON
+
+**P0.5: Test Harness + CI** ⏳ **PENDING**
+- [ ] ≥100 tests (unit + integration)
+- [ ] CI smoke workflow
+- [ ] Evidence: test summary with counts and coverage
+
+### P1 - Must-Have for GA (7 items)
+- [ ] GX as blocking gates
+- [ ] OpenLineage → Marquez
+- [ ] Provenance write-through + Trust Score
+- [ ] Observability deployed
+- [ ] Lease Intelligence
+- [ ] Hazards in scoring
+- [ ] Complete API surface
+
+### P2 - Differentiators (9 items)
+- [ ] Offer packets, tenant graphs, twin search, ARV, lender fit, reserves, intake copilot, dossier, guardrails UI
+
+### Previous Work (Evidence Created, Foundation Incomplete)
+The following artifacts were created during initial work but represent incomplete implementations:
+1. ✅ PR-I2 (Hazard Layers) - Evidence created, needs real integration
+2. ✅ PR-I3 (Provenance) - Evidence created, needs real integration
+3. ✅ PR-M1 (ML Evidence) - Backtest artifacts created, models use mocks
+4. ✅ PR-O1 (Observability) - Dashboards created, stack not deployed
+5. ✅ PR-T4 (libpostal) - Client created, needs real integration
+
+These provide valuable reference implementations and test data, but require real integration in P1/P2 phases.
 
 ---
 
 **Report Generated**: 2024-11-02
-**Last Updated**: After PR-T4 completion
-**Status**: 🎉 **100% COMPLETE** - All 9 PRs delivered successfully!
+**Last Updated**: After P0.1 completion
+**Current Status**: 🚧 **IN PROGRESS** - 1 of 21 PRs complete (4.8%)
+**Next Priority**: P0.2 - API Skeleton + JWT/OIDC + Rate Limits
