@@ -1,0 +1,255 @@
+name: CI - Quality Gates
+
+on:
+  push:
+    branches: [main, develop, claude/**]
+  pull_request:
+    branches: [main, develop]
+
+env:
+  PYTHON_VERSION: "3.10"
+
+jobs:
+  # ============================================================================
+  # Lint & Type Checking
+  # ============================================================================
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          poetry install
+
+      - name: Run Ruff (linting)
+        run: |
+          poetry run ruff check .
+
+      - name: Run Black (formatting check)
+        run: |
+          poetry run black --check .
+
+      - name: Run MyPy (type checking)
+        run: |
+          poetry run mypy .
+        continue-on-error: true  # Don't fail CI on type errors yet
+
+  # ============================================================================
+  # Test - Contracts Package
+  # ============================================================================
+  test-contracts:
+    name: Test - Contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        working-directory: packages/contracts
+        run: |
+          poetry install
+
+      - name: Run tests with coverage
+        working-directory: packages/contracts
+        run: |
+          poetry run pytest --cov=contracts --cov-report=xml --cov-fail-under=90
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: packages/contracts/coverage.xml
+          flags: contracts
+
+  # ============================================================================
+  # Test - Policy Kernel
+  # ============================================================================
+  test-policy-kernel:
+    name: Test - Policy Kernel
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        working-directory: services/policy-kernel
+        run: |
+          poetry install
+
+      - name: Run tests with coverage
+        working-directory: services/policy-kernel
+        run: |
+          poetry run pytest --cov=policy_kernel --cov-report=xml --cov-fail-under=90
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: services/policy-kernel/coverage.xml
+          flags: policy-kernel
+
+  # ============================================================================
+  # Test - Discovery Resolver
+  # ============================================================================
+  test-discovery:
+    name: Test - Discovery Resolver
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        working-directory: agents/discovery/resolver
+        run: |
+          poetry install
+
+      - name: Run tests with coverage
+        working-directory: agents/discovery/resolver
+        run: |
+          poetry run pytest --cov=resolver --cov-report=xml --cov-fail-under=90
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: agents/discovery/resolver/coverage.xml
+          flags: discovery
+
+  # ============================================================================
+  # Test - Enrichment Hub
+  # ============================================================================
+  test-enrichment:
+    name: Test - Enrichment Hub
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        working-directory: agents/enrichment/hub
+        run: |
+          poetry install
+
+      - name: Run tests with coverage
+        working-directory: agents/enrichment/hub
+        run: |
+          poetry run pytest --cov=enrichment_hub --cov-report=xml --cov-fail-under=90
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: agents/enrichment/hub/coverage.xml
+          flags: enrichment
+
+  # ============================================================================
+  # Test - Score Engine
+  # ============================================================================
+  test-scoring:
+    name: Test - Score Engine
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        working-directory: agents/scoring/engine
+        run: |
+          poetry install
+
+      - name: Run tests with coverage
+        working-directory: agents/scoring/engine
+        run: |
+          poetry run pytest --cov=score_engine --cov-report=xml --cov-fail-under=90
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: agents/scoring/engine/coverage.xml
+          flags: scoring
+
+  # ============================================================================
+  # Security Scan
+  # ============================================================================
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # ============================================================================
+  # Summary
+  # ============================================================================
+  ci-complete:
+    name: CI Complete
+    runs-on: ubuntu-latest
+    needs: [lint, test-contracts, test-policy-kernel, test-discovery, test-enrichment, test-scoring]
+    steps:
+      - name: CI Success
+        run: echo "All CI checks passed ✅"
