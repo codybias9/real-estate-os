@@ -1,0 +1,262 @@
+====================================================================================================
+SCENARIO 1: Experienced Investor with Good Deal
+====================================================================================================
+
+Property: 10-unit multifamily building
+Value: $1,200,000
+Loan Amount: $900,000
+
+Deal LTV: 75.0%
+Deal DSCR: 1.84x
+Borrower Credit: 740
+Borrower Experience: 5 properties, 8.0 years
+
+Qualified Lenders: 3/4
+
+====================================================================================================
+QUALIFIED LENDERS (ranked by fit score)
+====================================================================================================
+
+1. DSCR Lending Solutions - No-Doc DSCR Loan
+   Fit Score: 69.4/100
+
+   Terms:
+     Rate:            7.75%
+     Term:            30 years
+     Monthly Payment: $6,448
+     Origination Fee: $13,500
+
+   Requirements:
+     Max LTV:         80%
+     Min DSCR:        1.00x
+     Min Credit:      640
+     Min Properties:  0
+     Min Reserves:    6 months
+
+   Fit Breakdown:
+     LTV:       6.2/100
+     DSCR:      100.0/100
+     Credit:    100.0/100
+     Experience: 75.0/100
+     Reserves:  100.0/100
+
+----------------------------------------------------------------------------------------------------
+
+2. Investor Capital Group - Portfolio Investment Loan
+   Fit Score: 65.4/100
+
+   Terms:
+     Rate:            7.25%
+     Term:            30 years
+     Monthly Payment: $6,140
+     Origination Fee: $9,000
+
+   Requirements:
+     Max LTV:         80%
+     Min DSCR:        1.20x
+     Min Credit:      660
+     Min Properties:  1
+     Min Reserves:    9 months
+
+   Fit Breakdown:
+     LTV:       6.2/100
+     DSCR:      100.0/100
+     Credit:    80.0/100
+     Experience: 75.0/100
+     Reserves:  100.0/100
+
+----------------------------------------------------------------------------------------------------
+
+3. Prime National Bank - Conventional Investment Property
+   Fit Score: 61.1/100
+
+   Terms:
+     Rate:            6.50%
+     Term:            30 years
+     Monthly Payment: $5,689
+     Origination Fee: $6,750
+
+   Requirements:
+     Max LTV:         75%
+     Min DSCR:        1.25x
+     Min Credit:      700
+     Min Properties:  2
+     Min Reserves:    12 months
+
+   Fit Breakdown:
+     LTV:       0.0/100
+     DSCR:      100.0/100
+     Credit:    40.0/100
+     Experience: 75.0/100
+     Reserves:  100.0/100
+
+   Warnings:
+     ⚠ LTV 75.0% close to maximum 75.0%
+
+----------------------------------------------------------------------------------------------------
+
+
+
+
+====================================================================================================
+SCENARIO 2: First-Time Investor
+====================================================================================================
+
+Property: Single-family rental
+Value: $400,000
+Loan Amount: $320,000
+
+Deal LTV: 80.0%
+Deal DSCR: 0.94x
+Borrower Credit: 680
+Borrower Experience: 0 properties, 0.0 years
+
+Qualified Lenders: 0/4
+
+NO QUALIFIED LENDERS
+
+Disqualification reasons:
+
+Prime National Bank:
+  ✗ LTV 80.0% exceeds maximum 75.0%
+  ✗ DSCR 0.94x below minimum 1.25x
+  ✗ Credit score 680 below minimum 700
+  ✗ Properties owned 0 below minimum 2
+  ✗ Reserves 9.0 months below minimum 12.0
+
+Investor Capital Group:
+  ✗ DSCR 0.94x below minimum 1.20x
+  ✗ Properties owned 0 below minimum 1
+
+DSCR Lending Solutions:
+  ✗ DSCR 0.94x below minimum 1.00x
+
+Quick Close Capital:
+  ✗ LTV 80.0% exceeds maximum 70.0%
+
+
+
+
+====================================================================================================
+SCENARIO 3: Marginal Deal with Tight Metrics
+====================================================================================================
+
+Property: Small multifamily (duplex)
+Value: $500,000
+Loan Amount: $400,000
+
+Deal LTV: 80.0%
+Deal DSCR: 0.94x
+Borrower Credit: 650
+Borrower Experience: 1 properties, 1.5 years
+
+Qualified Lenders: 0/4
+
+NO QUALIFIED LENDERS
+
+Disqualification reasons:
+
+Prime National Bank:
+  ✗ LTV 80.0% exceeds maximum 75.0%
+  ✗ DSCR 0.94x below minimum 1.25x
+  ✗ Credit score 650 below minimum 700
+  ✗ Properties owned 1 below minimum 2
+  ✗ Reserves 7.0 months below minimum 12.0
+
+Investor Capital Group:
+  ✗ DSCR 0.94x below minimum 1.20x
+  ✗ Credit score 650 below minimum 660
+  ✗ Reserves 7.0 months below minimum 9.0
+
+DSCR Lending Solutions:
+  ✗ DSCR 0.94x below minimum 1.00x
+
+Quick Close Capital:
+  ✗ LTV 80.0% exceeds maximum 70.0%
+
+
+
+
+====================================================================================================
+SCENARIO 4: Fix-and-Flip Deal (Hard Money)
+====================================================================================================
+
+Property: Fix-and-flip opportunity
+ARV: $300,000
+Purchase Price: $180,000
+Loan Amount: $210,000
+
+Deal LTV: 70.0%
+Borrower Credit: 620
+Borrower Experience: 2 properties, 3.0 years
+
+Qualified Lenders: 1/4
+
+====================================================================================================
+QUALIFIED LENDERS (ranked by fit score)
+====================================================================================================
+
+1. Quick Close Capital - Hard Money Bridge Loan
+   Fit Score: 39.7/100
+
+   Terms:
+     Rate:            10.00%
+     Term:            2 years
+     Monthly Payment: $1,843
+     Origination Fee: $4,200
+
+   Requirements:
+     Max LTV:         70%
+     Min Credit:      600
+     Min Properties:  0
+     Min Reserves:    3 months
+
+   Fit Breakdown:
+     LTV:       0.0/100
+     DSCR:      100.0/100
+     Credit:    20.0/100
+     Experience: 40.0/100
+     Reserves:  16.7/100
+
+   Warnings:
+     ⚠ LTV 70.0% close to maximum 70.0%
+
+----------------------------------------------------------------------------------------------------
+
+
+
+
+====================================================================================================
+LENDER PROGRAM COMPARISON
+====================================================================================================
+
+Lender                         Rate     Max LTV    Min DSCR   Min Credit   Terms     
+----------------------------------------------------------------------------------------------------
+Prime National Bank            6.50%    75%       1.25x      700          30yr
+Investor Capital Group         7.25%    80%       1.20x      660          30yr
+DSCR Lending Solutions         7.75%    80%       1.00x      640          30yr
+Quick Close Capital            10.00%    70%       N/A        600          2yr
+
+Key Insights:
+  • Prime National Bank: Best rate (6.5%) but strictest requirements
+  • Investor Capital Group: Good balance of terms and flexibility
+  • DSCR Lending: No income verification, first-time investors OK
+  • Quick Close Capital: Hard money for bridge/rehab, highest rate (10%)
+
+====================================================================================================
+Lender Fit Scoring Demo Complete
+====================================================================================================
+
+Key Capabilities:
+  ✓ Multi-factor fit scoring (LTV, DSCR, credit, experience, reserves)
+  ✓ Hard requirement validation (property type, geography, loan size)
+  ✓ Ranked lender recommendations
+  ✓ Detailed disqualification reasons
+  ✓ Warning flags for close matches
+  ✓ Estimated terms and payments
+
+API Endpoints:
+  POST /api/v1/lenders/score - Score lender fit for a deal
+  GET  /api/v1/lenders/programs - List all loan programs
+  GET  /api/v1/lenders/requirements/{id} - Get lender requirements
+
