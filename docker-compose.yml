@@ -1,0 +1,267 @@
+version: '3.8'
+
+services:
+  # =================================================================
+  # PostgreSQL with PostGIS (Database)
+  # =================================================================
+  postgres:
+    image: postgis/postgis:15-3.3
+    container_name: real-estate-os-postgres
+    environment:
+      POSTGRES_DB: real_estate_os
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/migrations:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - real-estate-network
+
+  # =================================================================
+  # Redis (Rate Limiting + Caching)
+  # =================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: real-estate-os-redis
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes --requirepass redis_password
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - real-estate-network
+
+  # =================================================================
+  # Qdrant (Vector Database)
+  # =================================================================
+  qdrant:
+    image: qdrant/qdrant:v1.7.0
+    container_name: real-estate-os-qdrant
+    ports:
+      - "6333:6333"  # HTTP API
+      - "6334:6334"  # gRPC API
+    volumes:
+      - qdrant_data:/qdrant/storage
+    environment:
+      QDRANT__SERVICE__API_KEY: qdrant_api_key_changeme
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - real-estate-network
+
+  # =================================================================
+  # MinIO (Object Storage)
+  # =================================================================
+  minio:
+    image: minio/minio:latest
+    container_name: real-estate-os-minio
+    ports:
+      - "9000:9000"  # API
+      - "9001:9001"  # Console
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - real-estate-network
+
+  # =================================================================
+  # Keycloak (Authentication)
+  # =================================================================
+  keycloak:
+    image: quay.io/keycloak/keycloak:23.0
+    container_name: real-estate-os-keycloak
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: postgres
+      KC_DB_PASSWORD: postgres
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8080
+      KC_HOSTNAME_STRICT: false
+      KC_HOSTNAME_STRICT_HTTPS: false
+      KC_LOG_LEVEL: info
+      KC_METRICS_ENABLED: true
+      KC_HEALTH_ENABLED: true
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    command: start-dev
+    ports:
+      - "8080:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - real-estate-network
+
+  # =================================================================
+  # RabbitMQ (Message Queue for Airflow)
+  # =================================================================
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: real-estate-os-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: airflow
+      RABBITMQ_DEFAULT_PASS: airflow
+    ports:
+      - "5672:5672"   # AMQP
+      - "15672:15672" # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - real-estate-network
+
+  # =================================================================
+  # Prometheus (Metrics)
+  # =================================================================
+  prometheus:
+    image: prom/prometheus:v2.48.0
+    container_name: real-estate-os-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - real-estate-network
+
+  # =================================================================
+  # Grafana (Dashboards)
+  # =================================================================
+  grafana:
+    image: grafana/grafana:10.2.0
+    container_name: real-estate-os-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./observability/grafana-dashboards:/etc/grafana/provisioning/dashboards:ro
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:3000/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - real-estate-network
+
+  # =================================================================
+  # Real Estate OS API (FastAPI)
+  # =================================================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: real-estate-os-api
+    ports:
+      - "8000:8000"
+    environment:
+      # Database
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/real_estate_os
+
+      # Redis
+      REDIS_URL: redis://:redis_password@redis:6379/0
+
+      # Qdrant
+      QDRANT_URL: http://qdrant:6333
+      QDRANT_API_KEY: qdrant_api_key_changeme
+
+      # MinIO
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_SECURE: "false"
+
+      # Keycloak
+      KEYCLOAK_SERVER_URL: http://keycloak:8080
+      KEYCLOAK_REALM: real-estate-os
+      KEYCLOAK_CLIENT_ID: api-client
+      KEYCLOAK_CLIENT_SECRET: ""
+
+      # API Settings
+      ENVIRONMENT: development
+      DEBUG: "true"
+      LOG_LEVEL: INFO
+
+      # CORS
+      CORS_ORIGINS: '["http://localhost:3000","http://localhost:8000"]'
+
+      # Rate Limiting
+      RATE_LIMIT_ENABLED: "true"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      qdrant:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    volumes:
+      - ./api:/app/api:ro
+      - ./db:/app/db:ro
+    networks:
+      - real-estate-network
+
+networks:
+  real-estate-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:
+  qdrant_data:
+  minio_data:
+  rabbitmq_data:
+  prometheus_data:
+  grafana_data:
