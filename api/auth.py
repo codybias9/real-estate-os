@@ -68,10 +68,11 @@ class TokenData:
 class JWKSCache:
     """Cache for Keycloak JWKS (JSON Web Key Set)."""
 
-    def __init__(self):
+    def __init__(self, jwks_url: str = None, cache_ttl_seconds: int = 3600):
         self._jwks: Optional[Dict[str, Any]] = None
         self._last_fetch: Optional[datetime] = None
-        self._ttl = timedelta(hours=1)  # Refresh JWKS every hour
+        self._ttl = timedelta(seconds=cache_ttl_seconds)
+        self._jwks_url = jwks_url or settings.keycloak_jwks_url
 
     async def get_jwks(self) -> Dict[str, Any]:
         """
@@ -91,7 +92,7 @@ class JWKSCache:
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.get(
-                    settings.keycloak_jwks_url,
+                    self._jwks_url,
                     timeout=10.0
                 )
                 response.raise_for_status()
