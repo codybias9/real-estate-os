@@ -311,7 +311,7 @@ class RentRollParser:
                 document_id=document_id,
                 tenant_name=tenant_name or "Unknown",
                 property_address=property_address,
-                unit_number=unit_number,
+                unit_number=str(unit_number) if unit_number is not None else None,
                 lease_start_date=lease_start,
                 lease_end_date=lease_end,
                 monthly_rent=monthly_rent,
