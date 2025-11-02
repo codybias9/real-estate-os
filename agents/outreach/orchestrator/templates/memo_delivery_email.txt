@@ -1,0 +1,38 @@
+Investment Opportunity Analysis
+{{ company_name }}
+
+Dear {{ owner.name }},
+
+We've conducted a comprehensive analysis of your property at {{ property.address.line1 }} and identified it as a potential investment opportunity.
+
+PROPERTY SUMMARY
+Address: {{ property.address.line1 }}, {{ property.address.city }}, {{ property.address.state }} {{ property.address.zip }}
+Investment Score: {{ score.score }}/100
+
+{% if property.attrs %}
+Property Details:
+- Bedrooms: {{ property.attrs.beds if property.attrs.beds else 'N/A' }}
+- Bathrooms: {{ property.attrs.baths if property.attrs.baths else 'N/A' }}
+- Square Feet: {{ '{:,}'.format(property.attrs.sqft) if property.attrs.sqft else 'N/A' }}
+- Year Built: {{ property.attrs.year_built if property.attrs.year_built else 'N/A' }}
+{% endif %}
+
+WHY THIS PROPERTY?
+{% for reason in score.reasons[:3] %}
+• {{ reason.feature.replace('_', ' ').title() }}: {{ reason.note }}
+{% endfor %}
+
+We've prepared a detailed investment memo analyzing market conditions, potential returns, and strategic considerations for this property.
+
+View Full Investment Memo: {{ memo_url }}
+
+If you're interested in discussing this opportunity or have questions about our analysis, please don't hesitate to reach out.
+
+Best regards,
+{{ company_name }}
+{{ company_email }}
+
+---
+This analysis is based on public records and third-party data. Investment decisions should be made with comprehensive due diligence.
+
+To unsubscribe from future communications, please reply with "UNSUBSCRIBE".
