@@ -17,11 +17,61 @@ pydantic = "^2.11.7"
 requests = "^2.32.4"
 fastapi = "^0.111.0"
 uvicorn = {extras = ["standard"], version = "^0.30.1"}
+sqlalchemy = "^2.0.0"
+prometheus-client = "^0.20.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
+pytest-cov = "^4.1.0"
+pytest-asyncio = "^0.23.0"
 black = "^25.1.0"
+ruff = "^0.1.0"
+mypy = "^1.8.0"
+httpx = "^0.27.0"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+# Ruff configuration
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long (handled by black)
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+]
+
+[tool.ruff.per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/*" = ["F401", "F811"]
+
+[tool.ruff.isort]
+known-first-party = ["contracts", "policy_kernel", "resolver", "enrichment_hub", "score_engine"]
+
+# Black configuration
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+# MyPy configuration
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
