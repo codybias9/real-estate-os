@@ -1,0 +1,111 @@
+"""
+Pytest configuration for Docgen.Memo tests
+"""
+
+import sys
+from pathlib import Path
+
+# Add src to path for imports
+memo_src = Path(__file__).parent.parent / "src"
+sys.path.insert(0, str(memo_src))
+
+# Add contracts to path
+contracts_src = (
+    Path(__file__).parent.parent.parent.parent / "packages" / "contracts" / "src"
+)
+sys.path.insert(0, str(contracts_src))
+
+import pytest
+from datetime import datetime, timezone
+from uuid import uuid4
+
+from contracts.property_record import PropertyRecord, Address, Geo, Owner, Attributes
+from contracts.score_result import ScoreResult, ScoreReason, ScoreDirection
+
+
+@pytest.fixture
+def sample_property():
+    """Sample PropertyRecord for testing"""
+    return PropertyRecord(
+        apn="123-456-789",
+        apn_hash="abc123def456",
+        address=Address(
+            line1="123 Main St",
+            city="Springfield",
+            state="CA",
+            zip="90210",
+        ),
+        geo=Geo(lat=34.0522, lng=-118.2437),
+        owner=Owner(name="John Doe", type="person"),
+        attrs=Attributes(
+            beds=3,
+            baths=2.0,
+            sqft=1500,
+            year_built=1985,
+            lot_sqft=5000,
+            property_type="single_family",
+        ),
+        source="county_scraper",
+        source_id="prop_001",
+        url="https://example.com/property/123",
+        discovered_at=datetime.now(timezone.utc),
+        provenance=[],
+    )
+
+
+@pytest.fixture
+def sample_score():
+    """Sample ScoreResult for testing"""
+    return ScoreResult(
+        score=78,
+        reasons=[
+            ScoreReason(
+                feature="price_sqft",
+                weight=0.3,
+                direction=ScoreDirection.POSITIVE,
+                note="Price per sqft is 15% below market average",
+                raw_value=250.0,
+                benchmark=295.0,
+            ),
+            ScoreReason(
+                feature="days_on_market",
+                weight=0.25,
+                direction=ScoreDirection.POSITIVE,
+                note="Property has been on market for 45 days, indicating motivated seller",
+                raw_value=45,
+                benchmark=30,
+            ),
+            ScoreReason(
+                feature="cap_rate",
+                weight=0.2,
+                direction=ScoreDirection.POSITIVE,
+                note="Estimated cap rate of 8.5% exceeds target threshold",
+                raw_value=8.5,
+                benchmark=7.0,
+            ),
+            ScoreReason(
+                feature="location_score",
+                weight=0.15,
+                direction=ScoreDirection.NEUTRAL,
+                note="Location in average school district",
+                raw_value=6.5,
+                benchmark=7.0,
+            ),
+            ScoreReason(
+                feature="condition",
+                weight=0.1,
+                direction=ScoreDirection.NEGATIVE,
+                note="Property needs minor repairs estimated at $15k",
+                raw_value=15000,
+                benchmark=5000,
+            ),
+        ],
+        model_version="deterministic-v1",
+        computed_at=datetime.now(timezone.utc).isoformat(),
+    )
+
+
+@pytest.fixture
+def tenant_id():
+    """Sample tenant UUID"""
+    return str(uuid4())
