@@ -324,3 +324,13 @@ def pytest_configure(config):
     config.addinivalue_line("markers", "requires_redis: Tests requiring Redis")
     config.addinivalue_line("markers", "requires_qdrant: Tests requiring Qdrant")
     config.addinivalue_line("markers", "requires_minio: Tests requiring MinIO")
+
+
+def pytest_runtest_setup(item):
+    """Skip tests based on markers when dependencies unavailable."""
+    # Skip database tests if aiosqlite not available
+    if item.get_closest_marker("requires_db"):
+        try:
+            import aiosqlite
+        except ImportError:
+            pytest.skip("aiosqlite not installed - database tests skipped")

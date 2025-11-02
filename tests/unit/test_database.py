@@ -216,6 +216,7 @@ class TestDatabaseConnection:
     """Test database connection management."""
 
     @pytest.mark.asyncio
+    @pytest.mark.requires_db
     async def test_get_db_yields_session(self):
         """Test get_db() yields a valid session."""
         async for session in get_db():
@@ -225,6 +226,7 @@ class TestDatabaseConnection:
             assert result.scalar() == 1
 
     @pytest.mark.asyncio
+    @pytest.mark.requires_db
     async def test_db_session_rollback_on_error(self, db_session):
         """Test session rolls back on error."""
         # Start transaction
@@ -247,6 +249,7 @@ class TestDatabaseConnection:
         assert property_obj not in properties
 
     @pytest.mark.asyncio
+    @pytest.mark.requires_db
     async def test_db_session_isolation(self):
         """Test sessions are isolated from each other."""
         tenant_id = str(uuid4())
