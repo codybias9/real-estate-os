@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "reo-contracts"
+version = "0.1.0"
+description = "Canonical message contracts for Real Estate Platform"
+authors = ["Real Estate OS Team"]
+packages = [{include = "contracts", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pydantic = "^2.11.7"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+pytest-cov = "^4.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
