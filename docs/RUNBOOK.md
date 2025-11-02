@@ -307,6 +307,321 @@ print(stats)
 
 ---
 
+## Data Quality Operations (Great Expectations)
+
+### Overview
+Great Expectations (GX) provides data quality gates in our Airflow pipelines.
+When validation fails, pipelines halt to prevent bad data from propagating.
+
+### Viewing Data Docs
+
+Data Docs provide visual validation reports:
+
+```bash
+# Build and view Data Docs
+cd great_expectations
+great_expectations docs build
+
+# Open in browser
+open uncommitted/data_docs/local_site/index.html
+
+# Or access via Python
+python -c "
+from data_quality.gx_integration import GXCheckpointRunner
+runner = GXCheckpointRunner()
+context = runner.get_context()
+context.build_data_docs()
+"
+```
+
+### Running Checkpoints Manually
+
+For testing or debugging:
+
+```bash
+# Test properties ingestion checkpoint
+python -c "
+from data_quality.gx_integration import GXCheckpointRunner
+runner = GXCheckpointRunner()
+try:
+    result = runner.run_properties_ingestion_checkpoint()
+    print('✅ Validation passed')
+except Exception as e:
+    print(f'❌ Validation failed: {e}')
+"
+
+# Test prospects pre-ML checkpoint
+python -c "
+from data_quality.gx_integration import GXCheckpointRunner
+runner = GXCheckpointRunner()
+try:
+    result = runner.run_prospects_pre_ml_checkpoint()
+    print('✅ Validation passed')
+except Exception as e:
+    print(f'❌ Validation failed: {e}')
+"
+```
+
+### Handling Validation Failures
+
+When a GX checkpoint fails in Airflow:
+
+#### Step 1: Check Alerts
+
+- **Slack**: Check #data-quality-alerts for notification
+- **Email**: Check data-engineering@real-estate-os.com for alert
+- Alert includes:
+  - Failed expectation count
+  - Sample failed expectations
+  - Link to Data Docs
+
+#### Step 2: Review Data Docs
+
+```bash
+# Open Data Docs to see detailed failure report
+cd great_expectations
+open uncommitted/data_docs/local_site/index.html
+```
+
+Data Docs shows:
+- Which expectations failed
+- Sample failing data
+- Statistics (% passing, % failing)
+- Historical validation results
+
+#### Step 3: Investigate Root Cause
+
+Common failure causes:
+
+**NULL tenant_id (SECURITY CRITICAL)**
+```bash
+# Check ingestion code for tenant_id extraction
+grep -r "tenant_id" infra/airflow/dags/
+
+# Verify source system includes tenant info
+# Check recent ingestion logs for errors
+```
+
+**Invalid state codes**
+```bash
+# Check for international data in US-only feed
+SELECT DISTINCT state, COUNT(*)
+FROM properties
+WHERE state NOT IN ('AL', 'AK', ..., 'WY')
+GROUP BY state;
+
+# If international data is expected, update expectation suite
+```
+
+**Price/range outliers**
+```bash
+# Review outlier records
+SELECT * FROM properties
+WHERE price < 1000 OR price > 100000000;
+
+# Determine if outliers are valid or data errors
+# Update expectations if legitimate luxury properties
+```
+
+**Format violations (ZIP, email, phone)**
+```bash
+# Review malformed data
+SELECT zip, COUNT(*) FROM properties
+WHERE zip !~ '^\d{5}(-\d{4})?$'
+GROUP BY zip;
+
+# Consider using libpostal for address normalization
+# Add validation at ingestion to catch earlier
+```
+
+#### Step 4: Fix and Retry
+
+**Option A: Fix Data**
+```sql
+-- Example: Backfill NULL tenant_id
+UPDATE properties
+SET tenant_id = 'correct-tenant-uuid'
+WHERE id IN (SELECT id FROM properties WHERE tenant_id IS NULL);
+```
+
+**Option B: Fix Ingestion Code**
+```python
+# Update DAG to extract tenant_id correctly
+# Commit and deploy
+git add infra/airflow/dags/property_processing_pipeline.py
+git commit -m "fix: Extract tenant_id from source system"
+git push
+```
+
+**Option C: Update Expectations (if data is valid)**
+```json
+// Edit great_expectations/expectations/properties_suite.json
+{
+  "expectation_type": "expect_column_values_to_be_between",
+  "kwargs": {
+    "column": "price",
+    "min_value": 1000,
+    "max_value": 200000000,  // Increased for ultra-luxury
+    "mostly": 0.99
+  }
+}
+```
+
+#### Step 5: Retry Pipeline
+
+```bash
+# Via Airflow UI:
+# 1. Navigate to DAG: property_processing_pipeline
+# 2. Find failed run
+# 3. Click "Clear" on failed task
+# 4. Task will retry automatically
+
+# Via Airflow CLI:
+airflow tasks clear property_processing_pipeline \
+  validate_properties_ingestion \
+  --start-date 2024-11-02
+```
+
+### Adding New Expectations
+
+To add validation for new data quality rules:
+
+#### 1. Edit Expectation Suite
+
+```bash
+# Edit the relevant suite
+vim great_expectations/expectations/properties_suite.json
+```
+
+Add expectation:
+```json
+{
+  "expectation_type": "expect_column_values_to_not_match_regex",
+  "kwargs": {
+    "column": "address",
+    "regex": "^(P\\.?O\\.? BOX|PO BOX)",
+    "mostly": 0.95
+  },
+  "meta": {
+    "notes": "Reject PO Box addresses (95% should be physical addresses)"
+  }
+}
+```
+
+#### 2. Test Expectation
+
+```bash
+# Run checkpoint to test
+python -c "
+from data_quality.gx_integration import GXCheckpointRunner
+runner = GXCheckpointRunner()
+result = runner.run_properties_ingestion_checkpoint()
+print(f'Validation passed: {result[\"success\"]}')"
+```
+
+#### 3. Deploy
+
+```bash
+git add great_expectations/expectations/properties_suite.json
+git commit -m "feat(gx): Add PO Box validation for addresses"
+git push
+```
+
+### Emergency Bypass (Use with Caution!)
+
+If validation blocks critical pipeline and fix will take time:
+
+```python
+# TEMPORARY: Comment out GX task in DAG
+# infra/airflow/dags/property_processing_pipeline.py
+
+# validate_ingestion = PythonOperator(
+#     task_id='validate_properties_ingestion',
+#     python_callable=validate_properties_ingestion,
+# )
+
+# Update dependencies to skip validation
+# start >> ingest_task >> normalize_task  # Skip validation
+```
+
+**IMPORTANT:**
+1. Document reason in commit message
+2. Create incident ticket
+3. Monitor for downstream issues
+4. Fix validation ASAP
+5. Re-enable GX task
+
+### GX Metrics and Monitoring
+
+View validation success rates:
+
+```sql
+-- Query validation results (if stored in database)
+SELECT
+  DATE(run_time) as date,
+  checkpoint_name,
+  COUNT(*) as total_runs,
+  SUM(CASE WHEN success THEN 1 ELSE 0 END) as successful_runs,
+  ROUND(100.0 * SUM(CASE WHEN success THEN 1 ELSE 0 END) / COUNT(*), 2) as success_rate
+FROM gx_validation_results
+WHERE run_time >= NOW() - INTERVAL '30 days'
+GROUP BY DATE(run_time), checkpoint_name
+ORDER BY date DESC;
+```
+
+### Common GX Issues
+
+#### Issue: "Checkpoint not found"
+
+**Cause**: GX context cannot find checkpoint file
+
+**Fix**:
+```bash
+# Verify checkpoint file exists
+ls great_expectations/checkpoints/
+
+# Verify GX_ROOT_DIR is correct
+python -c "
+from data_quality.gx_integration import GX_ROOT_DIR
+print(f'GX Root: {GX_ROOT_DIR}')
+import os
+print(f'Exists: {os.path.exists(GX_ROOT_DIR)}')"
+```
+
+#### Issue: "Datasource connection failed"
+
+**Cause**: Cannot connect to PostgreSQL
+
+**Fix**:
+```bash
+# Check POSTGRES_CONNECTION_STRING env var
+echo $POSTGRES_CONNECTION_STRING
+
+# Test connection
+psql $POSTGRES_CONNECTION_STRING -c "SELECT 1;"
+
+# Update great_expectations.yml if needed
+```
+
+#### Issue: "All expectations passing but task fails"
+
+**Cause**: GX action (e.g., Slack notification) is failing
+
+**Fix**:
+```bash
+# Check Slack webhook
+echo $SLACK_WEBHOOK_URL
+
+# Test webhook
+curl -X POST $SLACK_WEBHOOK_URL \
+  -H 'Content-Type: application/json' \
+  -d '{"text": "GX test message"}'
+
+# Temporarily disable Slack action in checkpoint config
+```
+
+---
+
 ## Health Checks
 
 ### API Health

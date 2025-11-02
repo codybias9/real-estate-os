@@ -1,0 +1,37 @@
+name: prospects_pre_ml_checkpoint
+config_version: 1.0
+class_name: Checkpoint
+run_name_template: "%Y%m%d-%H%M%S-prospects-pre-ml"
+
+validations:
+  - batch_request:
+      datasource_name: postgres_datasource
+      data_connector_name: prospects_connector
+      data_asset_name: prospects
+    expectation_suite_name: prospects_suite
+
+action_list:
+  - name: store_validation_result
+    action:
+      class_name: StoreValidationResultAction
+  - name: store_evaluation_params
+    action:
+      class_name: StoreEvaluationParametersAction
+  - name: update_data_docs
+    action:
+      class_name: UpdateDataDocsAction
+      site_names:
+        - local_site
+  - name: slack_notification_on_failure
+    action:
+      class_name: SlackNotificationAction
+      slack_webhook: ${SLACK_WEBHOOK_URL}
+      notify_on: failure
+      notify_with:
+        - local_site
+      renderer:
+        module_name: great_expectations.render.renderer.slack_renderer
+        class_name: SlackRenderer
+
+evaluation_parameters: {}
+runtime_configuration: {}
