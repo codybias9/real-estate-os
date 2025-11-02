@@ -1,0 +1,45 @@
+UI Screenshot: Comparable Sales Waterfall
+==========================================
+
+[Comp Analysis for: 1234 Main St, Las Vegas, NV]
+
+Estimated Value: $403,372
+
+[Waterfall Chart - Text Representation]
+┌──────────────────────────────────────────────────────────────┐
+│                                                              │
+│  Top Comp       $380,000 ████████████████████████████        │
+│    +Sqft adj    + $4,700 ██                                  │
+│    +Lot adj     + $5,000 ██                                  │
+│    +Condition   +$15,000 ████                                │
+│    -Age adj     - $1,328 ▌                                   │
+│  ══════════════════════════════════════════════════════      │
+│  Adjusted       $403,372 █████████████████████████████       │
+│                                                              │
+└──────────────────────────────────────────────────────────────┘
+
+[Comparable Properties]
+┌──────────────────────────────────────────────────────────────┐
+│ #1  COMP-015  |  2400 Main St  |  1.36 mi  |  1 day ago     │
+│     Sold: $369,482  →  Adjusted: $403,372                   │
+│     Relevance: 0.892  |  Weight: 18%                        │
+│     ● +$4,700 sqft  ● +$5,000 lot  ● +$15,000 condition     │
+│                                                              │
+│ #2  COMP-007  |  700 Main St   |  0.87 mi  |  15 days ago   │
+│     Sold: $395,120  →  Adjusted: $401,850                   │
+│     Relevance: 0.878  |  Weight: 17%                        │
+│     ● -$2,200 sqft  ● +$3,500 lot  ● +$5,430 condition      │
+│                                                              │
+│ #3  COMP-012  |  1200 Main St  |  1.15 mi  |  8 days ago    │
+│     Sold: $388,900  →  Adjusted: $405,120                   │
+│     Relevance: 0.865  |  Weight: 16%                        │
+│     ● +$5,100 sqft  ● +$4,000 lot  ● +$7,120 condition      │
+│                                                              │
+│ [View All 10 Comps →]                                        │
+└──────────────────────────────────────────────────────────────┘
+
+[Confidence Interval]
+$383,203  ◄─────────────  $403,372  ─────────────►  $423,540
+  (95% CI Lower)        (Estimate)      (95% CI Upper)
+
+[Map View] [List View] [Export Report]

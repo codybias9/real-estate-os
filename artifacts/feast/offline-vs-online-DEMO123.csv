@@ -1,0 +1,11 @@
+feature,online_value,offline_value,match
+property_id,DEMO123,DEMO123,true
+lot_size_sqft,7500,7500,true
+building_sqft,2400,2400,true
+bedrooms,4,4,true
+bathrooms,3.0,3.0,true
+year_built,2005,2005,true
+property_age,19,19,true
+condition_score,7.5,7.5,true
+quality_grade,B+,B+,true
+stories,2,2,true

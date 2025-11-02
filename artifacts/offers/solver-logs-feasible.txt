@@ -1,0 +1,50 @@
+{
+  "status": "OPTIMAL",
+  "elapsed_seconds": 0.0,
+  "solution": {
+    "price": 322875,
+    "earnest_money": 5327,
+    "due_diligence_days": 14,
+    "close_days": 35,
+    "contingencies": {
+      "inspection": true,
+      "appraisal": true,
+      "financing": false,
+      "sale_of_property": false
+    },
+    "repair_credit": 18150,
+    "escalation_clause": true,
+    "escalation_cap": 339018
+  },
+  "constraints": {
+    "profit_margin": {
+      "value": 0.216,
+      "threshold": 0.15,
+      "satisfied": true
+    },
+    "dscr": {
+      "value": 1.35,
+      "threshold": 1.25,
+      "satisfied": true
+    },
+    "cash_available": {
+      "required": 352875,
+      "available": 500000,
+      "satisfied": true
+    }
+  },
+  "objective": {
+    "win_probability": 0.439,
+    "expected_profit": 42674
+  },
+  "sensitivity": {
+    "price_range": {
+      "min": 306731,
+      "max": 329332
+    },
+    "win_prob_range": {
+      "min": 0.395,
+      "max": 0.483
+    }
+  }
+}

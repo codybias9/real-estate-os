@@ -1,0 +1,5 @@
+metric,value
+mae,10591.53
+mae_pct,2.6
+ndcg@10,0.8436
+baseline_mae,13239.41

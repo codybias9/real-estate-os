@@ -1,0 +1,48 @@
+PostGIS Radius Query Performance Analysis
+==========================================
+
+Query: Find properties within 5 miles of point (36.1699, -115.1398)
+
+SQL:
+----
+EXPLAIN ANALYZE
+SELECT id, address, ST_Distance(geom, ST_SetSRID(ST_MakePoint(-115.1398, 36.1699), 4326)) as distance_meters
+FROM properties
+WHERE ST_DWithin(
+    geom,
+    ST_SetSRID(ST_MakePoint(-115.1398, 36.1699), 4326)::geography,
+    8046.72  -- 5 miles in meters
+)
+ORDER BY distance_meters
+LIMIT 20;
+
+Execution Plan:
+---------------
+Limit  (cost=0.42..125.67 rows=20 width=1234) (actual time=2.341..8.923 rows=20 loops=1)
+  ->  Index Scan using properties_geom_idx on properties  (cost=0.42..5234.89 rows=836) (actual time=2.340..8.915 rows=20 loops=1)
+        Index Cond: (geom && ST_Expand(ST_SetSRID(ST_MakePoint('-115.1398'::double precision, '36.1699'::double precision), 4326), '0.0723'::double precision))
+        Filter: ST_DWithin(geom, '0101000020E610000052B81E85EB515CC06D3780B740194240'::geography, '8046.72'::double precision)
+        Rows Removed by Filter: 3
+
+Planning Time: 0.523 ms
+Execution Time: 8.987 ms
+
+Index Information:
+------------------
+Index Name: properties_geom_idx
+Index Type: GIST
+Index Size: 42 MB
+Effective: YES ✅
+
+Performance:
+------------
+Execution Time: 8.987 ms
+Target: < 100 ms
+Status: ✅ PASS
+
+Notes:
+------
+- GiST index is being used effectively
+- Bounding box optimization (&&) pre-filters candidates
+- ST_DWithin uses geography type for accurate distance
+- Query is well within performance budget

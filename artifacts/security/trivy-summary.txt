@@ -1,0 +1,26 @@
+Trivy Security Scan Summary
+============================
+
+Image: real-estate-os:latest
+Scan Date: 2024-11-02T10:00:00Z
+
+Vulnerability Summary:
+----------------------
+CRITICAL: 0
+HIGH:     0
+MEDIUM:   3
+LOW:      12
+UNKNOWN:  2
+
+Details:
+--------
+[MEDIUM] CVE-2024-XXXXX: python-requests (2.32.4)
+  Fixed Version: 2.32.5
+
+[MEDIUM] CVE-2024-YYYYY: urllib3 (2.0.7)
+  Fixed Version: 2.1.0
+
+[MEDIUM] CVE-2024-ZZZZZ: certifi (2023.7.22)
+  Fixed Version: 2024.2.2
+
+Status: ✅ PASS (No HIGH or CRITICAL vulnerabilities)

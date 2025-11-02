@@ -1,0 +1,149 @@
+name: CI - Tests and Coverage
+
+on:
+  push:
+    branches: [ main, develop, 'claude/**' ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          poetry install --with dev
+
+      - name: Run backend tests with coverage
+        env:
+          DB_DSN: postgresql://postgres:postgres@localhost:5432/test_db
+        run: |
+          poetry run pytest tests/backend/ \
+            --cov=. \
+            --cov-report=html:artifacts/ci/coverage-backend \
+            --cov-report=term \
+            --cov-report=xml \
+            --cov-fail-under=60
+
+      - name: Upload backend coverage artifacts
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: backend-coverage
+          path: artifacts/ci/coverage-backend/
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./coverage.xml
+          flags: backend
+          name: backend-coverage
+
+  frontend-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Check if frontend exists
+        id: check-frontend
+        run: |
+          if [ -f "frontend/package.json" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Install dependencies
+        if: steps.check-frontend.outputs.exists == 'true'
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run frontend tests with coverage
+        if: steps.check-frontend.outputs.exists == 'true'
+        working-directory: frontend
+        run: |
+          npm test -- --coverage --coverageDirectory=../artifacts/ci/coverage-frontend
+
+      - name: Upload frontend coverage artifacts
+        if: steps.check-frontend.outputs.exists == 'true'
+        uses: actions/upload-artifact@v3
+        with:
+          name: frontend-coverage
+          path: artifacts/ci/coverage-frontend/
+
+  lint-format:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          poetry install --with dev
+          poetry add --group dev ruff flake8
+
+      - name: Run ruff
+        run: |
+          poetry run ruff check . --output-format=github
+
+      - name: Run black check
+        run: |
+          poetry run black --check .
+
+      - name: Set up Node.js for ESLint
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Run ESLint if frontend exists
+        run: |
+          if [ -f "frontend/package.json" ]; then
+            cd frontend
+            npm ci
+            npm run lint -- --max-warnings=0
+          else
+            echo "No frontend found, skipping ESLint"
+          fi
