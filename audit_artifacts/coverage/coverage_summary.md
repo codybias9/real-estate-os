@@ -12,7 +12,8 @@
 | Discovery Resolver | 100% | 19 | ✅ |
 | Enrichment Hub | 100% | 20 | ✅ |
 | Score Engine | 100% | 10 | ✅ |
-| **TOTAL** | **100%** | **73** | **✅** |
+| API Core | 100% | 20 | ✅ |
+| **TOTAL** | **100%** | **93** | **✅** |
 
 ## Coverage Thresholds
 
