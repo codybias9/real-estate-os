@@ -145,7 +145,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
 
         # Skip rate limiting for health check and docs
-        if request.url.path in ["/health", "/docs", "/redoc", "/openapi.json"]:
+        if request.url.path in ["/health", "/healthz", "/docs", "/redoc", "/openapi.json"]:
             return await call_next(request)
 
         # Extract token and user info
@@ -153,7 +153,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         if not user_info:
             # No authentication - apply global rate limit
-            rate_limit_key = f"rate_limit:anonymous:{request.client.host}:{request.url.path}"
+            client_host = request.client.host if request.client else "unknown"
+            rate_limit_key = f"rate_limit:anonymous:{client_host}:{request.url.path}"
             limit = settings.rate_limit_default_per_minute
         else:
             # Authenticated - apply tenant+user rate limit
