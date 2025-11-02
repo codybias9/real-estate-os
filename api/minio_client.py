@@ -618,6 +618,107 @@ class MinIOClient:
     # ========================================================================
     # Health Check
     # ========================================================================
+    # Method Aliases (for test compatibility)
+    # ========================================================================
+
+    def upload_file(
+        self,
+        bucket_name: str,
+        object_name: str,
+        file_path: str,
+        tenant_id: str,
+        content_type: str = "application/octet-stream"
+    ) -> str:
+        """Alias for put_object_from_path."""
+        return self.put_object_from_path(
+            bucket_name=bucket_name,
+            relative_path=object_name,
+            file_path=file_path,
+            tenant_id=tenant_id,
+            content_type=content_type
+        )
+
+    def upload_bytes(
+        self,
+        bucket_name: str,
+        object_name: str,
+        data: bytes,
+        tenant_id: str,
+        content_type: str = "application/octet-stream"
+    ) -> str:
+        """Alias for put_object."""
+        import io
+        return self.put_object(
+            bucket_name=bucket_name,
+            object_name=object_name,
+            data=io.BytesIO(data),
+            length=len(data),
+            tenant_id=tenant_id,
+            content_type=content_type
+        )
+
+    def download_file(
+        self,
+        bucket_name: str,
+        object_name: str,
+        file_path: str,
+        tenant_id: str
+    ) -> str:
+        """Alias for get_object_to_path."""
+        return self.get_object_to_path(
+            bucket_name=bucket_name,
+            object_name=object_name,
+            file_path=file_path,
+            tenant_id=tenant_id
+        )
+
+    def download_bytes(
+        self,
+        bucket_name: str,
+        object_name: str,
+        tenant_id: str
+    ) -> bytes:
+        """Alias for get_object."""
+        return self.get_object(
+            bucket_name=bucket_name,
+            object_name=object_name,
+            tenant_id=tenant_id
+        )
+
+    def delete_object(
+        self,
+        bucket_name: str,
+        object_name: str,
+        tenant_id: str
+    ) -> None:
+        """Alias for remove_object."""
+        self.remove_object(
+            bucket_name=bucket_name,
+            object_name=object_name,
+            tenant_id=tenant_id
+        )
+
+    def get_presigned_url(
+        self,
+        bucket_name: str,
+        object_name: str,
+        tenant_id: str,
+        expires_seconds: int = 3600
+    ) -> str:
+        """Alias for presigned_get_url."""
+        from datetime import timedelta
+        return self.presigned_get_url(
+            bucket_name=bucket_name,
+            object_name=object_name,
+            tenant_id=tenant_id,
+            expires=timedelta(seconds=expires_seconds)
+        )
+
+    def create_bucket(self, bucket_name: str) -> None:
+        """Alias for ensure_bucket."""
+        self.ensure_bucket(bucket_name=bucket_name)
+
+    # ========================================================================
 
     def health_check(self) -> dict:
         """
