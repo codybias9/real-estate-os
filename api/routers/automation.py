@@ -426,3 +426,300 @@ def get_state_disclaimers(state: str):
         "disclaimers": state_disclaimers,
         "requires_special_handling": state.upper() in disclaimers
     }
+
+# ============================================================================
+# EMAIL DELIVERABILITY & COMPLIANCE
+# ============================================================================
+
+@router.post("/compliance/unsubscribe")
+def record_email_unsubscribe(
+    email: str,
+    reason: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Record email unsubscribe
+
+    Compliance:
+    - CAN-SPAM: Must honor within 10 business days
+    - GDPR: Must honor immediately
+
+    This endpoint should be called:
+    - When user clicks unsubscribe link
+    - When spam complaint received
+    - When hard bounce occurs
+
+    Args:
+        email: Email address to unsubscribe
+        reason: Optional reason for unsubscribe
+
+    Returns:
+        Unsubscribe record confirmation
+    """
+    from api.deliverability import record_unsubscribe
+
+    unsubscribe_id = record_unsubscribe(
+        db=db,
+        email=email,
+        reason=reason,
+        source="user_request"
+    )
+
+    return {
+        "success": True,
+        "unsubscribe_id": unsubscribe_id,
+        "email": email,
+        "message": "Email address has been unsubscribed from all future communications"
+    }
+
+
+@router.get("/compliance/check-unsubscribe/{email}")
+def check_unsubscribe_status(email: str, db: Session = Depends(get_db)):
+    """
+    Check if email is unsubscribed
+
+    Args:
+        email: Email address to check
+
+    Returns:
+        Unsubscribe status
+    """
+    from api.deliverability import is_unsubscribed
+
+    unsubscribed = is_unsubscribed(db, email)
+
+    return {
+        "email": email,
+        "unsubscribed": unsubscribed,
+        "can_send": not unsubscribed
+    }
+
+
+@router.post("/compliance/dnc/add")
+def add_to_do_not_call(
+    phone: str,
+    reason: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Add phone number to Do Not Call list
+
+    Compliance:
+    - TCPA: Must honor DNC requests
+
+    Args:
+        phone: Phone number to add
+        reason: Optional reason
+
+    Returns:
+        DNC record confirmation
+    """
+    from api.deliverability import add_to_dnc_list
+
+    dnc_id = add_to_dnc_list(
+        db=db,
+        phone=phone,
+        reason=reason,
+        source="user_request"
+    )
+
+    return {
+        "success": True,
+        "dnc_id": dnc_id,
+        "phone": phone,
+        "message": "Phone number added to Do Not Call list"
+    }
+
+
+@router.get("/compliance/dnc/check/{phone}")
+def check_dnc_status(phone: str, db: Session = Depends(get_db)):
+    """
+    Check if phone is on Do Not Call list
+
+    Args:
+        phone: Phone number to check
+
+    Returns:
+        DNC status
+    """
+    from api.deliverability import is_on_dnc_list
+
+    on_dnc = is_on_dnc_list(db, phone)
+
+    return {
+        "phone": phone,
+        "on_dnc_list": on_dnc,
+        "can_call": not on_dnc
+    }
+
+
+@router.post("/compliance/consent/record")
+def record_communication_consent(
+    property_id: int,
+    consent_type: str,
+    consented: bool,
+    consent_method: str,
+    consent_text: Optional[str] = None,
+    ip_address: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Record communication consent
+
+    Compliance:
+    - GDPR: Requires explicit consent with audit trail
+    - TCPA: Requires prior express written consent
+
+    Consent Types:
+    - email: Email marketing consent
+    - sms: SMS/text message consent
+    - call: Phone call consent
+    - recording: Call recording consent
+
+    Consent Methods:
+    - web_form: Online form submission
+    - verbal: Verbal consent (call)
+    - written: Written consent (mail/fax)
+    - implied: Implied consent (existing relationship)
+
+    Args:
+        property_id: Property ID
+        consent_type: Type of consent (email, sms, call, recording)
+        consented: Whether consent was given
+        consent_method: How consent was obtained
+        consent_text: Exact text of consent
+        ip_address: IP address of consenter
+
+    Returns:
+        Consent record confirmation
+    """
+    from api.deliverability import record_consent
+
+    consent_id = record_consent(
+        db=db,
+        property_id=property_id,
+        consent_type=consent_type,
+        consented=consented,
+        consent_method=consent_method,
+        consent_text=consent_text,
+        ip_address=ip_address
+    )
+
+    return {
+        "success": True,
+        "consent_id": consent_id,
+        "property_id": property_id,
+        "consent_type": consent_type,
+        "consented": consented,
+        "message": f"{consent_type.title()} consent recorded"
+    }
+
+
+@router.get("/compliance/consent/check/{property_id}/{consent_type}")
+def check_communication_consent(
+    property_id: int,
+    consent_type: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Check consent status for property
+
+    Args:
+        property_id: Property ID
+        consent_type: Type of consent to check
+
+    Returns:
+        Consent status
+    """
+    from api.deliverability import check_consent
+
+    consent = check_consent(db, property_id, consent_type)
+
+    if consent is None:
+        status = "no_record"
+        can_communicate = False
+        message = f"No {consent_type} consent on record"
+    elif consent:
+        status = "consented"
+        can_communicate = True
+        message = f"{consent_type.title()} consent given"
+    else:
+        status = "declined"
+        can_communicate = False
+        message = f"{consent_type.title()} consent declined"
+
+    return {
+        "property_id": property_id,
+        "consent_type": consent_type,
+        "status": status,
+        "can_communicate": can_communicate,
+        "message": message
+    }
+
+
+@router.post("/compliance/validate-send")
+def validate_communication_before_send(
+    property_id: int,
+    communication_type: str,
+    to_address: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Validate compliance before sending communication
+
+    Pre-send validation checks:
+    - Unsubscribe status (email)
+    - DNC status (calls/SMS)
+    - Consent records
+    - Suppression lists
+
+    Args:
+        property_id: Property ID
+        communication_type: Type (email, sms, call)
+        to_address: Recipient (email or phone)
+
+    Returns:
+        Validation result with allow/block decision
+    """
+    from api.deliverability import validate_communication_compliance
+
+    validation = validate_communication_compliance(
+        db=db,
+        property_id=property_id,
+        communication_type=communication_type,
+        to_address=to_address
+    )
+
+    return {
+        "property_id": property_id,
+        "communication_type": communication_type,
+        "to_address": to_address,
+        **validation
+    }
+
+
+@router.post("/deliverability/validate-dns")
+def validate_dns_configuration(
+    domain: str,
+    dkim_selector: str = "default"
+):
+    """
+    Validate DNS configuration for email deliverability
+
+    Checks:
+    - SPF record (Sender Policy Framework)
+    - DKIM record (DomainKeys Identified Mail)
+    - DMARC record (Domain-based Message Authentication)
+
+    Args:
+        domain: Domain to validate (e.g., "real-estate-os.com")
+        dkim_selector: DKIM selector (default: "default")
+
+    Returns:
+        Comprehensive deliverability validation with score
+    """
+    from api.deliverability import validate_email_deliverability
+
+    results = validate_email_deliverability(domain, dkim_selector)
+
+    return results

@@ -1187,6 +1187,102 @@ class FailedTask(Base):
     )
 
 # ============================================================================
+# EMAIL DELIVERABILITY & COMPLIANCE MODELS
+# ============================================================================
+
+class EmailUnsubscribe(Base):
+    """
+    Email unsubscribe list
+
+    Compliance:
+    - CAN-SPAM: Must honor within 10 business days
+    - GDPR: Must honor immediately
+    - Permanent suppression
+
+    Use Cases:
+    - User unsubscribe requests
+    - Spam complaints
+    - Hard bounces
+    """
+    __tablename__ = "email_unsubscribes"
+
+    id = Column(Integer, primary_key=True)
+    email = Column(String(255), nullable=False, unique=True, index=True)
+    unsubscribed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    reason = Column(Text)
+    source = Column(String(50), nullable=False, default="user_request")  # user_request, complaint, bounce
+
+    __table_args__ = (
+        Index('idx_unsubscribe_email', 'email'),
+    )
+
+
+class DoNotCall(Base):
+    """
+    Do Not Call (DNC) list
+
+    Compliance:
+    - TCPA: Must honor DNC requests
+    - Permanent suppression for calls/SMS
+
+    Use Cases:
+    - User DNC requests
+    - Regulatory DNC lists
+    - Litigation protection
+    """
+    __tablename__ = "do_not_call"
+
+    id = Column(Integer, primary_key=True)
+    phone = Column(String(20), nullable=False, unique=True, index=True)  # Normalized (digits only)
+    added_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    reason = Column(Text)
+    source = Column(String(50), nullable=False, default="user_request")
+
+    __table_args__ = (
+        Index('idx_dnc_phone', 'phone'),
+    )
+
+
+class CommunicationConsent(Base):
+    """
+    Communication consent tracking
+
+    Compliance:
+    - GDPR: Requires explicit consent with audit trail
+    - TCPA: Requires prior express written consent for calls/SMS
+    - Full audit trail for litigation defense
+
+    Consent Types:
+    - email: Email marketing consent
+    - sms: SMS/text message consent
+    - call: Phone call consent
+    - recording: Call recording consent
+    """
+    __tablename__ = "communication_consents"
+
+    id = Column(Integer, primary_key=True)
+    property_id = Column(Integer, ForeignKey("properties.id", ondelete="CASCADE"), nullable=False)
+
+    # Consent details
+    consent_type = Column(String(50), nullable=False)  # email, sms, call, recording
+    consented = Column(Boolean, nullable=False)  # True = consent given, False = declined
+
+    # Audit trail
+    consent_method = Column(String(50), nullable=False)  # web_form, verbal, written, implied
+    consent_text = Column(Text)  # Exact text of consent
+    ip_address = Column(String(45))  # IPv4 or IPv6
+    recorded_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    property = relationship("Property", backref="consents")
+
+    __table_args__ = (
+        Index('idx_consent_property', 'property_id'),
+        Index('idx_consent_type', 'consent_type'),
+        Index('idx_consent_recorded', 'recorded_at'),
+    )
+
+# ============================================================================
 # LEGACY MODEL (keep for compatibility)
 # ============================================================================
 

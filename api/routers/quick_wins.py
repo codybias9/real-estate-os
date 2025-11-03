@@ -158,10 +158,62 @@ Best regards
 """
 
     # ========================================================================
-    # STEP 3: Send Email via SendGrid
+    # STEP 3: Validate Compliance Before Sending
     # ========================================================================
     to_email = property.owner_mailing_address or "owner@example.com"
 
+    # Check compliance (unsubscribe, consent, suppression)
+    from api.deliverability import validate_communication_compliance
+
+    compliance_check = validate_communication_compliance(
+        db=db,
+        property_id=property.id,
+        communication_type="email",
+        to_address=to_email
+    )
+
+    if not compliance_check["allowed"]:
+        # Compliance violation - do not send
+        import logging
+        logging.error(
+            f"Compliance violation prevents email to {to_email}: {compliance_check['reasons']}",
+            extra={
+                "property_id": property.id,
+                "reasons": compliance_check["reasons"]
+            }
+        )
+
+        # Return error response (store in idempotency for replay consistency)
+        error_response = {
+            "success": False,
+            "property_id": property.id,
+            "memo_url": memo_url,
+            "error": "Compliance violation prevents sending",
+            "reasons": compliance_check["reasons"]
+        }
+        idempotency.store_response(400, error_response, request.dict())
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "message": "Cannot send email due to compliance violation",
+                "reasons": compliance_check["reasons"]
+            }
+        )
+
+    # Log warnings if present (no consent on record)
+    if compliance_check["warnings"]:
+        import logging
+        logging.warning(
+            f"Compliance warnings for {to_email}: {compliance_check['warnings']}",
+            extra={
+                "property_id": property.id,
+                "warnings": compliance_check["warnings"]
+            }
+        )
+
+    # ========================================================================
+    # STEP 4: Send Email via SendGrid
+    # ========================================================================
     try:
         send_result = send_email(
             to_email=to_email,

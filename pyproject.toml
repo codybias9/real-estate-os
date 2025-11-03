@@ -54,6 +54,7 @@ sentry-sdk = {extras = ["fastapi"], version = "^1.44.1"}
 # Utilities
 python-dateutil = "^2.9.0"
 boto3 = "^1.39.3"
+dnspython = "^2.4.2"  # DNS validation for SPF/DKIM/DMARC
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
