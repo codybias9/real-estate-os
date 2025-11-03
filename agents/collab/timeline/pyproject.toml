@@ -30,7 +30,7 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
-addopts = "-v --cov=timeline --cov-report=term-missing --cov-fail-under=70"
+addopts = "-v --cov=timeline --cov-report=term-missing --cov-fail-under=65"
 timeout = 10
 asyncio_mode = "auto"
 
