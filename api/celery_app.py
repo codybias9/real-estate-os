@@ -73,6 +73,46 @@ celery_app.conf.update(
         }
     },
 
+    # RabbitMQ queue configuration with Dead Letter Exchange (DLX)
+    task_queues={
+        "memos": {
+            "exchange": "default",
+            "routing_key": "memos",
+            "queue_arguments": {
+                "x-dead-letter-exchange": "dlx",
+                "x-dead-letter-routing-key": "dlq.memos",
+                "x-message-ttl": 86400000,  # 24 hours
+            }
+        },
+        "enrichment": {
+            "exchange": "default",
+            "routing_key": "enrichment",
+            "queue_arguments": {
+                "x-dead-letter-exchange": "dlx",
+                "x-dead-letter-routing-key": "dlq.enrichment",
+                "x-message-ttl": 86400000,
+            }
+        },
+        "emails": {
+            "exchange": "default",
+            "routing_key": "emails",
+            "queue_arguments": {
+                "x-dead-letter-exchange": "dlx",
+                "x-dead-letter-routing-key": "dlq.emails",
+                "x-message-ttl": 86400000,
+            }
+        },
+        "maintenance": {
+            "exchange": "default",
+            "routing_key": "maintenance",
+            "queue_arguments": {
+                "x-dead-letter-exchange": "dlx",
+                "x-dead-letter-routing-key": "dlq.maintenance",
+                "x-message-ttl": 86400000,
+            }
+        },
+    },
+
     # Beat schedule (periodic tasks)
     beat_schedule={
         # Update deliverability metrics daily
@@ -103,49 +143,31 @@ celery_app.conf.update(
         "process-email-sequences": {
             "task": "api.tasks.email_tasks.process_scheduled_sequences",
             "schedule": crontab(minute="*/15"),  # Every 15 minutes
+        },
+
+        # Check DLQ alerts every 5 minutes
+        "check-dlq-alerts": {
+            "task": "api.tasks.maintenance_tasks.check_dlq_alerts",
+            "schedule": crontab(minute="*/5"),  # Every 5 minutes
+        },
+
+        # Clean up expired idempotency keys daily
+        "cleanup-idempotency-keys": {
+            "task": "api.tasks.maintenance_tasks.cleanup_idempotency_keys",
+            "schedule": crontab(hour=4, minute=0),  # 4:00 AM daily
         }
     }
 )
 
 # ============================================================================
-# TASK BASE CLASSES
+# TASK BASE CLASSES WITH DLQ SUPPORT
 # ============================================================================
 
-class BaseTask(celery_app.Task):
-    """
-    Base task class with common functionality
-    """
+# Import DLQ task base class
+from api.dlq import DLQTask
 
-    def on_failure(self, exc, task_id, args, kwargs, einfo):
-        """
-        Handle task failure - log to database and send alerts
-        """
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.error(f"Task {self.name} failed: {exc}", exc_info=einfo)
-
-        # TODO: Send alert to Sentry or monitoring system
-        # TODO: Record failure in database
-
-    def on_retry(self, exc, task_id, args, kwargs, einfo):
-        """
-        Handle task retry
-        """
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.warning(f"Task {self.name} retrying: {exc}")
-
-    def on_success(self, retval, task_id, args, kwargs):
-        """
-        Handle task success
-        """
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.info(f"Task {self.name} completed successfully")
-
-
-# Set default base class for all tasks
-celery_app.Task = BaseTask
+# Set default base class for all tasks (includes automatic DLQ recording)
+celery_app.Task = DLQTask
 
 # ============================================================================
 # UTILITIES

@@ -1078,6 +1078,62 @@ class IdempotencyKey(Base):
     )
 
 # ============================================================================
+# DEAD LETTER QUEUE (DLQ) MODELS
+# ============================================================================
+
+class FailedTask(Base):
+    """
+    Failed Celery tasks for Dead Letter Queue (DLQ) management
+
+    Tracks tasks that failed after exhausting retries, allowing:
+    - Admin inspection of failures
+    - Manual replay with idempotency
+    - Monitoring and alerting
+    - Failure analytics
+
+    Lifecycle:
+    1. Task fails → recorded with status="failed"
+    2. Admin replays → status="replaying"
+    3. Replay succeeds → status="replayed"
+    4. Manual archive → status="archived"
+    """
+    __tablename__ = "failed_tasks"
+
+    id = Column(Integer, primary_key=True)
+
+    # Task identification
+    task_id = Column(String(255), nullable=False, unique=True)  # Original Celery task ID
+    task_name = Column(String(255), nullable=False)  # e.g., "api.tasks.memo_tasks.generate_memo_async"
+    queue_name = Column(String(100), nullable=False, default="default")
+
+    # Task arguments (for replay)
+    args = Column(JSONB, default=[])
+    kwargs = Column(JSONB, default={})
+
+    # Failure details
+    exception_type = Column(String(255))
+    exception_message = Column(Text)
+    traceback = Column(Text)
+    retries_attempted = Column(Integer, default=0)
+
+    # Timestamps
+    failed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    replayed_at = Column(DateTime)
+
+    # Replay tracking
+    status = Column(String(50), nullable=False, default="failed")  # failed, replaying, replayed, archived
+    replayed_task_id = Column(String(255))  # New task ID if replayed
+    replay_count = Column(Integer, default=0)
+
+    # Indexes
+    __table_args__ = (
+        Index('idx_failedtask_status', 'status'),
+        Index('idx_failedtask_queue', 'queue_name'),
+        Index('idx_failedtask_task_name', 'task_name'),
+        Index('idx_failedtask_failed_at', 'failed_at'),
+    )
+
+# ============================================================================
 # LEGACY MODEL (keep for compatibility)
 # ============================================================================
 

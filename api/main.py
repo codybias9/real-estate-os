@@ -23,7 +23,8 @@ from api.routers import (
     open_data,
     webhooks,
     jobs,
-    sse_events
+    sse_events,
+    admin
 )
 
 # Create FastAPI app
@@ -260,6 +261,9 @@ app.include_router(jobs.router, prefix="/api/v1")
 
 # Server-Sent Events (Real-time updates)
 app.include_router(sse_events.router, prefix="/api/v1")
+
+# Admin & System Management (DLQ, Monitoring, Health)
+app.include_router(admin.router, prefix="/api/v1")
 
 # ============================================================================
 # STARTUP / SHUTDOWN EVENTS

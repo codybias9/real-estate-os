@@ -370,3 +370,86 @@ def archive_old_properties(self, days_inactive: int = 180) -> Dict[str, Any]:
         logger.info(f"Archived {len(inactive_properties)} inactive properties")
 
         return results
+
+
+# ============================================================================
+# DLQ MONITORING
+# ============================================================================
+
+@celery_app.task(bind=True, name="api.tasks.maintenance_tasks.check_dlq_alerts")
+def check_dlq_alerts(self) -> Dict[str, Any]:
+    """
+    Check DLQ for failed tasks and send alerts
+
+    Runs every 5 minutes via Celery Beat
+
+    Alert conditions:
+    - DLQ depth > 0 for > 5 minutes
+    - Alert clears when DLQ is empty or all tasks replayed
+
+    Returns:
+        Dict with alert status
+    """
+    logger.info("Checking DLQ alerts")
+
+    with next(get_db_session()) as db:
+        from api.dlq import check_dlq_alerts as check_dlq
+
+        alert = check_dlq(db)
+
+        if alert:
+            # Alert should fire
+            logger.warning(
+                f"DLQ ALERT: {alert['message']}",
+                extra={
+                    "total_failed": alert["total_failed"],
+                    "oldest_failure": alert["oldest_failure"],
+                    "time_since_oldest_minutes": alert["time_since_oldest_minutes"],
+                    "by_queue": alert["by_queue"]
+                }
+            )
+
+            # TODO: Send alert to monitoring system
+            # - Post to Slack/Discord
+            # - Create PagerDuty incident
+            # - Email admins
+            # - Grafana alert annotation
+
+            return {
+                "alert_triggered": True,
+                "alert_data": alert
+            }
+        else:
+            logger.debug("DLQ is healthy - no alerts")
+
+            return {
+                "alert_triggered": False,
+                "message": "DLQ is healthy"
+            }
+
+
+@celery_app.task(bind=True, name="api.tasks.maintenance_tasks.cleanup_idempotency_keys")
+def cleanup_idempotency_keys(self) -> Dict[str, Any]:
+    """
+    Clean up expired idempotency keys
+
+    Runs daily at 4:00 AM via Celery Beat
+
+    Removes idempotency keys that have exceeded their TTL (24 hours default)
+
+    Returns:
+        Dict with cleanup results
+    """
+    logger.info("Cleaning up expired idempotency keys")
+
+    with next(get_db_session()) as db:
+        from api.idempotency import cleanup_expired_idempotency_keys
+
+        deleted_count = cleanup_expired_idempotency_keys(db)
+
+        logger.info(f"Cleaned up {deleted_count} expired idempotency keys")
+
+        return {
+            "deleted_count": deleted_count,
+            "timestamp": datetime.utcnow().isoformat()
+        }
