@@ -1016,6 +1016,68 @@ class OpenDataSource(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 # ============================================================================
+# IDEMPOTENCY
+# ============================================================================
+
+class IdempotencyKey(Base):
+    """
+    Idempotency keys for preventing duplicate operations
+
+    Prevents duplicate side-effects from:
+    - User double-clicks
+    - Network retries
+    - Webhook replays
+    - API client retries
+
+    Key features:
+    - Unique constraint on (key, endpoint)
+    - Response caching for consistent replay
+    - Automatic expiration (TTL)
+    - Scoped to user/team
+
+    Usage:
+        POST /api/v1/properties
+        Idempotency-Key: unique-client-generated-key-123
+
+        If same key used again:
+        - Within TTL: Returns cached response (409 if processing, 200 if complete)
+        - After TTL: Treated as new request
+    """
+    __tablename__ = "idempotency_keys"
+
+    id = Column(Integer, primary_key=True)
+
+    # Idempotency key (client-provided or server-generated)
+    idempotency_key = Column(String(255), nullable=False, index=True)
+
+    # Endpoint that was called
+    endpoint = Column(String(255), nullable=False)
+    request_method = Column(String(10), nullable=False)  # POST, PUT, PATCH, DELETE
+
+    # Request details (for debugging)
+    request_params = Column(JSONB)
+
+    # Cached response
+    response_status = Column(Integer)  # HTTP status code
+    response_body = Column(JSONB)      # Response JSON
+
+    # Ownership
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"))
+    team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"))
+
+    # Timestamps
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    expires_at = Column(DateTime, nullable=False)  # TTL for cleanup
+
+    # Unique constraint: same key + endpoint = idempotent
+    __table_args__ = (
+        UniqueConstraint('idempotency_key', 'endpoint', name='uq_idempotency_key_endpoint'),
+        Index('idx_idempotency_user_id', 'user_id'),
+        Index('idx_idempotency_team_id', 'team_id'),
+        Index('idx_idempotency_expires_at', 'expires_at'),
+    )
+
+# ============================================================================
 # LEGACY MODEL (keep for compatibility)
 # ============================================================================
 

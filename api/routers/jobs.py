@@ -1,8 +1,13 @@
 """
 Background Jobs Router
 Endpoints for queuing and checking async tasks
+
+IDEMPOTENCY:
+All job-queuing endpoints use idempotency keys to prevent duplicate task submission.
+Client should provide Idempotency-Key header or one will be auto-generated.
 """
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel
@@ -20,6 +25,7 @@ from api.tasks import (
     send_email_async,
     send_bulk_emails
 )
+from api.idempotency import get_idempotency_handler, IdempotencyHandler
 
 router = APIRouter(prefix="/jobs", tags=["Background Jobs"])
 
@@ -89,33 +95,54 @@ class JobStatusResponse(BaseModel):
 
 @router.post("/memo/generate", response_model=JobResponse)
 def queue_memo_generation(
-    request: GenerateMemoJobRequest,
+    memo_request: GenerateMemoJobRequest,
+    http_request: Request,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
+    idempotency: IdempotencyHandler = Depends(get_idempotency_handler)
 ):
     """
     Queue memo generation as background job
 
     Returns immediately with job ID
     Poll /jobs/{job_id}/status to check progress
+
+    Idempotency:
+    - Provide Idempotency-Key header to prevent duplicate submissions
+    - Same key within 24 hours returns the same job_id (cached response)
+    - Prevents duplicate memo generation from double-clicks or retries
     """
+    # Check for existing idempotent request
+    existing = idempotency.check_existing()
+    if existing:
+        return JSONResponse(
+            content=existing["body"],
+            status_code=existing["status_code"],
+            headers={"X-Idempotency-Cached": "true"}
+        )
+
     # Verify property exists and user has access
-    property = db.query(Property).filter(Property.id == request.property_id).first()
+    property = db.query(Property).filter(Property.id == memo_request.property_id).first()
     if not property:
         raise HTTPException(status_code=404, detail="Property not found")
 
     if property.team_id != current_user.team_id:
         raise HTTPException(status_code=403, detail="Access denied")
 
-    # Queue task
-    task = generate_memo_async.delay(request.property_id, request.template)
+    # Queue task (only once due to idempotency)
+    task = generate_memo_async.delay(memo_request.property_id, memo_request.template)
 
-    return {
+    response = {
         "success": True,
         "job_id": task.id,
         "status": "queued",
-        "message": f"Memo generation queued for property {request.property_id}"
+        "message": f"Memo generation queued for property {memo_request.property_id}"
     }
+
+    # Store response for idempotency
+    idempotency.store_response(200, response, memo_request.dict())
+
+    return response
 
 
 @router.post("/memo/batch", response_model=JobResponse)
