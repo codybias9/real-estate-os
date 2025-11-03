@@ -10,9 +10,9 @@ from fastapi.responses import RedirectResponse
 
 # Add services to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../services/security/src"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../services/observability/src"))
 
 from api.v1 import router as v1_router
-from api.metrics import metrics_endpoint
 
 # Import security middleware
 from security import (
@@ -20,6 +20,16 @@ from security import (
     SecurityHeadersMiddleware,
     RequestIDMiddleware,
     get_rate_limiter,
+)
+
+# Import observability
+from observability import (
+    configure_logging,
+    get_logger,
+    LoggingMiddleware,
+    MetricsMiddleware,
+    setup_error_handlers,
+    get_metrics,
 )
 
 # FastAPI app with OpenAPI documentation
@@ -78,6 +88,10 @@ app = FastAPI(
     ],
 )
 
+# Configure logging
+configure_logging(level="INFO", json_logs=False)
+logger = get_logger(__name__)
+
 # Configure CORS for frontend
 configure_cors(app)
 
@@ -87,10 +101,21 @@ app.add_middleware(SecurityHeadersMiddleware)
 # Add request ID tracking middleware
 app.add_middleware(RequestIDMiddleware)
 
+# Add logging middleware
+app.add_middleware(LoggingMiddleware)
+
+# Add metrics middleware
+app.add_middleware(MetricsMiddleware)
+
 # Configure rate limiting
 rate_limiter = get_rate_limiter()
 app.state.limiter = rate_limiter.get_limiter()
 rate_limiter.add_exception_handler(app)
+
+# Set up error handlers
+setup_error_handlers(app)
+
+logger.info("application_started", message="Real Estate OS API initialized")
 
 
 # Root redirect to docs
@@ -113,4 +138,7 @@ def metrics():
     Returns metrics in Prometheus exposition format.
     Not included in OpenAPI docs as it's for monitoring systems.
     """
-    return metrics_endpoint()
+    from fastapi.responses import Response
+
+    metrics_data = get_metrics()
+    return Response(content=metrics_data, media_type="text/plain")
