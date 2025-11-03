@@ -2,9 +2,9 @@
 Authentication Router
 Login, Register, Password Reset, User Profile
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
-from datetime import timedelta
+from datetime import timedelta, datetime
 from typing import Optional
 
 from api.database import get_db
@@ -103,7 +103,7 @@ def register(request: schemas.RegisterRequest, db: Session = Depends(get_db)):
 # ============================================================================
 
 @router.post("/login", response_model=schemas.AuthResponse)
-def login(request: schemas.LoginRequest, db: Session = Depends(get_db)):
+def login(request: schemas.LoginRequest, http_request: Request, db: Session = Depends(get_db)):
     """
     Authenticate user and return JWT token
 
@@ -113,15 +113,61 @@ def login(request: schemas.LoginRequest, db: Session = Depends(get_db)):
 
     Token should be included in subsequent requests:
         Authorization: Bearer <token>
+
+    Security:
+    - Rate limited: 5 attempts per minute
+    - Login lockout: 5 failed attempts = 15 minute lockout
+    - Progressive backoff: 15min → 30min → 1hr → 4hr
+    - Generic error message (no user enumeration)
     """
+    from api.rate_limit import (
+        is_locked_out,
+        record_failed_login,
+        record_successful_login,
+        get_remaining_attempts
+    )
+
+    # Use email as identifier for lockout tracking
+    identifier = request.email.lower()
+
+    # Check if account is locked out
+    locked, unlock_in = is_locked_out(identifier)
+    if locked:
+        remaining_minutes = (unlock_in // 60) + 1
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail=f"Too many failed login attempts. Account locked for {remaining_minutes} minutes.",
+            headers={"Retry-After": str(unlock_in)}
+        )
+
+    # Attempt authentication
     user = authenticate_user(db, request.email, request.password)
 
     if not user:
+        # Record failed attempt
+        record_failed_login(identifier)
+
+        # Get remaining attempts
+        remaining = get_remaining_attempts(identifier)
+
+        # Generic error message (prevent user enumeration)
+        detail = "Incorrect email or password"
+        if remaining > 0 and remaining <= 3:
+            # Only show remaining attempts when getting close to lockout
+            detail += f". {remaining} attempts remaining before account lockout."
+
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
+            detail=detail,
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    # Successful login - clear failed attempts
+    record_successful_login(identifier)
+
+    # Update last login timestamp
+    user.last_login = datetime.utcnow()
+    db.commit()
 
     # Create access token
     access_token = create_access_token(

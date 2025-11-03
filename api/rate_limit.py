@@ -386,3 +386,206 @@ def get_current_rate_limit_status(identifier: str) -> dict:
         }
 
     return status
+
+
+# ============================================================================
+# LOGIN LOCKOUT & AUTHENTICATION SECURITY
+# ============================================================================
+
+# Lockout configuration
+MAX_LOGIN_ATTEMPTS = 5  # Lock after 5 failed attempts
+LOCKOUT_DURATION_MINUTES = 15  # Lock for 15 minutes
+PROGRESSIVE_BACKOFF = True  # Increase lockout duration with repeated failures
+
+
+def get_login_attempts_key(identifier: str) -> str:
+    """Get Redis key for login attempts counter"""
+    return f"auth:login_attempts:{identifier}"
+
+
+def get_lockout_key(identifier: str) -> str:
+    """Get Redis key for lockout status"""
+    return f"auth:lockout:{identifier}"
+
+
+def get_lockout_count_key(identifier: str) -> str:
+    """Get Redis key for total lockout count (for progressive backoff)"""
+    return f"auth:lockout_count:{identifier}"
+
+
+def is_locked_out(identifier: str) -> tuple[bool, Optional[int]]:
+    """
+    Check if identifier is currently locked out
+
+    Args:
+        identifier: Email or IP address
+
+    Returns:
+        Tuple of (is_locked, seconds_until_unlock)
+    """
+    if not redis_client:
+        return False, None
+
+    lockout_key = get_lockout_key(identifier)
+    ttl = redis_client.ttl(lockout_key)
+
+    if ttl > 0:
+        return True, ttl
+
+    return False, None
+
+
+def record_failed_login(identifier: str):
+    """
+    Record a failed login attempt
+
+    Implements progressive backoff:
+    - First lockout: 15 minutes
+    - Second lockout: 30 minutes
+    - Third lockout: 1 hour
+    - Fourth+ lockout: 4 hours
+
+    Args:
+        identifier: Email or IP address
+    """
+    if not redis_client:
+        return
+
+    attempts_key = get_login_attempts_key(identifier)
+    lockout_key = get_lockout_key(identifier)
+    lockout_count_key = get_lockout_count_key(identifier)
+
+    # Increment failed attempts counter
+    attempts = redis_client.incr(attempts_key)
+
+    # Set expiry on attempts counter (reset after 15 minutes)
+    if attempts == 1:
+        redis_client.expire(attempts_key, 15 * 60)
+
+    # Check if we should lock out
+    if attempts >= MAX_LOGIN_ATTEMPTS:
+        # Get total lockout count for progressive backoff
+        lockout_count = int(redis_client.get(lockout_count_key) or 0)
+
+        # Calculate lockout duration
+        if PROGRESSIVE_BACKOFF:
+            # Progressive backoff: 15min, 30min, 1hr, 4hr
+            durations = [15, 30, 60, 240]  # minutes
+            duration_minutes = durations[min(lockout_count, len(durations) - 1)]
+        else:
+            duration_minutes = LOCKOUT_DURATION_MINUTES
+
+        # Set lockout
+        redis_client.setex(lockout_key, duration_minutes * 60, "locked")
+
+        # Increment lockout count (expires after 24 hours)
+        redis_client.incr(lockout_count_key)
+        redis_client.expire(lockout_count_key, 24 * 60 * 60)
+
+        # Clear attempts counter (will start fresh after lockout)
+        redis_client.delete(attempts_key)
+
+        logger.warning(
+            f"Account locked out: {identifier}",
+            extra={
+                "identifier": identifier,
+                "attempts": attempts,
+                "lockout_duration_minutes": duration_minutes,
+                "lockout_number": lockout_count + 1
+            }
+        )
+
+
+def record_successful_login(identifier: str):
+    """
+    Record a successful login
+
+    Clears failed attempts counter but preserves lockout history
+    (for progressive backoff)
+
+    Args:
+        identifier: Email or IP address
+    """
+    if not redis_client:
+        return
+
+    attempts_key = get_login_attempts_key(identifier)
+
+    # Clear failed attempts
+    redis_client.delete(attempts_key)
+
+    logger.info(f"Successful login: {identifier}")
+
+
+def get_remaining_attempts(identifier: str) -> int:
+    """
+    Get remaining login attempts before lockout
+
+    Args:
+        identifier: Email or IP address
+
+    Returns:
+        Number of remaining attempts (0 if locked out)
+    """
+    if not redis_client:
+        return MAX_LOGIN_ATTEMPTS
+
+    # Check if locked out
+    locked, _ = is_locked_out(identifier)
+    if locked:
+        return 0
+
+    # Get current attempts
+    attempts_key = get_login_attempts_key(identifier)
+    attempts = int(redis_client.get(attempts_key) or 0)
+
+    return max(0, MAX_LOGIN_ATTEMPTS - attempts)
+
+
+def reset_lockout(identifier: str):
+    """
+    Reset lockout for an identifier (admin action)
+
+    Args:
+        identifier: Email or IP address
+    """
+    if not redis_client:
+        return
+
+    attempts_key = get_login_attempts_key(identifier)
+    lockout_key = get_lockout_key(identifier)
+    lockout_count_key = get_lockout_count_key(identifier)
+
+    redis_client.delete(attempts_key)
+    redis_client.delete(lockout_key)
+    redis_client.delete(lockout_count_key)
+
+    logger.info(f"Lockout reset for {identifier}")
+
+
+def get_lockout_status(identifier: str) -> dict:
+    """
+    Get detailed lockout status
+
+    Args:
+        identifier: Email or IP address
+
+    Returns:
+        Dict with lockout status details
+    """
+    if not redis_client:
+        return {"enabled": False}
+
+    locked, ttl = is_locked_out(identifier)
+    attempts = int(redis_client.get(get_login_attempts_key(identifier)) or 0)
+    lockout_count = int(redis_client.get(get_lockout_count_key(identifier)) or 0)
+
+    return {
+        "enabled": True,
+        "locked_out": locked,
+        "unlock_in_seconds": ttl if locked else 0,
+        "failed_attempts": attempts,
+        "remaining_attempts": get_remaining_attempts(identifier),
+        "total_lockouts_today": lockout_count,
+        "max_attempts": MAX_LOGIN_ATTEMPTS
+    }
