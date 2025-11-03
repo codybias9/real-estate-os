@@ -155,6 +155,12 @@ celery_app.conf.update(
         "cleanup-idempotency-keys": {
             "task": "api.tasks.maintenance_tasks.cleanup_idempotency_keys",
             "schedule": crontab(hour=4, minute=0),  # 4:00 AM daily
+        },
+
+        # Run portfolio reconciliation nightly
+        "portfolio-reconciliation": {
+            "task": "api.tasks.maintenance_tasks.run_portfolio_reconciliation",
+            "schedule": crontab(hour=1, minute=0),  # 1:00 AM daily
         }
     }
 )

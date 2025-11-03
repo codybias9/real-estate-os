@@ -487,3 +487,164 @@ def cleanup_expired_idempotency_keys(
         "deleted_count": deleted,
         "message": f"Cleaned up {deleted} expired idempotency keys"
     }
+
+
+# ============================================================================
+# PORTFOLIO RECONCILIATION
+# ============================================================================
+
+@router.post("/reconciliation/run")
+def run_manual_reconciliation(
+    team_id: Optional[int] = Query(None, description="Optional team filter"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    """
+    Run manual portfolio reconciliation
+
+    Validates database integrity against CSV truth data.
+
+    Query Parameters:
+        - team_id: Optional team filter (null = global reconciliation)
+
+    Alert Conditions:
+        - Any metric drift > ±0.5%
+        - Alert fires when threshold exceeded
+
+    Returns:
+        Reconciliation results with metric-by-metric comparison
+
+    Security:
+        - Requires ADMIN role
+
+    Use Cases:
+        - Post-migration validation
+        - On-demand integrity check
+        - Debugging data issues
+    """
+    from api.reconciliation import (
+        run_reconciliation,
+        store_reconciliation_result,
+        send_reconciliation_alert
+    )
+
+    try:
+        # Run reconciliation
+        results = run_reconciliation(db, team_id=team_id)
+
+        # Store results
+        record_id = store_reconciliation_result(db, results, team_id=team_id)
+
+        # Send alert if threshold exceeded
+        if results["alert"]:
+            send_reconciliation_alert(results)
+
+        return {
+            "success": True,
+            "record_id": record_id,
+            "timestamp": results["timestamp"],
+            "summary": {
+                "total_metrics": results["total_metrics"],
+                "passing_metrics": results["passing_metrics"],
+                "failing_metrics": results["failing_metrics"],
+                "max_drift": results["max_drift_formatted"],
+                "alert_triggered": results["alert"]
+            },
+            "metrics": results["metrics"]
+        }
+
+    except FileNotFoundError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Truth data CSV not found: {str(e)}"
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Reconciliation failed: {str(e)}"
+        )
+
+
+@router.get("/reconciliation/history")
+def get_reconciliation_history_endpoint(
+    team_id: Optional[int] = Query(None, description="Optional team filter"),
+    limit: int = Query(30, ge=1, le=365, description="Max results (days)"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    """
+    Get reconciliation history
+
+    Shows past reconciliation runs with pass/fail status.
+
+    Query Parameters:
+        - team_id: Optional team filter
+        - limit: Max results (default 30 days, max 365)
+
+    Returns:
+        List of reconciliation runs ordered by date (most recent first)
+
+    Security:
+        - Requires ADMIN role
+    """
+    from api.reconciliation import get_reconciliation_history
+
+    history = get_reconciliation_history(db, team_id=team_id, limit=limit)
+
+    return {
+        "count": len(history),
+        "history": history
+    }
+
+
+@router.get("/reconciliation/latest")
+def get_latest_reconciliation(
+    team_id: Optional[int] = Query(None, description="Optional team filter"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_admin)
+):
+    """
+    Get latest reconciliation result
+
+    Returns most recent reconciliation run with full details.
+
+    Query Parameters:
+        - team_id: Optional team filter
+
+    Returns:
+        Latest reconciliation result or 404 if none exist
+
+    Security:
+        - Requires ADMIN role
+    """
+    from db.models import ReconciliationHistory
+
+    query = db.query(ReconciliationHistory)
+
+    if team_id:
+        query = query.filter(ReconciliationHistory.team_id == team_id)
+
+    latest = query.order_by(
+        ReconciliationHistory.reconciliation_date.desc()
+    ).first()
+
+    if not latest:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="No reconciliation history found"
+        )
+
+    return {
+        "id": latest.id,
+        "reconciliation_date": latest.reconciliation_date.isoformat(),
+        "summary": {
+            "total_metrics": latest.total_metrics,
+            "passing_metrics": latest.passing_metrics,
+            "failing_metrics": latest.failing_metrics,
+            "max_drift": f"{latest.max_drift_percentage * 100:.4f}%",
+            "alert_triggered": latest.alert_triggered
+        },
+        "results": latest.results_json,
+        "created_at": latest.created_at.isoformat()
+    }

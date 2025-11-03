@@ -1078,6 +1078,59 @@ class IdempotencyKey(Base):
     )
 
 # ============================================================================
+# PORTFOLIO RECONCILIATION MODELS
+# ============================================================================
+
+class ReconciliationHistory(Base):
+    """
+    Portfolio reconciliation audit trail
+
+    Tracks nightly reconciliation runs comparing database metrics
+    against CSV truth data.
+
+    Alert Conditions:
+    - Any metric drift > 0.5%
+    - Alert fires when alert_triggered = True
+
+    Use Cases:
+    - Data integrity verification
+    - Detect migration errors
+    - Audit compliance
+    - Financial accuracy
+    """
+    __tablename__ = "reconciliation_history"
+
+    id = Column(Integer, primary_key=True)
+
+    # Optional team filter
+    team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"))
+
+    # Reconciliation date
+    reconciliation_date = Column(DateTime, nullable=False)
+
+    # Summary metrics
+    total_metrics = Column(Integer, nullable=False, default=0)
+    passing_metrics = Column(Integer, nullable=False, default=0)
+    failing_metrics = Column(Integer, nullable=False, default=0)
+    max_drift_percentage = Column(Float, nullable=False, default=0.0)
+
+    # Alert status
+    alert_triggered = Column(Boolean, nullable=False, default=False)
+
+    # Full results JSON
+    results_json = Column(JSONB)
+
+    # Timestamp
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Indexes
+    __table_args__ = (
+        Index('idx_reconciliation_team', 'team_id'),
+        Index('idx_reconciliation_date', 'reconciliation_date'),
+        Index('idx_reconciliation_alert', 'alert_triggered'),
+    )
+
+# ============================================================================
 # DEAD LETTER QUEUE (DLQ) MODELS
 # ============================================================================
 

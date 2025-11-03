@@ -453,3 +453,95 @@ def cleanup_idempotency_keys(self) -> Dict[str, Any]:
             "deleted_count": deleted_count,
             "timestamp": datetime.utcnow().isoformat()
         }
+
+
+# ============================================================================
+# PORTFOLIO RECONCILIATION
+# ============================================================================
+
+@celery_app.task(bind=True, name="api.tasks.maintenance_tasks.run_portfolio_reconciliation")
+def run_portfolio_reconciliation(self) -> Dict[str, Any]:
+    """
+    Run nightly portfolio reconciliation
+
+    Runs daily at 1:00 AM via Celery Beat
+
+    Compares database metrics against CSV truth data:
+    - Property counts by stage
+    - Total assessed/market values
+    - Deal counts and values
+    - Budget tracking totals
+
+    Alert Conditions:
+    - Any metric drift > ±0.5%
+    - Alert fires immediately
+    - Stored in reconciliation_history table
+
+    Returns:
+        Dict with reconciliation results
+    """
+    logger.info("Starting nightly portfolio reconciliation")
+
+    with next(get_db_session()) as db:
+        from api.reconciliation import (
+            run_reconciliation,
+            store_reconciliation_result,
+            send_reconciliation_alert
+        )
+
+        try:
+            # Run reconciliation (no team filter for global reconciliation)
+            results = run_reconciliation(db, team_id=None)
+
+            # Store results in database
+            record_id = store_reconciliation_result(db, results, team_id=None)
+
+            # Send alert if threshold exceeded
+            if results["alert"]:
+                logger.warning(
+                    "RECONCILIATION ALERT: Drift threshold exceeded",
+                    extra={
+                        "failing_metrics": results["failing_metrics"],
+                        "max_drift": results["max_drift_formatted"],
+                        "record_id": record_id
+                    }
+                )
+
+                # Send alert to monitoring system
+                send_reconciliation_alert(results)
+
+            else:
+                logger.info(
+                    "Reconciliation PASSED: All metrics within tolerance",
+                    extra={
+                        "total_metrics": results["total_metrics"],
+                        "max_drift": results["max_drift_formatted"],
+                        "record_id": record_id
+                    }
+                )
+
+            return {
+                "success": True,
+                "record_id": record_id,
+                "total_metrics": results["total_metrics"],
+                "passing_metrics": results["passing_metrics"],
+                "failing_metrics": results["failing_metrics"],
+                "max_drift": results["max_drift_formatted"],
+                "alert_triggered": results["alert"]
+            }
+
+        except FileNotFoundError as e:
+            logger.error(f"Truth data CSV not found: {str(e)}")
+            return {
+                "success": False,
+                "error": "Truth data CSV not found",
+                "message": str(e)
+            }
+
+        except Exception as e:
+            logger.error(f"Reconciliation failed: {str(e)}", exc_info=True)
+            return {
+                "success": False,
+                "error": "Reconciliation failed",
+                "message": str(e)
+            }
