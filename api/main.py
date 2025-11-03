@@ -9,6 +9,7 @@ import os
 
 # Import all routers
 from api.routers import (
+    auth,
     properties,
     quick_wins,
     workflow,
@@ -19,7 +20,8 @@ from api.routers import (
     automation,
     differentiators,
     onboarding,
-    open_data
+    open_data,
+    webhooks
 )
 
 # Create FastAPI app
@@ -204,6 +206,9 @@ def get_status():
 # INCLUDE ALL ROUTERS
 # ============================================================================
 
+# Authentication (Login, Register, Profile)
+app.include_router(auth.router, prefix="/api/v1")
+
 # Properties (CRUD, Filtering, Timeline, Stats)
 app.include_router(properties.router, prefix="/api/v1")
 
@@ -236,6 +241,9 @@ app.include_router(onboarding.router, prefix="/api/v1")
 
 # Open Data Integrations (Free Sources, Enrichment, Provenance)
 app.include_router(open_data.router, prefix="/api/v1")
+
+# Webhooks (SendGrid, Twilio event handlers)
+app.include_router(webhooks.router, prefix="/api/v1")
 
 # ============================================================================
 # STARTUP / SHUTDOWN EVENTS

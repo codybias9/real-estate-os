@@ -1,0 +1,311 @@
+version: '3.8'
+
+services:
+  # =============================================================================
+  # DATABASE
+  # =============================================================================
+  postgres:
+    image: postgres:14-alpine
+    container_name: real-estate-os-postgres
+    environment:
+      POSTGRES_DB: real_estate_os
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - real-estate-os
+
+  # =============================================================================
+  # REDIS (Caching & Sessions)
+  # =============================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: real-estate-os-redis
+    command: redis-server --appendonly yes
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - real-estate-os
+
+  # =============================================================================
+  # MESSAGE QUEUE (RabbitMQ)
+  # =============================================================================
+  rabbitmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: real-estate-os-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+      RABBITMQ_DEFAULT_VHOST: /
+    ports:
+      - "5672:5672"    # AMQP port
+      - "15672:15672"  # Management UI
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - real-estate-os
+
+  # =============================================================================
+  # OBJECT STORAGE (MinIO - S3 compatible)
+  # =============================================================================
+  minio:
+    image: minio/minio:latest
+    container_name: real-estate-os-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"   # API
+      - "9001:9001"   # Console
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - real-estate-os
+
+  # Create default bucket
+  minio-init:
+    image: minio/mc:latest
+    container_name: real-estate-os-minio-init
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin;
+      /usr/bin/mc mb myminio/real-estate-os-memos --ignore-existing;
+      /usr/bin/mc mb myminio/real-estate-os-artifacts --ignore-existing;
+      /usr/bin/mc policy set download myminio/real-estate-os-memos;
+      echo 'MinIO buckets created successfully';
+      "
+    networks:
+      - real-estate-os
+
+  # =============================================================================
+  # BACKEND API
+  # =============================================================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: real-estate-os-api
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+    environment:
+      - DB_DSN=postgresql://postgres:postgres@postgres:5432/real_estate_os
+      - REDIS_URL=redis://redis:6379/0
+      - RABBITMQ_URL=amqp://admin:admin@rabbitmq:5672/
+      - S3_ENDPOINT_URL=http://minio:9000
+      - S3_ACCESS_KEY=minioadmin
+      - S3_SECRET_KEY=minioadmin
+      - S3_BUCKET_NAME=real-estate-os-memos
+      - ENVIRONMENT=development
+      - DEBUG=true
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - /app/.venv  # Don't mount venv
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    networks:
+      - real-estate-os
+    restart: unless-stopped
+
+  # =============================================================================
+  # CELERY WORKER (Background Jobs)
+  # =============================================================================
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: real-estate-os-celery-worker
+    command: celery -A api.celery_app worker --loglevel=info --concurrency=4
+    environment:
+      - DB_DSN=postgresql://postgres:postgres@postgres:5432/real_estate_os
+      - REDIS_URL=redis://redis:6379/0
+      - RABBITMQ_URL=amqp://admin:admin@rabbitmq:5672/
+      - CELERY_BROKER_URL=amqp://admin:admin@rabbitmq:5672/
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - S3_ENDPOINT_URL=http://minio:9000
+      - S3_ACCESS_KEY=minioadmin
+      - S3_SECRET_KEY=minioadmin
+      - ENVIRONMENT=development
+    volumes:
+      - .:/app
+      - /app/.venv
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    networks:
+      - real-estate-os
+    restart: unless-stopped
+
+  # =============================================================================
+  # CELERY BEAT (Scheduled Tasks)
+  # =============================================================================
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: real-estate-os-celery-beat
+    command: celery -A api.celery_app beat --loglevel=info
+    environment:
+      - DB_DSN=postgresql://postgres:postgres@postgres:5432/real_estate_os
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=amqp://admin:admin@rabbitmq:5672/
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - ENVIRONMENT=development
+    volumes:
+      - .:/app
+      - /app/.venv
+    depends_on:
+      - postgres
+      - redis
+      - rabbitmq
+    networks:
+      - real-estate-os
+    restart: unless-stopped
+
+  # =============================================================================
+  # FLOWER (Celery Monitoring)
+  # =============================================================================
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: real-estate-os-flower
+    command: celery -A api.celery_app flower --port=5555
+    environment:
+      - CELERY_BROKER_URL=amqp://admin:admin@rabbitmq:5672/
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+      - rabbitmq
+    networks:
+      - real-estate-os
+    restart: unless-stopped
+
+  # =============================================================================
+  # NGINX (Reverse Proxy)
+  # =============================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: real-estate-os-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - api
+    networks:
+      - real-estate-os
+    restart: unless-stopped
+
+  # =============================================================================
+  # MONITORING - Prometheus
+  # =============================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: real-estate-os-prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    networks:
+      - real-estate-os
+    restart: unless-stopped
+
+  # =============================================================================
+  # MONITORING - Grafana
+  # =============================================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: real-estate-os-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=false
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+    networks:
+      - real-estate-os
+    restart: unless-stopped
+
+# =============================================================================
+# NETWORKS
+# =============================================================================
+networks:
+  real-estate-os:
+    driver: bridge
+
+# =============================================================================
+# VOLUMES
+# =============================================================================
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  rabbitmq_data:
+    driver: local
+  minio_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local

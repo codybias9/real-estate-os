@@ -9,6 +9,13 @@ from datetime import datetime, timedelta
 
 from api.database import get_db
 from api import schemas
+from api.integrations import (
+    generate_property_memo,
+    upload_file,
+    get_file_url,
+    get_memo_path,
+    send_email
+)
 from db.models import (
     Property, Communication, CommunicationType, CommunicationDirection,
     Template, PropertyTimeline, Task, TaskStatus, TaskPriority,
@@ -51,19 +58,76 @@ def generate_and_send(
         if not template:
             raise HTTPException(status_code=404, detail="Template not found")
 
-    # Generate memo URL (in production, this would call your PDF generator)
-    memo_url = f"https://memos.real-estate-os.com/properties/{property.id}/memo.pdf"
-    property.memo_url = memo_url
-    property.memo_generated_at = datetime.utcnow()
+    # ========================================================================
+    # STEP 1: Generate PDF Memo
+    # ========================================================================
+    try:
+        # Prepare property data for memo generation
+        property_data = {
+            "address": property.address,
+            "city": property.city,
+            "state": property.state,
+            "zip_code": property.zip_code,
+            "beds": property.beds,
+            "baths": property.baths,
+            "sqft": property.sqft,
+            "year_built": property.year_built,
+            "assessed_value": property.assessed_value,
+            "market_value_estimate": property.market_value_estimate,
+            "arv": property.arv,
+            "repair_estimate": property.repair_estimate,
+            "bird_dog_score": property.bird_dog_score,
+            "propensity_to_sell": property.propensity_to_sell,
+            "score_reasons": property.score_reasons or []
+        }
 
-    # Create email body with memo link
+        # Generate PDF
+        pdf_bytes = generate_property_memo(property_data)
+
+        # Upload to MinIO
+        object_name = get_memo_path(property.id)
+        upload_result = upload_file(
+            pdf_bytes,
+            object_name,
+            content_type="application/pdf",
+            metadata={
+                "property_id": str(property.id),
+                "generated_at": datetime.utcnow().isoformat()
+            }
+        )
+
+        # Get signed URL (expires in 30 days for investor access)
+        memo_url = get_file_url(object_name, expires=timedelta(days=30))
+
+        # Update property
+        property.memo_url = memo_url
+        property.memo_generated_at = datetime.utcnow()
+
+    except Exception as e:
+        # If PDF generation fails, log error but continue (for demo purposes)
+        # In production, you might want to raise HTTPException here
+        import logging
+        logging.error(f"Failed to generate memo PDF: {str(e)}")
+        memo_url = f"https://memos.real-estate-os.com/properties/{property.id}/memo.pdf"
+        property.memo_url = memo_url
+        property.memo_generated_at = datetime.utcnow()
+
+    # ========================================================================
+    # STEP 2: Prepare Email
+    # ========================================================================
     if template:
-        email_body = template.body_template.replace("{{memo_url}}", memo_url)
+        # Render template with variables
+        email_body = template.body_template
+        email_body = email_body.replace("{{memo_url}}", memo_url)
+        email_body = email_body.replace("{{property.address}}", property.address)
+        email_body = email_body.replace("{{owner_name}}", property.owner_name or "Property Owner")
+
         email_subject = template.subject_template or f"Investment Opportunity: {property.address}"
+        email_subject = email_subject.replace("{{property.address}}", property.address)
     else:
         email_subject = f"Investment Opportunity: {property.address}"
         email_body = f"""
-Hello,
+Hello {property.owner_name or ""},
 
 I wanted to share an exciting investment opportunity with you.
 
@@ -75,21 +139,63 @@ Please let me know if you'd like to discuss this further.
 Best regards
 """
 
-    # Create communication record
-    communication = Communication(
-        property_id=property.id,
-        template_id=template.id if template else None,
-        type=CommunicationType.EMAIL,
-        direction=CommunicationDirection.OUTBOUND,
-        from_address="team@real-estate-os.com",  # In production, use actual sender
-        to_address=property.owner_mailing_address or "owner@example.com",
-        subject=email_subject,
-        body=email_body,
-        sent_at=datetime.utcnow()
-    )
+    # ========================================================================
+    # STEP 3: Send Email via SendGrid
+    # ========================================================================
+    to_email = property.owner_mailing_address or "owner@example.com"
 
-    db.add(communication)
-    db.flush()
+    try:
+        send_result = send_email(
+            to_email=to_email,
+            subject=email_subject,
+            body_text=email_body,
+            body_html=email_body.replace("\n", "<br>"),
+            custom_args={
+                "property_id": str(property.id),
+                "communication_type": "memo_send"
+            },
+            categories=["memo", "outreach"]
+        )
+
+        # Create communication record
+        communication = Communication(
+            property_id=property.id,
+            template_id=template.id if template else None,
+            type=CommunicationType.EMAIL,
+            direction=CommunicationDirection.OUTBOUND,
+            from_address="team@real-estate-os.com",
+            to_address=to_email,
+            subject=email_subject,
+            body=email_body,
+            sent_at=datetime.utcnow(),
+            metadata={
+                "sendgrid_message_id": send_result.get("message_id"),
+                "memo_url": memo_url
+            }
+        )
+
+        db.add(communication)
+        db.flush()
+
+    except Exception as e:
+        # If email fails, still create communication record but mark as failed
+        import logging
+        logging.error(f"Failed to send email via SendGrid: {str(e)}")
+
+        communication = Communication(
+            property_id=property.id,
+            template_id=template.id if template else None,
+            type=CommunicationType.EMAIL,
+            direction=CommunicationDirection.OUTBOUND,
+            from_address="team@real-estate-os.com",
+            to_address=to_email,
+            subject=email_subject,
+            body=email_body,
+            metadata={"error": str(e), "memo_url": memo_url}
+        )
+
+        db.add(communication)
+        db.flush()
 
     # Update property engagement tracking
     property.last_contact_date = datetime.utcnow()

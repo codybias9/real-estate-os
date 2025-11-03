@@ -77,6 +77,51 @@ class BaseSchema(BaseModel):
         populate_by_name = True
 
 # ============================================================================
+# AUTHENTICATION & USER SCHEMAS
+# ============================================================================
+
+class LoginRequest(BaseSchema):
+    email: EmailStr
+    password: str = Field(..., min_length=8)
+
+class RegisterRequest(BaseSchema):
+    email: EmailStr
+    password: str = Field(..., min_length=8)
+    full_name: str = Field(..., min_length=1)
+    team_name: Optional[str] = None
+    team_id: Optional[int] = None
+    role: Optional[UserRoleEnum] = None
+
+class TokenResponse(BaseSchema):
+    access_token: str
+    token_type: str = "bearer"
+
+class UserResponse(BaseSchema):
+    id: int
+    email: EmailStr
+    full_name: str
+    role: UserRoleEnum
+    team_id: int
+    phone: Optional[str] = None
+    is_active: bool
+    created_at: datetime
+
+class AuthResponse(TokenResponse):
+    user: UserResponse
+
+class UpdateUserRequest(BaseSchema):
+    full_name: Optional[str] = None
+    email: Optional[EmailStr] = None
+    phone: Optional[str] = None
+
+class ChangePasswordRequest(BaseSchema):
+    current_password: str
+    new_password: str = Field(..., min_length=8)
+
+class RequestPasswordResetRequest(BaseSchema):
+    email: EmailStr
+
+# ============================================================================
 # PROPERTY SCHEMAS
 # ============================================================================
 
