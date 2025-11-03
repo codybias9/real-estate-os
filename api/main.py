@@ -114,6 +114,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Add rate limiting middleware
+from api.rate_limit import rate_limit_middleware
+app.middleware("http")(rate_limit_middleware)
+
 # ============================================================================
 # LEGACY ENDPOINTS (keep for compatibility)
 # ============================================================================
