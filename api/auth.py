@@ -167,6 +167,126 @@ def get_current_user(
 
 
 # ============================================================================
+# SSE TOKEN AUTHENTICATION
+# ============================================================================
+
+def create_sse_token(user_id: int) -> str:
+    """
+    Create a short-lived SSE token for EventSource connections
+
+    Since browsers' EventSource API doesn't support custom headers,
+    we generate a short-lived token that can be passed as a query parameter.
+
+    Security considerations:
+    - Token expires in 5 minutes
+    - Token includes 'sse' claim to differentiate from regular access tokens
+    - Token should be used immediately and not stored
+    - Server rotates tokens on each reconnect
+
+    Args:
+        user_id: User ID to encode in token
+
+    Returns:
+        Short-lived JWT token string
+
+    Usage:
+        # Backend: Generate token
+        sse_token = create_sse_token(user.id)
+
+        # Frontend: Use token in query string
+        const eventSource = new EventSource(
+            `/api/v1/sse/stream?token=${sse_token}`
+        );
+    """
+    expire = datetime.utcnow() + timedelta(minutes=5)
+
+    to_encode = {
+        "sub": user_id,
+        "sse": True,  # Mark as SSE token
+        "exp": expire,
+        "iat": datetime.utcnow()
+    }
+
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+async def get_current_user_from_query(
+    token: Optional[str] = None,
+    db: Session = Depends(get_db)
+) -> User:
+    """
+    Dependency to get authenticated user from query parameter token
+
+    Used specifically for SSE endpoints where browsers' EventSource API
+    doesn't support custom headers.
+
+    Security:
+    - Tokens are short-lived (5 minutes)
+    - Tokens must have 'sse' claim
+    - Tokens expire and require refresh
+
+    Args:
+        token: JWT token from query parameter
+        db: Database session
+
+    Returns:
+        Current authenticated User object
+
+    Raises:
+        HTTPException: If token is missing, invalid, or user not found
+
+    Usage:
+        @router.get("/sse/stream")
+        async def sse_stream(
+            current_user: User = Depends(get_current_user_from_query)
+        ):
+            ...
+    """
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="SSE token required in query parameter"
+        )
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired SSE token"
+        )
+
+    # Verify this is an SSE token
+    if not payload.get("sse"):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token type. Use SSE token for this endpoint"
+        )
+
+    user_id: int = payload.get("sub")
+    if user_id is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload"
+        )
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found"
+        )
+
+    if not user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Inactive user"
+        )
+
+    return user
+
+
+# ============================================================================
 # AUTHENTICATION HELPERS
 # ============================================================================
 

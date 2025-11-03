@@ -31,6 +31,7 @@ sendgrid = "^6.11.0"
 twilio = "^9.0.4"
 minio = "^7.2.5"
 stripe = "^8.9.0"
+pynacl = "^1.5.0"  # SendGrid webhook signature verification
 
 # Background Jobs
 celery = "^5.3.6"

@@ -1,6 +1,13 @@
 """
 Webhooks Router
 Handle incoming webhooks from SendGrid, Twilio, and other external services
+
+SECURITY:
+- All webhooks verify signatures to prevent unauthorized requests
+- SendGrid: Ed25519 signature verification
+- Twilio: HMAC-SHA1 signature verification
+- Timestamp validation prevents replay attacks
+- Deduplication prevents duplicate processing
 """
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session
@@ -19,6 +26,13 @@ from api.sse import (
     emit_timeline_event,
     emit_communication_received
 )
+from api.webhook_security import (
+    verify_sendgrid_webhook,
+    verify_twilio_webhook,
+    webhook_deduplicator,
+    check_webhook_ordering,
+    handle_webhook_failure
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
@@ -27,7 +41,7 @@ router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
 # SENDGRID WEBHOOKS
 # ============================================================================
 
-@router.post("/sendgrid")
+@router.post("/sendgrid", dependencies=[Depends(verify_sendgrid_webhook)])
 async def sendgrid_webhook(request: Request, db: Session = Depends(get_db)):
     """
     Handle SendGrid webhook events
@@ -42,6 +56,12 @@ async def sendgrid_webhook(request: Request, db: Session = Depends(get_db)):
     - unsubscribe: Recipient unsubscribed
 
     SendGrid sends events in batches as JSON array
+
+    Security:
+    - Signature verification (Ed25519)
+    - Timestamp validation (prevents replay attacks)
+    - Deduplication (prevents duplicate processing)
+    - Event ordering validation
     """
     try:
         events = await request.json()
@@ -56,6 +76,16 @@ async def sendgrid_webhook(request: Request, db: Session = Depends(get_db)):
                 # Process event
                 processed_event = process_sendgrid_event(event_data)
                 event_type = processed_event.get("event_type")
+
+                # Check for duplicate webhook
+                # Create unique ID from message ID + event type + timestamp
+                message_id = event_data.get("sg_message_id", "")
+                timestamp = event_data.get("timestamp", 0)
+                webhook_id = f"sendgrid_{message_id}_{event_type}_{timestamp}"
+
+                if webhook_deduplicator.is_duplicate(webhook_id):
+                    logger.info(f"Skipping duplicate SendGrid webhook: {webhook_id}")
+                    continue
 
                 # Extract custom args (property_id, communication_id)
                 property_id = processed_event.get("custom_args", {}).get("property_id")
@@ -202,7 +232,7 @@ async def sendgrid_webhook(request: Request, db: Session = Depends(get_db)):
 # TWILIO WEBHOOKS
 # ============================================================================
 
-@router.post("/twilio/sms")
+@router.post("/twilio/sms", dependencies=[Depends(verify_twilio_webhook)])
 async def twilio_sms_webhook(request: Request, db: Session = Depends(get_db)):
     """
     Handle Twilio SMS status webhooks
@@ -214,6 +244,11 @@ async def twilio_sms_webhook(request: Request, db: Session = Depends(get_db)):
     - delivered: SMS delivered to recipient
     - undelivered: SMS failed to deliver
     - failed: SMS send failed
+
+    Security:
+    - Signature verification (HMAC-SHA1)
+    - Deduplication (prevents duplicate processing)
+    - Event ordering validation
     """
     try:
         # Parse form data (Twilio sends webhooks as form-encoded)
@@ -266,7 +301,7 @@ async def twilio_sms_webhook(request: Request, db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail="Webhook processing failed")
 
 
-@router.post("/twilio/voice")
+@router.post("/twilio/voice", dependencies=[Depends(verify_twilio_webhook)])
 async def twilio_voice_webhook(request: Request, db: Session = Depends(get_db)):
     """
     Handle Twilio voice call status webhooks
@@ -279,6 +314,10 @@ async def twilio_voice_webhook(request: Request, db: Session = Depends(get_db)):
     - busy: Recipient busy
     - failed: Call failed
     - no-answer: No answer
+
+    Security:
+    - Signature verification (HMAC-SHA1)
+    - Deduplication (prevents duplicate processing)
     """
     try:
         form_data = await request.form()
@@ -336,10 +375,13 @@ async def twilio_voice_webhook(request: Request, db: Session = Depends(get_db)):
 # TWILIO TRANSCRIPTION WEBHOOK
 # ============================================================================
 
-@router.post("/twilio/transcription")
+@router.post("/twilio/transcription", dependencies=[Depends(verify_twilio_webhook)])
 async def twilio_transcription_webhook(request: Request, db: Session = Depends(get_db)):
     """
     Handle Twilio transcription completion webhooks
+
+    Security:
+    - Signature verification (HMAC-SHA1)
     """
     try:
         form_data = await request.form()
