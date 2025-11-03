@@ -13,7 +13,7 @@ interface AuthState {
 interface AuthActions {
   setUser: (user: User) => void
   setTokens: (tokens: AuthTokens) => void
-  login: (user: User, tokens: AuthTokens) => void
+  login: (tokens: AuthTokens, user: User) => void
   logout: () => void
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
@@ -37,10 +37,10 @@ export const useAuthStore = create<AuthStore>()(
 
       setTokens: (tokens) => set({ tokens }),
 
-      login: (user, tokens) =>
+      login: (tokens, user) =>
         set({
-          user,
           tokens,
+          user,
           isAuthenticated: true,
           error: null,
         }),
