@@ -7,12 +7,16 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime, timedelta
+import logging
 
 from api.database import get_db
 from api import schemas
 from db.models import (
     Property, PropertyProvenance, OpenDataSource, Team
 )
+from api.data_providers import get_provider, ProviderError
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/open-data", tags=["Open Data Integrations"])
 
@@ -225,64 +229,91 @@ def enrich_property(
 
     enriched_fields = []
     total_cost = 0.0
+    sources_used = []
 
-    # Simulate enrichment (in production, call actual APIs)
-    for source in sources[:3]:  # Limit to first 3 sources for demo
-        # Example: Enrich from this source
-        if "addresses" in source.data_types and not property.latitude:
-            # Simulate geocoding
-            property.latitude = 34.0522  # Example
-            property.longitude = -118.2437
-
-            # Record provenance
-            provenance = PropertyProvenance(
-                property_id=property_id,
-                field_name="latitude",
-                source_name=source.name,
-                source_tier=source.source_type,
-                license_type=source.license_type,
-                cost=source.cost_per_request,
-                confidence=source.data_quality_rating,
-                fetched_at=datetime.utcnow(),
-                expires_at=datetime.utcnow() + timedelta(days=source.freshness_days)
+    # Real enrichment using data providers
+    for source in sources:
+        try:
+            # Get provider instance
+            provider = get_provider(
+                source.name,
+                api_key=None  # Will be loaded from environment variables
             )
 
-            db.add(provenance)
-            enriched_fields.append("latitude")
-            total_cost += source.cost_per_request
+            # Check if provider is available
+            if not provider.check_availability():
+                logger.warning(f"Provider {source.name} not available, skipping")
+                continue
 
-        if "flood_zones" in source.data_types:
-            # Check flood zone
-            flood_zone = "X"  # Example: not in flood zone
+            # Prepare enrichment parameters
+            enrich_params = {
+                "address": property.address,
+                "city": property.city,
+                "state": property.state,
+                "zip_code": property.zip_code,
+                "latitude": property.latitude,
+                "longitude": property.longitude,
+            }
 
-            property.custom_fields["flood_zone"] = flood_zone
+            # Call provider
+            logger.info(f"Enriching property {property_id} with {source.name}")
+            result = provider.enrich_property(**enrich_params)
 
-            provenance = PropertyProvenance(
-                property_id=property_id,
-                field_name="flood_zone",
-                source_name=source.name,
-                source_tier=source.source_type,
-                license_type=source.license_type,
-                cost=source.cost_per_request,
-                confidence=source.data_quality_rating,
-                fetched_at=datetime.utcnow(),
-                expires_at=datetime.utcnow() + timedelta(days=source.freshness_days)
-            )
+            if result.success:
+                # Apply enriched fields to property
+                for field_name, value in result.fields.items():
+                    # Map provider field names to property model
+                    if field_name in ["latitude", "longitude", "address", "city", "state", "zip_code"]:
+                        # Direct property fields
+                        setattr(property, field_name, value)
+                    else:
+                        # Store in custom_fields JSONB
+                        if not property.custom_fields:
+                            property.custom_fields = {}
+                        property.custom_fields[field_name] = value
 
-            db.add(provenance)
-            enriched_fields.append("flood_zone")
-            total_cost += source.cost_per_request
+                    # Record provenance for each field
+                    prov_data = result.provenance.get(field_name, {})
+                    provenance = PropertyProvenance(
+                        property_id=property_id,
+                        field_name=field_name,
+                        source_name=source.name,
+                        source_tier=source.source_type,
+                        license_type=source.license_type,
+                        cost=result.cost,
+                        confidence=prov_data.get("confidence", source.data_quality_rating),
+                        fetched_at=datetime.utcnow(),
+                        expires_at=datetime.fromisoformat(prov_data["expires_at"]) if "expires_at" in prov_data else datetime.utcnow() + timedelta(days=source.freshness_days)
+                    )
+                    db.add(provenance)
+                    enriched_fields.append(field_name)
 
+                total_cost += result.cost
+                sources_used.append(source.name)
+
+            else:
+                # Log errors but continue
+                logger.error(f"Enrichment failed for {source.name}: {result.errors}")
+
+        except ProviderError as e:
+            logger.error(f"Provider error for {source.name}: {str(e)}")
+            continue
+
+        except Exception as e:
+            logger.error(f"Unexpected error enriching with {source.name}: {str(e)}")
+            continue
+
+    # Update property timestamp
     property.updated_at = datetime.utcnow()
     db.commit()
 
     return {
         "property_id": property_id,
-        "enriched_fields": enriched_fields,
-        "sources_used": [s.name for s in sources[:3]],
-        "total_cost": total_cost,
-        "free_sources": sum(1 for s in sources[:3] if s.cost_per_request == 0),
-        "paid_sources": sum(1 for s in sources[:3] if s.cost_per_request > 0)
+        "enriched_fields": list(set(enriched_fields)),  # Deduplicate
+        "sources_used": sources_used,
+        "total_cost": round(total_cost, 4),
+        "free_sources": sum(1 for s in sources if s.name in sources_used and s.cost_per_request == 0),
+        "paid_sources": sum(1 for s in sources if s.name in sources_used and s.cost_per_request > 0)
     }
 
 # ============================================================================
