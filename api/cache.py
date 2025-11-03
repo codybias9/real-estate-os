@@ -439,3 +439,158 @@ def get_cache_stats() -> dict:
     except Exception as e:
         logger.error(f"Failed to get cache stats: {str(e)}")
         return {"enabled": True, "error": str(e)}
+
+
+# ============================================================================
+# CACHE + ETAG INTEGRATION
+# ============================================================================
+
+def cache_response_with_etag(
+    key_prefix: str,
+    ttl: Optional[int] = None,
+    vary_on: Optional[list] = None
+):
+    """
+    Decorator combining cache and ETag support
+
+    Provides both server-side caching (Redis) and client-side caching (ETag)
+
+    Args:
+        key_prefix: Cache key prefix
+        ttl: Time to live
+        vary_on: List of parameter names to vary cache on
+
+    Usage:
+        @router.get("/properties")
+        @cache_response_with_etag("properties_list", ttl=60, vary_on=["team_id", "stage"])
+        def list_properties(
+            request: Request,
+            team_id: int,
+            stage: Optional[str] = None,
+            db: Session = Depends(get_db)
+        ):
+            return properties
+
+    Flow:
+    1. Check If-None-Match header (client-side cache) -> 304 if match
+    2. Check Redis cache (server-side cache) -> return if hit
+    3. Execute function and cache result
+    4. Return with ETag header
+    """
+    def decorator(func: Callable):
+        @wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            from fastapi import Request
+            from api.etag import generate_etag, check_etag_match
+            from fastapi.responses import Response, JSONResponse
+
+            if not CACHE_ENABLED:
+                return await func(*args, **kwargs)
+
+            # Find request in kwargs
+            request: Optional[Request] = None
+            for arg in args:
+                if isinstance(arg, Request):
+                    request = arg
+                    break
+            if not request:
+                for key, value in kwargs.items():
+                    if isinstance(value, Request):
+                        request = value
+                        break
+
+            # Build cache key
+            cache_params = {}
+            if vary_on:
+                for param_name in vary_on:
+                    if param_name in kwargs:
+                        cache_params[param_name] = kwargs[param_name]
+
+            cache_key = generate_cache_key(key_prefix, **cache_params)
+
+            # Generate ETag from cache key (consistent across requests)
+            etag = generate_etag(cache_key)
+
+            # Check client-side cache (ETag)
+            if request and check_etag_match(request, etag):
+                logger.debug(f"ETag match - returning 304 for {cache_key}")
+                return Response(status_code=304, headers={"ETag": etag})
+
+            # Check server-side cache (Redis)
+            cached_value = cache_get(cache_key)
+            if cached_value is not None:
+                logger.debug(f"Cache hit: {cache_key}")
+                return JSONResponse(content=cached_value, headers={"ETag": etag})
+
+            # Execute function
+            result = await func(*args, **kwargs)
+
+            # Store in cache
+            cache_ttl = ttl or CACHE_TTLS.get(key_prefix, DEFAULT_TTL)
+            cache_set(cache_key, result, cache_ttl)
+
+            # Return with ETag
+            return JSONResponse(content=result, headers={"ETag": etag})
+
+        @wraps(func)
+        def sync_wrapper(*args, **kwargs):
+            from fastapi import Request
+            from api.etag import generate_etag, check_etag_match
+            from fastapi.responses import Response, JSONResponse
+
+            if not CACHE_ENABLED:
+                return func(*args, **kwargs)
+
+            # Find request in kwargs
+            request: Optional[Request] = None
+            for arg in args:
+                if isinstance(arg, Request):
+                    request = arg
+                    break
+            if not request:
+                for key, value in kwargs.items():
+                    if isinstance(value, Request):
+                        request = value
+                        break
+
+            # Build cache key
+            cache_params = {}
+            if vary_on:
+                for param_name in vary_on:
+                    if param_name in kwargs:
+                        cache_params[param_name] = kwargs[param_name]
+
+            cache_key = generate_cache_key(key_prefix, **cache_params)
+
+            # Generate ETag from cache key
+            etag = generate_etag(cache_key)
+
+            # Check client-side cache (ETag)
+            if request and check_etag_match(request, etag):
+                logger.debug(f"ETag match - returning 304 for {cache_key}")
+                return Response(status_code=304, headers={"ETag": etag})
+
+            # Check server-side cache (Redis)
+            cached_value = cache_get(cache_key)
+            if cached_value is not None:
+                logger.debug(f"Cache hit: {cache_key}")
+                return JSONResponse(content=cached_value, headers={"ETag": etag})
+
+            # Execute function
+            result = func(*args, **kwargs)
+
+            # Store in cache
+            cache_ttl = ttl or CACHE_TTLS.get(key_prefix, DEFAULT_TTL)
+            cache_set(cache_key, result, cache_ttl)
+
+            # Return with ETag
+            return JSONResponse(content=result, headers={"ETag": etag})
+
+        # Return appropriate wrapper based on function type
+        import asyncio
+        if asyncio.iscoroutinefunction(func):
+            return async_wrapper
+        else:
+            return sync_wrapper
+
+    return decorator

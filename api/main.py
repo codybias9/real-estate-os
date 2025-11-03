@@ -118,6 +118,10 @@ app.add_middleware(
 from api.rate_limit import rate_limit_middleware
 app.middleware("http")(rate_limit_middleware)
 
+# Add ETag support for conditional requests
+from api.etag import etag_middleware
+app.middleware("http")(etag_middleware)
+
 # ============================================================================
 # LEGACY ENDPOINTS (keep for compatibility)
 # ============================================================================

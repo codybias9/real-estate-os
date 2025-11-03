@@ -2,7 +2,7 @@
 Property Management Router
 Handles CRUD operations, filtering, timeline, and pipeline stats
 """
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, func, desc
 from typing import List, Optional
@@ -11,6 +11,7 @@ from datetime import datetime, timedelta
 from api.database import get_db
 from api import schemas
 from db.models import Property, PropertyTimeline, PropertyStage, Team, User
+from api.cache import cache_response_with_etag, invalidate_property_cache
 
 router = APIRouter(prefix="/properties", tags=["Properties"])
 
@@ -63,7 +64,9 @@ def create_property(
     return db_property
 
 @router.get("", response_model=List[schemas.PropertyResponse])
+@cache_response_with_etag("properties_list", ttl=60, vary_on=["team_id", "stage", "assigned_user_id"])
 def list_properties(
+    request: Request,
     team_id: Optional[int] = Query(None),
     stage: Optional[schemas.PropertyStageEnum] = Query(None),
     assigned_user_id: Optional[int] = Query(None),
@@ -94,6 +97,10 @@ def list_properties(
     - tags: Filter by tags (AND logic)
     - skip: Pagination offset
     - limit: Pagination limit
+
+    Caching:
+    - Server-side: Redis cache for 60 seconds
+    - Client-side: ETag support for conditional requests (304 Not Modified)
     """
     query = db.query(Property).filter(Property.archived_at.is_(None))
 
@@ -212,6 +219,9 @@ def update_property(
     db.commit()
     db.refresh(property)
 
+    # Invalidate cache for this property
+    invalidate_property_cache(property.id, property.team_id)
+
     return property
 
 @router.delete("/{property_id}", status_code=204)
@@ -236,6 +246,9 @@ def delete_property(property_id: int, db: Session = Depends(get_db)):
     db.add(timeline_event)
 
     db.commit()
+
+    # Invalidate cache for this property
+    invalidate_property_cache(property.id, property.team_id)
 
     return None
 
