@@ -21,7 +21,9 @@ from api.routers import (
     differentiators,
     onboarding,
     open_data,
-    webhooks
+    webhooks,
+    jobs,
+    sse_events
 )
 
 # Create FastAPI app
@@ -244,6 +246,12 @@ app.include_router(open_data.router, prefix="/api/v1")
 
 # Webhooks (SendGrid, Twilio event handlers)
 app.include_router(webhooks.router, prefix="/api/v1")
+
+# Background Jobs (Async task management)
+app.include_router(jobs.router, prefix="/api/v1")
+
+# Server-Sent Events (Real-time updates)
+app.include_router(sse_events.router, prefix="/api/v1")
 
 # ============================================================================
 # STARTUP / SHUTDOWN EVENTS

@@ -14,6 +14,11 @@ from db.models import (
 )
 from api.integrations.sendgrid_client import process_webhook_event as process_sendgrid_event
 from api.integrations.twilio_client import process_webhook_event as process_twilio_event
+from api.sse import (
+    emit_property_update,
+    emit_timeline_event,
+    emit_communication_received
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
@@ -87,6 +92,17 @@ async def sendgrid_webhook(request: Request, db: Session = Depends(get_db)):
                         if property:
                             property.email_opens = (property.email_opens or 0) + 1
 
+                            # Emit real-time event
+                            await emit_property_update(
+                                property_id=property.id,
+                                team_id=property.team_id,
+                                data={
+                                    "event": "email_opened",
+                                    "email_opens": property.email_opens,
+                                    "communication_id": communication.id
+                                }
+                            )
+
                     elif event_type == "click":
                         communication.clicked_at = datetime.fromtimestamp(processed_event.get("timestamp", 0))
 
@@ -96,6 +112,18 @@ async def sendgrid_webhook(request: Request, db: Session = Depends(get_db)):
                         ).first()
                         if property:
                             property.email_clicks = (property.email_clicks or 0) + 1
+
+                            # Emit real-time event
+                            await emit_property_update(
+                                property_id=property.id,
+                                team_id=property.team_id,
+                                data={
+                                    "event": "email_clicked",
+                                    "email_clicks": property.email_clicks,
+                                    "communication_id": communication.id,
+                                    "url": processed_event.get("url")
+                                }
+                            )
 
                     elif event_type == "bounce":
                         communication.bounced_at = datetime.fromtimestamp(processed_event.get("timestamp", 0))
