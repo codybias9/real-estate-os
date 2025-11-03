@@ -2,13 +2,15 @@
 Quick Wins Router
 Low-effort, high-impact features for immediate productivity boost
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime, timedelta
 
 from api.database import get_db
 from api import schemas
+from api.idempotency import IdempotencyHandler, get_idempotency_handler
 from api.integrations import (
     generate_property_memo,
     upload_file,
@@ -31,7 +33,9 @@ router = APIRouter(prefix="/quick-wins", tags=["Quick Wins"])
 @router.post("/generate-and-send", response_model=schemas.GenerateAndSendResponse)
 def generate_and_send(
     request: schemas.GenerateAndSendRequest,
-    db: Session = Depends(get_db)
+    http_request: Request,
+    db: Session = Depends(get_db),
+    idempotency: IdempotencyHandler = Depends(get_idempotency_handler)
 ):
     """
     Quick Win #1: Generate & Send Combo (2 days effort)
@@ -45,7 +49,21 @@ def generate_and_send(
     4. Create timeline event
 
     Impact: Eliminates 2 extra clicks per send
+
+    Idempotency:
+    - Provide Idempotency-Key header to prevent duplicate sends
+    - Same key within 24 hours returns cached response
+    - Prevents duplicate emails to property owners
     """
+    # Check for existing idempotent request
+    existing = idempotency.check_existing()
+    if existing:
+        return JSONResponse(
+            content=existing["body"],
+            status_code=existing["status_code"],
+            headers={"X-Idempotency-Cached": "true"}
+        )
+
     # Get property
     property = db.query(Property).filter(Property.id == request.property_id).first()
     if not property:
@@ -220,12 +238,18 @@ Best regards
     db.commit()
     db.refresh(communication)
 
-    return {
+    # Prepare response
+    response = {
         "property_id": property.id,
         "memo_url": memo_url,
         "communication_id": communication.id,
         "sent_at": communication.sent_at
     }
+
+    # Store response for idempotency
+    idempotency.store_response(200, response, request.dict())
+
+    return response
 
 # ============================================================================
 # 2. AUTO-ASSIGN ON REPLY

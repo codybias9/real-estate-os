@@ -3,6 +3,7 @@ Property Management Router
 Handles CRUD operations, filtering, timeline, and pipeline stats
 """
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, func, desc
 from typing import List, Optional
@@ -10,6 +11,7 @@ from datetime import datetime, timedelta
 
 from api.database import get_db
 from api import schemas
+from api.idempotency import IdempotencyHandler, get_idempotency_handler
 from db.models import Property, PropertyTimeline, PropertyStage, Team, User
 from api.cache import cache_response_with_etag, invalidate_property_cache
 
@@ -260,13 +262,29 @@ def delete_property(property_id: int, db: Session = Depends(get_db)):
 def change_property_stage(
     property_id: int,
     stage_change: schemas.PropertyStageChange,
-    db: Session = Depends(get_db)
+    http_request: Request,
+    db: Session = Depends(get_db),
+    idempotency: IdempotencyHandler = Depends(get_idempotency_handler)
 ):
     """
     Change property pipeline stage
 
     Creates timeline event
+
+    Idempotency:
+    - Provide Idempotency-Key header to prevent duplicate stage changes
+    - Same key within 24 hours returns cached response
+    - Prevents duplicate timeline events and stage transitions
     """
+    # Check for existing idempotent request
+    existing = idempotency.check_existing()
+    if existing:
+        return JSONResponse(
+            content=existing["body"],
+            status_code=existing["status_code"],
+            headers={"X-Idempotency-Cached": "true"}
+        )
+
     property = db.query(Property).filter(Property.id == property_id).first()
     if not property:
         raise HTTPException(status_code=404, detail="Property not found")
@@ -289,6 +307,13 @@ def change_property_stage(
 
     db.commit()
     db.refresh(property)
+
+    # Convert property to dict for idempotency storage
+    from api.schemas import PropertyResponse
+    property_dict = PropertyResponse.from_orm(property).dict()
+
+    # Store response for idempotency
+    idempotency.store_response(200, property_dict, stage_change.dict())
 
     return property
 
