@@ -37,14 +37,12 @@ export interface AuthTokens {
 
 export type PropertyStage =
   | 'new'
-  | 'researching'
   | 'outreach'
-  | 'negotiating'
   | 'qualified'
-  | 'offer'
-  | 'closing'
-  | 'won'
-  | 'lost'
+  | 'negotiation'
+  | 'under_contract'
+  | 'closed_won'
+  | 'closed_lost'
   | 'archived'
 
 export interface Property {
