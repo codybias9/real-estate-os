@@ -85,12 +85,12 @@ class IdempotencyHandler:
         self.current_user = current_user
         self.ttl_hours = ttl_hours
 
-        # Extract key from header or generate
-        self.key = self._get_or_generate_key()
-
-        # Endpoint identifier
+        # Endpoint identifier (set before _get_or_generate_key)
         self.endpoint = str(request.url.path)
         self.method = request.method
+
+        # Extract key from header or generate (after method is set)
+        self.key = self._get_or_generate_key()
 
     def _get_or_generate_key(self) -> str:
         """

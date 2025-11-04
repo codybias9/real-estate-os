@@ -330,13 +330,18 @@ def draft_reply(
         context_parts.append(f"Key factors: {reasons}")
 
     # Objection handling templates
+    # Format property values safely
+    assessed_value_str = f"${property.assessed_value:,.0f}" if property.assessed_value else "N/A"
+    arv_str = f"${property.arv:,.0f}" if property.arv else "Competitive"
+    repair_estimate_str = f"${property.repair_estimate:,.0f}" if property.repair_estimate else "Minimal"
+
     objection_responses = {
         "price_too_low": f"""
 I understand your concern about the offer price. Let me explain our valuation:
 
-- Current assessed value: ${property.assessed_value:,.0f} if property.assessed_value else 'N/A'
-- Our estimated ARV: ${property.arv:,.0f} if property.arv else 'Competitive'
-- Estimated repairs needed: ${property.repair_estimate:,.0f} if property.repair_estimate else 'Minimal'
+- Current assessed value: {assessed_value_str}
+- Our estimated ARV: {arv_str}
+- Estimated repairs needed: {repair_estimate_str}
 
 We base our offers on post-repair value and market comps in your area. I'd be happy to share the detailed comp analysis with you.
 

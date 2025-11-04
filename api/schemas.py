@@ -352,7 +352,7 @@ class TaskResponse(TaskBase):
     due_at: Optional[datetime] = None
     completed_at: Optional[datetime] = None
     source_event_type: Optional[str] = None
-    metadata: Dict[str, Any] = {}
+    extra_metadata: Dict[str, Any] = {}
     created_at: datetime
     updated_at: datetime
 
@@ -745,7 +745,6 @@ class OpenDataSourceResponse(BaseSchema):
     is_active: bool
 
 class EnrichPropertyRequest(BaseSchema):
-    property_id: int
     sources: Optional[List[str]] = None  # If None, use all active sources
 
 class ProvenanceInspectorResponse(BaseSchema):
