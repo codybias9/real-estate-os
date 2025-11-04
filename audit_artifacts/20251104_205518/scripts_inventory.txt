@@ -1,0 +1,15 @@
+scripts/setup.sh
+scripts/docker/stop.sh
+scripts/docker/validate.sh
+scripts/docker/health.sh
+scripts/docker/start.sh
+scripts/demo/seed.sh
+scripts/proofs/05_idempotency.sh
+scripts/proofs/07_sse_events.sh
+scripts/proofs/01_mock_providers.sh
+scripts/proofs/04_rate_limiting.sh
+scripts/proofs/03_authentication.sh
+scripts/proofs/06_background_jobs.sh
+scripts/proofs/02_api_health.sh
+scripts/proofs/run_all_proofs.sh
+scripts/test/run_tests.sh

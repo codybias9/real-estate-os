@@ -1,0 +1,10 @@
+MOCK_MODE=true
+DB_DSN=postgresql://postgres:postgres@postgres:5432/real_estate_os
+SENDGRID_API_KEY=mock-sendgrid-key-not-used
+SENDGRID_FROM_EMAIL=demo@real-estate-os.com
+SENDGRID_FROM_NAME=Real Estate OS Demo
+SENDGRID_WEBHOOK_SECRET=mock-webhook-secret
+TWILIO_ACCOUNT_SID=mock-twilio-sid-not-used
+TWILIO_AUTH_TOKEN=mock-twilio-token-not-used
+TWILIO_PHONE_NUMBER=+15551234567
+TWILIO_VERIFY_SERVICE_SID=mock-verify-sid-not-used
