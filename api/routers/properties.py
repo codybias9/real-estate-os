@@ -160,7 +160,7 @@ def list_properties(
 
     # Order by score (high to low), then created date (newest first)
     query = query.order_by(
-        desc(Property.bird_dog_score.nullslast()),
+        desc(Property.bird_dog_score).nullslast(),
         desc(Property.created_at)
     )
 

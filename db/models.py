@@ -120,6 +120,7 @@ class User(Base):
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     last_login_at = Column(DateTime)
+    deleted_at = Column(DateTime, index=True)  # Soft delete support
 
     # Relationships
     team = relationship("Team", back_populates="members")
@@ -149,6 +150,7 @@ class Team(Base):
 
     # Timestamps
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    deleted_at = Column(DateTime, index=True)  # Soft delete support
 
     # Relationships
     members = relationship("User", back_populates="team")
@@ -244,6 +246,7 @@ class Property(Base):
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     archived_at = Column(DateTime)
+    deleted_at = Column(DateTime, index=True)  # Soft delete support
 
     # Relationships
     team = relationship("Team", back_populates="properties")
