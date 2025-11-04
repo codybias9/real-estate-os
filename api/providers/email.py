@@ -143,6 +143,7 @@ class SendGridProvider(EmailProvider):
     """
     Production email provider using SendGrid API
 
+    Wraps api.integrations.sendgrid_client for production use.
     Requires SENDGRID_API_KEY in configuration.
     """
 
@@ -179,17 +180,47 @@ class SendGridProvider(EmailProvider):
                 "error": "API key not configured"
             }
 
-        # TODO: Implement actual SendGrid API call
-        # from sendgrid import SendGridAPIClient
-        # from sendgrid.helpers.mail import Mail
+        try:
+            # Import and use the sendgrid_client integration
+            from api.integrations import sendgrid_client
 
-        logger.warning("SendGrid implementation pending - returning mock success")
+            # Convert attachments format if needed
+            sendgrid_attachments = None
+            if attachments:
+                sendgrid_attachments = [
+                    {
+                        "filename": att.get("filename"),
+                        "content": att.get("content"),
+                        "type": att.get("type", "application/octet-stream")
+                    }
+                    for att in attachments
+                ]
 
-        message_id = f"<sendgrid-{datetime.utcnow().timestamp()}@realtor-demo.com>"
+            # Call sendgrid_client
+            result = sendgrid_client.send_email(
+                to_email=to,
+                subject=subject,
+                body_text=body if not html else "",
+                body_html=body if html else None,
+                from_email=from_email or self.from_email,
+                attachments=sendgrid_attachments,
+                custom_args=metadata or {}
+            )
 
-        return {
-            "message_id": message_id,
-            "status": "sent",
-            "provider": "sendgrid",
-            "note": "Implementation pending"
-        }
+            logger.info(f"Email sent via SendGrid to {to}: {subject}")
+
+            return {
+                "message_id": result.get("message_id"),
+                "status": "sent" if result.get("success") else "failed",
+                "provider": "sendgrid",
+                "status_code": result.get("status_code")
+            }
+
+        except Exception as e:
+            logger.error(f"Failed to send email via SendGrid: {str(e)}")
+            return {
+                "message_id": None,
+                "status": "failed",
+                "provider": "sendgrid",
+                "error": str(e)
+            }
