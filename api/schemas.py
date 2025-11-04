@@ -339,7 +339,7 @@ class TaskUpdate(BaseSchema):
     title: Optional[str] = None
     description: Optional[str] = None
     status: Optional[TaskStatusEnum] = None
-    priority: Optional[TaskPriority Enum] = None
+    priority: Optional[TaskPriorityEnum] = None
     due_at: Optional[datetime] = None
 
 class TaskResponse(TaskBase):

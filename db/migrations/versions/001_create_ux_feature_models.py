@@ -31,20 +31,8 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Create ENUM types
-    op.execute("""
-        CREATE TYPE userrole AS ENUM ('admin', 'manager', 'agent', 'viewer');
-        CREATE TYPE propertystage AS ENUM ('new', 'outreach', 'qualified', 'negotiation', 'under_contract', 'closed_won', 'closed_lost', 'archived');
-        CREATE TYPE communicationtype AS ENUM ('email', 'sms', 'call', 'postcard', 'note');
-        CREATE TYPE communicationdirection AS ENUM ('inbound', 'outbound');
-        CREATE TYPE taskstatus AS ENUM ('pending', 'in_progress', 'completed', 'overdue', 'cancelled');
-        CREATE TYPE taskpriority AS ENUM ('low', 'medium', 'high', 'urgent');
-        CREATE TYPE dealstatus AS ENUM ('proposed', 'negotiating', 'accepted', 'closed', 'dead');
-        CREATE TYPE sharelinkstatus AS ENUM ('active', 'expired', 'revoked');
-        CREATE TYPE compliancestatus AS ENUM ('passed', 'failed', 'needs_review');
-        CREATE TYPE dataflagstatus AS ENUM ('open', 'in_progress', 'resolved', 'wont_fix');
-        CREATE TYPE investorreadinesslevel AS ENUM ('red', 'yellow', 'green');
-    """)
+    # ENUM types will be created automatically by SQLAlchemy when creating tables
+    # No need to create them manually
 
     # Teams table
     op.create_table(

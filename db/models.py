@@ -109,6 +109,7 @@ class User(Base):
     uuid = Column(UUID(as_uuid=True), default=uuid.uuid4, unique=True, nullable=False)
     email = Column(String(255), unique=True, nullable=False, index=True)
     full_name = Column(String(255))
+    password_hash = Column(String(255), nullable=False)
     role = Column(SQLEnum(UserRole), nullable=False, default=UserRole.AGENT)
     team_id = Column(Integer, ForeignKey("teams.id", ondelete="SET NULL"))
     is_active = Column(Boolean, default=True)
@@ -302,7 +303,7 @@ class PropertyTimeline(Base):
     event_title = Column(String(255), nullable=False)
     event_description = Column(Text)
 
-    metadata = Column(JSONB, default={})
+    extra_metadata = Column(JSONB, default={})
 
     # Related entities
     communication_id = Column(Integer, ForeignKey("communications.id", ondelete="SET NULL"))
@@ -367,7 +368,7 @@ class Communication(Base):
     email_thread_position = Column(Integer)
 
     # Metadata
-    metadata = Column(JSONB, default={})
+    extra_metadata = Column(JSONB, default={})
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
 
@@ -470,7 +471,7 @@ class Task(Base):
     source_communication_id = Column(Integer, ForeignKey("communications.id", ondelete="SET NULL"))
 
     # Metadata
-    metadata = Column(JSONB, default={})
+    extra_metadata = Column(JSONB, default={})
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -586,7 +587,7 @@ class Deal(Base):
 
     # Metadata
     notes = Column(Text)
-    metadata = Column(JSONB, default={})
+    extra_metadata = Column(JSONB, default={})
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
