@@ -369,3 +369,26 @@ if __name__ == "__main__":
         reload=True,
         log_level="info"
     )
+
+# =============================================================================
+# PROVIDER STATUS ENDPOINT (for mock mode verification)
+# =============================================================================
+
+@app.get("/api/v1/status/providers")
+def get_provider_status():
+    """
+    Get current provider configuration
+    
+    Returns which provider implementations are currently active:
+    - email: mailhog-smtp vs sendgrid
+    - sms: mock-twilio vs twilio  
+    - storage: minio-local vs aws-s3
+    - pdf: gotenberg-local vs weasyprint
+    - llm: deterministic-templates vs openai
+    
+    Use this endpoint to verify mock mode is properly configured.
+    """
+    from api.config import get_provider_info
+    
+    return get_provider_info()
+
