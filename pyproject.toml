@@ -17,6 +17,13 @@ pydantic = "^2.11.7"
 requests = "^2.32.4"
 fastapi = "^0.111.0"
 uvicorn = {extras = ["standard"], version = "^0.30.1"}
+sqlalchemy = "^2.0.44"
+alembic = "^1.17.1"
+passlib = {extras = ["bcrypt"], version = "^1.7.4"}
+python-jose = {extras = ["cryptography"], version = "^3.5.0"}
+python-multipart = "^0.0.20"
+slowapi = "^0.1.9"
+bcrypt = "^5.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.4.1"
