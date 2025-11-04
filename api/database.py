@@ -1,6 +1,9 @@
 """
 Database connection and session management
 """
+from dotenv import load_dotenv
+load_dotenv()  # Load environment variables first
+
 import os
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, Session

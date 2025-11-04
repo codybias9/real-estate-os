@@ -2,6 +2,9 @@
 Real Estate OS - Comprehensive API
 10x better decision speed, not just data
 """
+from dotenv import load_dotenv
+load_dotenv()  # Load environment variables from .env file
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
@@ -299,7 +302,7 @@ async def metrics_collection_task():
     - Provider status
     """
     import asyncio
-    from db.database import get_db
+    from api.database import get_db
 
     while True:
         try:
