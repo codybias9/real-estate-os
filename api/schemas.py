@@ -227,7 +227,7 @@ class CommunicationBase(BaseSchema):
     to_address: Optional[str] = None
     subject: Optional[str] = None
     body: Optional[str] = None
-    metadata: Optional[Dict[str, Any]] = {}
+    extra_metadata: Optional[Dict[str, Any]] = {}
 
 class CommunicationCreate(CommunicationBase):
     user_id: Optional[int] = None
@@ -793,7 +793,7 @@ class TimelineEvent(BaseSchema):
     event_type: str
     event_title: str
     event_description: Optional[str] = None
-    metadata: Dict[str, Any] = {}
+    extra_metadata: Dict[str, Any] = {}
     created_at: datetime
 
 class PipelineStats(BaseSchema):

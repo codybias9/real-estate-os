@@ -136,7 +136,7 @@ def apply_cadence_rules(
                     event_type="cadence_paused",
                     event_title="Cadence Paused",
                     event_description=f"Auto-paused by rule: {rule.name}",
-                    metadata={"rule_id": rule.id, "trigger": event_type}
+                    extra_metadata={"rule_id": rule.id, "trigger": event_type}
                 )
                 db.add(timeline_event)
 
@@ -209,7 +209,7 @@ def check_dnc_compliance(
             event_type="dnc_detected",
             event_title="⚠️ DNC Registry Match",
             event_description="Property phone number is on Do Not Call registry",
-            metadata={"phone": phone_number}
+            extra_metadata={"phone": phone_number}
         )
         db.add(timeline_event)
 
@@ -301,7 +301,7 @@ def record_opt_out(
         event_type="opted_out",
         event_title="🚫 Opt-Out Recorded",
         event_description=f"Contact opted out: {reason or 'No reason given'}",
-        metadata={"reason": reason}
+        extra_metadata={"reason": reason}
     )
     db.add(timeline_event)
 

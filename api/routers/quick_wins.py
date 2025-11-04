@@ -108,7 +108,7 @@ def generate_and_send(
             pdf_bytes,
             object_name,
             content_type="application/pdf",
-            metadata={
+            extra_metadata={
                 "property_id": str(property.id),
                 "generated_at": datetime.utcnow().isoformat()
             }
@@ -238,7 +238,7 @@ Best regards
             subject=email_subject,
             body=email_body,
             sent_at=datetime.utcnow(),
-            metadata={
+            extra_metadata={
                 "sendgrid_message_id": send_result.get("message_id"),
                 "memo_url": memo_url
             }
@@ -261,7 +261,7 @@ Best regards
             to_address=to_email,
             subject=email_subject,
             body=email_body,
-            metadata={"error": str(e), "memo_url": memo_url}
+            extra_metadata={"error": str(e), "memo_url": memo_url}
         )
 
         db.add(communication)
@@ -283,7 +283,7 @@ Best regards
         event_title="Memo Generated & Sent",
         event_description=f"Memo generated and emailed to {communication.to_address}",
         communication_id=communication.id,
-        metadata={"memo_url": memo_url}
+        extra_metadata={"memo_url": memo_url}
     )
     db.add(timeline_event)
 
@@ -383,7 +383,7 @@ def auto_assign_on_reply(
         communication_id=communication_id,
         task_id=task.id,
         user_id=last_outbound.user_id,
-        metadata={"trigger": "inbound_reply", "sla_hours": 24}
+        extra_metadata={"trigger": "inbound_reply", "sla_hours": 24}
     )
     db.add(timeline_event)
 
@@ -491,7 +491,7 @@ def flag_data_issue(
         priority=TaskPriority.MEDIUM,
         sla_hours=72,
         due_at=datetime.utcnow() + timedelta(hours=72),
-        metadata={"data_flag_id": data_flag.id, "field_name": flag_data.field_name}
+        extra_metadata={"data_flag_id": data_flag.id, "field_name": flag_data.field_name}
     )
 
     db.add(task)
@@ -505,7 +505,7 @@ def flag_data_issue(
         event_description=f"Data quality issue reported for field: {flag_data.field_name}",
         task_id=task.id,
         user_id=user_id,
-        metadata={
+        extra_metadata={
             "field_name": flag_data.field_name,
             "issue_type": flag_data.issue_type,
             "data_flag_id": data_flag.id

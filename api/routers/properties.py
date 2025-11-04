@@ -212,7 +212,7 @@ def update_property(
             event_type="stage_changed",
             event_title="Stage Changed",
             event_description=f"Moved from {old_stage.value} to {property.current_stage.value}",
-            metadata={"old_stage": old_stage.value, "new_stage": property.current_stage.value}
+            extra_metadata={"old_stage": old_stage.value, "new_stage": property.current_stage.value}
         )
         db.add(timeline_event)
 
@@ -301,7 +301,7 @@ def change_property_stage(
         event_type="stage_changed",
         event_title="Stage Changed",
         event_description=f"Moved from {old_stage.value} to {stage_change.new_stage.value}",
-        metadata={"old_stage": old_stage.value, "new_stage": stage_change.new_stage.value}
+        extra_metadata={"old_stage": old_stage.value, "new_stage": stage_change.new_stage.value}
     )
     db.add(timeline_event)
 

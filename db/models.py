@@ -199,8 +199,8 @@ class Property(Base):
     repair_estimate = Column(Float)
 
     # Pipeline tracking
-    current_stage = Column(SQLEnum(PropertyStage), nullable=False, default=PropertyStage.NEW, index=True)
-    previous_stage = Column(SQLEnum(PropertyStage))
+    current_stage = Column(SQLEnum(PropertyStage, values_callable=lambda x: [e.value for e in x]), nullable=False, default=PropertyStage.NEW, index=True)
+    previous_stage = Column(SQLEnum(PropertyStage, values_callable=lambda x: [e.value for e in x]))
     stage_changed_at = Column(DateTime)
 
     # Engagement tracking
@@ -338,8 +338,8 @@ class Communication(Base):
     template_id = Column(Integer, ForeignKey("templates.id", ondelete="SET NULL"))
 
     # Communication details
-    type = Column(SQLEnum(CommunicationType), nullable=False, index=True)
-    direction = Column(SQLEnum(CommunicationDirection), nullable=False)
+    type = Column(SQLEnum(CommunicationType, values_callable=lambda x: [e.value for e in x]), nullable=False, index=True)
+    direction = Column(SQLEnum(CommunicationDirection, values_callable=lambda x: [e.value for e in x]), nullable=False)
 
     # Contact info
     from_address = Column(String(500))  # email or phone
@@ -409,7 +409,7 @@ class Template(Base):
     team_id = Column(Integer, ForeignKey("teams.id", ondelete="CASCADE"), nullable=False)
 
     name = Column(String(255), nullable=False)
-    type = Column(SQLEnum(CommunicationType), nullable=False)
+    type = Column(SQLEnum(CommunicationType, values_callable=lambda x: [e.value for e in x]), nullable=False)
 
     # Stage filtering
     applicable_stages = Column(JSONB, default=[])  # List of PropertyStage values
@@ -458,8 +458,8 @@ class Task(Base):
     title = Column(String(500), nullable=False)
     description = Column(Text)
 
-    status = Column(SQLEnum(TaskStatus), nullable=False, default=TaskStatus.PENDING, index=True)
-    priority = Column(SQLEnum(TaskPriority), nullable=False, default=TaskPriority.MEDIUM, index=True)
+    status = Column(SQLEnum(TaskStatus, values_callable=lambda x: [e.value for e in x]), nullable=False, default=TaskStatus.PENDING, index=True)
+    priority = Column(SQLEnum(TaskPriority, values_callable=lambda x: [e.value for e in x]), nullable=False, default=TaskPriority.MEDIUM, index=True)
 
     # SLA tracking
     due_at = Column(DateTime, index=True)
@@ -560,7 +560,7 @@ class Deal(Base):
     uuid = Column(UUID(as_uuid=True), default=uuid.uuid4, unique=True, nullable=False)
     property_id = Column(Integer, ForeignKey("properties.id", ondelete="CASCADE"), nullable=False)
 
-    status = Column(SQLEnum(DealStatus), nullable=False, default=DealStatus.PROPOSED, index=True)
+    status = Column(SQLEnum(DealStatus, values_callable=lambda x: [e.value for e in x]), nullable=False, default=DealStatus.PROPOSED, index=True)
 
     # Deal structure
     offer_price = Column(Float)
@@ -646,7 +646,7 @@ class ShareLink(Base):
 
     # Link configuration
     short_code = Column(String(20), unique=True, nullable=False, index=True)
-    status = Column(SQLEnum(ShareLinkStatus), nullable=False, default=ShareLinkStatus.ACTIVE)
+    status = Column(SQLEnum(ShareLinkStatus, values_callable=lambda x: [e.value for e in x]), nullable=False, default=ShareLinkStatus.ACTIVE)
 
     # Security
     password_hash = Column(String(255))
@@ -707,7 +707,7 @@ class DealRoom(Base):
     description = Column(Text)
 
     # Investor readiness
-    readiness_level = Column(SQLEnum(InvestorReadinessLevel), default=InvestorReadinessLevel.RED)
+    readiness_level = Column(SQLEnum(InvestorReadinessLevel, values_callable=lambda x: [e.value for e in x]), default=InvestorReadinessLevel.RED)
     readiness_factors = Column(JSONB, default={})  # {"memo": True, "comps": True, "disclosures": False}
 
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -806,7 +806,7 @@ class ComplianceCheck(Base):
     property_id = Column(Integer, ForeignKey("properties.id", ondelete="CASCADE"), nullable=False)
 
     check_type = Column(String(50), nullable=False)  # "dnc", "opt_out", "state_law", etc.
-    status = Column(SQLEnum(ComplianceStatus), nullable=False)
+    status = Column(SQLEnum(ComplianceStatus, values_callable=lambda x: [e.value for e in x]), nullable=False)
 
     details = Column(Text)
     checked_at = Column(DateTime, default=datetime.utcnow, nullable=False)
@@ -903,7 +903,7 @@ class DataFlag(Base):
     issue_type = Column(String(100), nullable=False)  # "incorrect", "outdated", "missing", etc.
     description = Column(Text)
 
-    status = Column(SQLEnum(DataFlagStatus), nullable=False, default=DataFlagStatus.OPEN)
+    status = Column(SQLEnum(DataFlagStatus, values_callable=lambda x: [e.value for e in x]), nullable=False, default=DataFlagStatus.OPEN)
 
     resolved_by_user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"))
     resolved_at = Column(DateTime)

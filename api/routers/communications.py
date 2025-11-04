@@ -276,7 +276,7 @@ def capture_call(
         event_description=f"{direction.value.title()} call - {call_data.duration_seconds}s",
         communication_id=communication.id,
         user_id=user_id,
-        metadata={
+        extra_metadata={
             "duration_seconds": call_data.duration_seconds,
             "sentiment": sentiment,
             "key_points_count": len(key_points)
