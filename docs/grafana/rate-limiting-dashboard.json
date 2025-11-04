@@ -1,0 +1,434 @@
+{
+  "dashboard": {
+    "title": "Real Estate OS - Rate Limiting",
+    "description": "API rate limiting monitoring with Redis-based tracking",
+    "tags": ["realestateos", "rate-limiting", "api", "throttling"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "10s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "timepicker": {
+      "refresh_intervals": ["5s", "10s", "30s", "1m", "5m", "15m"],
+      "time_options": ["5m", "15m", "1h", "6h", "12h", "24h"]
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Rate Limit Hits (Last Hour)",
+        "type": "stat",
+        "gridPos": {"x": 0, "y": 0, "w": 6, "h": 6},
+        "targets": [
+          {
+            "expr": "sum(increase(realestateos_rate_limit_hits_total[1h]))",
+            "legendFormat": "Total Hits",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": null, "color": "green"},
+                {"value": 10, "color": "yellow"},
+                {"value": 100, "color": "red"}
+              ]
+            }
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          },
+          "text": {"titleSize": 16, "valueSize": 48},
+          "colorMode": "background",
+          "graphMode": "area"
+        },
+        "alert": {
+          "name": "High Rate Limit Hits",
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [100],
+                "type": "gt"
+              },
+              "operator": {"type": "and"},
+              "query": {"params": ["A", "5m", "now"]},
+              "reducer": {"type": "last"}
+            }
+          ],
+          "executionErrorState": "alerting",
+          "for": "5m",
+          "frequency": "1m",
+          "message": "High number of rate limit hits detected - possible abuse or misconfiguration",
+          "noDataState": "no_data",
+          "notifications": []
+        }
+      },
+      {
+        "id": 2,
+        "title": "Rate Limit Hit Rate",
+        "type": "stat",
+        "gridPos": {"x": 6, "y": 0, "w": 6, "h": 6},
+        "targets": [
+          {
+            "expr": "sum(rate(realestateos_rate_limit_hits_total[5m]))",
+            "legendFormat": "Hits/sec",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "decimals": 2,
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": null, "color": "green"},
+                {"value": 0.1, "color": "yellow"},
+                {"value": 1, "color": "red"}
+              ]
+            }
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          },
+          "text": {"titleSize": 16, "valueSize": 48},
+          "colorMode": "value",
+          "graphMode": "area"
+        }
+      },
+      {
+        "id": 3,
+        "title": "Affected Users (Last Hour)",
+        "type": "stat",
+        "gridPos": {"x": 12, "y": 0, "w": 6, "h": 6},
+        "targets": [
+          {
+            "expr": "count(count by (user_id) (increase(realestateos_rate_limit_hits_total[1h])))",
+            "legendFormat": "Unique Users",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": {"mode": "palette-classic"}
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          },
+          "text": {"titleSize": 16, "valueSize": 48},
+          "colorMode": "value"
+        }
+      },
+      {
+        "id": 4,
+        "title": "Average Remaining Quota",
+        "type": "gauge",
+        "gridPos": {"x": 18, "y": 0, "w": 6, "h": 6},
+        "targets": [
+          {
+            "expr": "avg(realestateos_rate_limit_remaining)",
+            "legendFormat": "Remaining",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "min": 0,
+            "max": 100,
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": null, "color": "red"},
+                {"value": 20, "color": "yellow"},
+                {"value": 50, "color": "green"}
+              ]
+            }
+          }
+        },
+        "options": {
+          "showThresholdLabels": false,
+          "showThresholdMarkers": true
+        }
+      },
+      {
+        "id": 5,
+        "title": "Rate Limit Hits Over Time",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 6, "w": 24, "h": 8},
+        "targets": [
+          {
+            "expr": "sum(rate(realestateos_rate_limit_hits_total[1m])) by (endpoint)",
+            "legendFormat": "{{endpoint}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "color": {"mode": "palette-classic"},
+            "custom": {
+              "lineInterpolation": "smooth",
+              "fillOpacity": 15,
+              "showPoints": "auto",
+              "axisPlacement": "auto"
+            }
+          }
+        },
+        "options": {
+          "legend": {
+            "displayMode": "table",
+            "placement": "bottom",
+            "calcs": ["last", "max", "mean"]
+          },
+          "tooltip": {"mode": "multi", "sort": "desc"}
+        }
+      },
+      {
+        "id": 6,
+        "title": "Top 10 Rate-Limited Users",
+        "type": "table",
+        "gridPos": {"x": 0, "y": 14, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "topk(10, sum by (user_id) (increase(realestateos_rate_limit_hits_total[1h])))",
+            "legendFormat": "{{user_id}}",
+            "refId": "A",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "Value"},
+              "properties": [
+                {"id": "displayName", "value": "Hits (Last Hour)"},
+                {"id": "custom.displayMode", "value": "color-background"},
+                {"id": "color", "value": {"mode": "thresholds"}},
+                {"id": "thresholds", "value": {
+                  "mode": "absolute",
+                  "steps": [
+                    {"value": null, "color": "green"},
+                    {"value": 5, "color": "yellow"},
+                    {"value": 10, "color": "red"}
+                  ]
+                }}
+              ]
+            }
+          ]
+        },
+        "options": {
+          "showHeader": true,
+          "sortBy": [{"displayName": "Hits (Last Hour)", "desc": true}]
+        }
+      },
+      {
+        "id": 7,
+        "title": "Top 10 Rate-Limited Endpoints",
+        "type": "table",
+        "gridPos": {"x": 12, "y": 14, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "topk(10, sum by (endpoint) (increase(realestateos_rate_limit_hits_total[1h])))",
+            "legendFormat": "{{endpoint}}",
+            "refId": "A",
+            "format": "table",
+            "instant": true
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "align": "auto",
+              "displayMode": "auto"
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "Value"},
+              "properties": [
+                {"id": "displayName", "value": "Hits (Last Hour)"},
+                {"id": "custom.displayMode", "value": "color-background"}
+              ]
+            }
+          ]
+        },
+        "options": {
+          "showHeader": true,
+          "sortBy": [{"displayName": "Hits (Last Hour)", "desc": true}]
+        }
+      },
+      {
+        "id": 8,
+        "title": "Rate Limit Reset Time Distribution",
+        "type": "heatmap",
+        "gridPos": {"x": 0, "y": 22, "w": 24, "h": 8},
+        "targets": [
+          {
+            "expr": "realestateos_rate_limit_reset_seconds",
+            "legendFormat": "{{user_id}}",
+            "refId": "A",
+            "format": "time_series"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "hideFrom": {
+                "tooltip": false,
+                "viz": false,
+                "legend": false
+              }
+            }
+          }
+        },
+        "options": {
+          "calculate": true,
+          "calculation": {},
+          "cellGap": 2,
+          "cellValues": {},
+          "color": {
+            "mode": "scheme",
+            "scheme": "Spectral",
+            "steps": 128
+          },
+          "yAxis": {
+            "unit": "s"
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "API Request Success vs Rate Limited",
+        "type": "piechart",
+        "gridPos": {"x": 0, "y": 30, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "sum(increase(realestateos_api_requests_total{status!=\"429\"}[1h]))",
+            "legendFormat": "Successful",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(increase(realestateos_rate_limit_hits_total[1h]))",
+            "legendFormat": "Rate Limited",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        },
+        "options": {
+          "legend": {
+            "displayMode": "table",
+            "placement": "right",
+            "values": ["value", "percent"]
+          },
+          "pieType": "pie"
+        }
+      },
+      {
+        "id": 10,
+        "title": "Rate Limit Quota Remaining by Endpoint",
+        "type": "bargauge",
+        "gridPos": {"x": 12, "y": 30, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "avg by (endpoint) (realestateos_rate_limit_remaining)",
+            "legendFormat": "{{endpoint}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "min": 0,
+            "max": 100,
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "percentage",
+              "steps": [
+                {"value": null, "color": "red"},
+                {"value": 20, "color": "yellow"},
+                {"value": 50, "color": "green"}
+              ]
+            }
+          }
+        },
+        "options": {
+          "orientation": "horizontal",
+          "displayMode": "gradient",
+          "showUnfilled": true
+        }
+      }
+    ],
+    "annotations": {
+      "list": [
+        {
+          "name": "Rate Limit Threshold Changes",
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "iconColor": "blue",
+          "tags": ["rate-limit-config"]
+        },
+        {
+          "name": "Abuse Detection",
+          "datasource": "Prometheus",
+          "enable": true,
+          "iconColor": "red",
+          "expr": "sum(rate(realestateos_rate_limit_hits_total[1m])) > 1",
+          "titleFormat": "High Rate Limit Activity",
+          "textFormat": "Possible abuse detected"
+        }
+      ]
+    },
+    "templating": {
+      "list": [
+        {
+          "name": "endpoint",
+          "type": "query",
+          "datasource": "Prometheus",
+          "query": "label_values(realestateos_rate_limit_hits_total, endpoint)",
+          "refresh": 1,
+          "multi": true,
+          "includeAll": true
+        },
+        {
+          "name": "user",
+          "type": "query",
+          "datasource": "Prometheus",
+          "query": "label_values(realestateos_rate_limit_hits_total, user_id)",
+          "refresh": 1,
+          "multi": true,
+          "includeAll": true
+        }
+      ]
+    }
+  }
+}

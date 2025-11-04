@@ -1,252 +1,591 @@
 """
 Rate Limiting Middleware
-
-Implements per-tenant and per-token rate limiting with sliding window algorithm.
-Uses Redis for distributed rate limiting in production.
+Per-user and per-IP rate limiting using Redis
 """
-
+import os
+import time
+from typing import Optional
 from fastapi import Request, HTTPException, status
 from fastapi.responses import JSONResponse
-from starlette.middleware.base import BaseHTTPMiddleware
-from typing import Dict, Tuple, Optional
-from datetime import datetime, timedelta
-import time
-import os
-from collections import defaultdict, deque
+import redis
+import logging
 
+logger = logging.getLogger(__name__)
 
-class RateLimitExceeded(HTTPException):
-    """Custom exception for rate limit exceeded"""
+# ============================================================================
+# REDIS CONNECTION
+# ============================================================================
 
-    def __init__(self, retry_after: int):
-        super().__init__(
-            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-            detail="Rate limit exceeded",
-            headers={"Retry-After": str(retry_after)}
-        )
-        self.retry_after = retry_after
+REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
+try:
+    redis_client = redis.from_url(REDIS_URL, decode_responses=True)
+    # Test connection
+    redis_client.ping()
+    logger.info("Rate limiting Redis connection established")
+except Exception as e:
+    logger.warning(f"Rate limiting disabled - Redis not available: {str(e)}")
+    redis_client = None
 
-class InMemoryRateLimiter:
+# ============================================================================
+# RATE LIMIT CONFIGURATION
+# ============================================================================
+
+# Default rate limits (can be overridden per endpoint)
+DEFAULT_RATE_LIMITS = {
+    "per_minute": int(os.getenv("RATE_LIMIT_PER_MINUTE", "60")),
+    "per_hour": int(os.getenv("RATE_LIMIT_PER_HOUR", "1000")),
+    "per_day": int(os.getenv("RATE_LIMIT_PER_DAY", "10000"))
+}
+
+# Stricter limits for authentication endpoints
+AUTH_RATE_LIMITS = {
+    "per_minute": 5,
+    "per_hour": 20,
+    "per_day": 100
+}
+
+# Generous limits for authenticated API calls
+API_RATE_LIMITS = {
+    "per_minute": 100,
+    "per_hour": 5000,
+    "per_day": 50000
+}
+
+# ============================================================================
+# RATE LIMITING FUNCTIONS
+# ============================================================================
+
+def get_rate_limit_key(identifier: str, window: str) -> str:
     """
-    In-memory rate limiter using sliding window algorithm
-    For production, use RedisRateLimiter
+    Generate Redis key for rate limiting
+
+    Args:
+        identifier: User ID, IP address, or other identifier
+        window: Time window ('minute', 'hour', 'day')
+
+    Returns:
+        Redis key string
     """
+    current_time = int(time.time())
 
-    def __init__(self):
-        # Store for each key: deque of timestamps
-        self.requests: Dict[str, deque] = defaultdict(deque)
-        self.cleanup_interval = 60  # Clean up old entries every 60 seconds
-        self.last_cleanup = time.time()
+    if window == "minute":
+        # Bucket per minute
+        bucket = current_time // 60
+    elif window == "hour":
+        # Bucket per hour
+        bucket = current_time // 3600
+    elif window == "day":
+        # Bucket per day
+        bucket = current_time // 86400
+    else:
+        bucket = current_time
 
-    def is_allowed(self, key: str, limit: int, window_seconds: int) -> Tuple[bool, int]:
-        """
-        Check if request is allowed under rate limit
-
-        Returns: (is_allowed, retry_after_seconds)
-        """
-        now = time.time()
-
-        # Periodic cleanup
-        if now - self.last_cleanup > self.cleanup_interval:
-            self._cleanup()
-
-        # Remove old timestamps outside the window
-        window_start = now - window_seconds
-        request_times = self.requests[key]
-
-        while request_times and request_times[0] < window_start:
-            request_times.popleft()
-
-        # Check if under limit
-        if len(request_times) < limit:
-            request_times.append(now)
-            return True, 0
-        else:
-            # Calculate when the oldest request will expire
-            oldest_request = request_times[0]
-            retry_after = int(oldest_request + window_seconds - now) + 1
-            return False, retry_after
-
-    def _cleanup(self):
-        """Remove entries that are completely outside any reasonable window"""
-        now = time.time()
-        max_window = 3600  # 1 hour
-
-        for key in list(self.requests.keys()):
-            request_times = self.requests[key]
-            # Remove timestamps older than max window
-            while request_times and request_times[0] < now - max_window:
-                request_times.popleft()
-
-            # If empty, remove key
-            if not request_times:
-                del self.requests[key]
-
-        self.last_cleanup = now
+    return f"rate_limit:{identifier}:{window}:{bucket}"
 
 
-class RedisRateLimiter:
+def check_rate_limit(
+    identifier: str,
+    limits: dict,
+    redis_client: redis.Redis
+) -> tuple[bool, Optional[dict]]:
     """
-    Redis-backed rate limiter for distributed systems
-    Uses sorted sets with timestamp scores
+    Check if request is within rate limits
+
+    Args:
+        identifier: User ID, IP, or identifier
+        limits: Dict with 'per_minute', 'per_hour', 'per_day' limits
+        redis_client: Redis client
+
+    Returns:
+        Tuple of (allowed: bool, info: dict or None)
+        If not allowed, info contains retry_after and limit details
     """
+    if not redis_client:
+        # Rate limiting disabled if Redis not available
+        return True, None
 
-    def __init__(self, redis_url: str = None):
-        try:
-            import redis
-            self.redis = redis.from_url(redis_url or os.getenv("REDIS_URL", "redis://localhost:6379"))
-        except ImportError:
-            raise ImportError("redis package required for RedisRateLimiter. Install with: pip install redis")
-
-    def is_allowed(self, key: str, limit: int, window_seconds: int) -> Tuple[bool, int]:
-        """
-        Check if request is allowed using Redis sorted set
-        """
-        now = time.time()
-        window_start = now - window_seconds
-
-        pipe = self.redis.pipeline()
-
-        # Remove old entries
-        pipe.zremrangebyscore(key, 0, window_start)
-
-        # Count remaining entries
-        pipe.zcard(key)
-
-        # Add current request
-        pipe.zadd(key, {str(now): now})
-
-        # Set expiry on key
-        pipe.expire(key, window_seconds + 10)
-
-        results = pipe.execute()
-        count = results[1]  # Result of zcard
-
-        if count < limit:
-            return True, 0
-        else:
-            # Get oldest timestamp in window
-            oldest = self.redis.zrange(key, 0, 0, withscores=True)
-            if oldest:
-                oldest_time = oldest[0][1]
-                retry_after = int(oldest_time + window_seconds - now) + 1
-                # Remove the request we just added since it's over limit
-                self.redis.zrem(key, str(now))
-                return False, retry_after
-            else:
-                return False, 1
-
-
-class RateLimitMiddleware(BaseHTTPMiddleware):
-    """
-    Rate limiting middleware for FastAPI
-
-    Configuration via environment variables:
-    - RATE_LIMIT_ENABLED: true/false (default: true)
-    - RATE_LIMIT_BACKEND: memory/redis (default: memory)
-    - RATE_LIMIT_DEFAULT: requests per minute (default: 60)
-    """
-
-    # Route-specific rate limits (requests per minute)
-    ROUTE_LIMITS = {
-        "/auth": (10, 60),  # 10 requests per minute for auth endpoints
-        "/api/v1/properties": (30, 60),  # 30 req/min
-        "/api/v1/search": (20, 60),  # 20 req/min (more expensive)
-        "/api/v1/negotiation": (10, 60),  # 10 req/min (compliance)
-        "/api/v1/admin": (100, 60),  # 100 req/min for admin
+    windows = {
+        "minute": (60, limits.get("per_minute")),
+        "hour": (3600, limits.get("per_hour")),
+        "day": (86400, limits.get("per_day"))
     }
 
-    # Exempt routes (no rate limiting)
-    EXEMPT_ROUTES = ["/healthz", "/version", "/docs", "/openapi.json", "/redoc"]
+    for window_name, (ttl, limit) in windows.items():
+        if limit is None:
+            continue
 
-    def __init__(self, app):
-        super().__init__(app)
+        key = get_rate_limit_key(identifier, window_name)
 
-        # Initialize rate limiter backend
-        backend = os.getenv("RATE_LIMIT_BACKEND", "memory")
-        if backend == "redis":
-            try:
-                self.limiter = RedisRateLimiter()
-            except Exception as e:
-                print(f"Failed to initialize Redis rate limiter: {e}")
-                print("Falling back to in-memory rate limiter")
-                self.limiter = InMemoryRateLimiter()
-        else:
-            self.limiter = InMemoryRateLimiter()
+        try:
+            # Increment counter
+            current = redis_client.incr(key)
 
-        self.enabled = os.getenv("RATE_LIMIT_ENABLED", "true").lower() == "true"
-        self.default_limit = int(os.getenv("RATE_LIMIT_DEFAULT", "60"))
+            # Set expiry on first request
+            if current == 1:
+                redis_client.expire(key, ttl)
 
-    def _get_rate_limit_for_path(self, path: str) -> Tuple[int, int]:
-        """
-        Get rate limit configuration for a path
-        Returns: (limit, window_seconds)
-        """
-        # Check for exact match
-        for route_prefix, (limit, window) in self.ROUTE_LIMITS.items():
-            if path.startswith(route_prefix):
-                return limit, window
+            # Check if limit exceeded
+            if current > limit:
+                retry_after = redis_client.ttl(key)
 
-        # Default limit
-        return self.default_limit, 60
+                return False, {
+                    "retry_after": retry_after,
+                    "limit": limit,
+                    "window": window_name,
+                    "current": current
+                }
 
-    def _get_rate_limit_key(self, request: Request) -> str:
-        """
-        Generate rate limit key from request
-        Uses tenant_id and user_id if available, otherwise IP address
-        """
-        # Try to extract tenant and user from auth (if available)
-        tenant_id = request.state.__dict__.get("tenant_id")
-        user_id = request.state.__dict__.get("user_id")
+        except Exception as e:
+            logger.error(f"Rate limit check failed: {str(e)}")
+            # Fail open if Redis has issues
+            return True, None
 
-        if tenant_id and user_id:
-            return f"rl:tenant:{tenant_id}:user:{user_id}:{request.url.path}"
-        elif user_id:
-            return f"rl:user:{user_id}:{request.url.path}"
-        else:
-            # Fallback to IP-based rate limiting
-            client_ip = request.client.host if request.client else "unknown"
-            return f"rl:ip:{client_ip}:{request.url.path}"
+    return True, None
 
-    async def dispatch(self, request: Request, call_next):
-        """
-        Check rate limit before processing request
-        """
-        # Skip if rate limiting disabled
-        if not self.enabled:
-            return await call_next(request)
 
-        # Check if route is exempt
-        path = request.url.path
-        if any(path.startswith(exempt) for exempt in self.EXEMPT_ROUTES):
-            return await call_next(request)
+def get_identifier_from_request(request: Request, user_id: Optional[int] = None) -> str:
+    """
+    Get identifier for rate limiting from request
 
-        # Get rate limit for this path
-        limit, window = self._get_rate_limit_for_path(path)
+    Priority:
+    1. Authenticated user ID (most accurate)
+    2. IP address (fallback for unauthenticated requests)
 
-        # Generate rate limit key
-        key = self._get_rate_limit_key(request)
+    Args:
+        request: FastAPI request
+        user_id: Authenticated user ID (if available)
 
-        # Check rate limit
-        allowed, retry_after = self.limiter.is_allowed(key, limit, window)
+    Returns:
+        Identifier string
+    """
+    if user_id:
+        return f"user:{user_id}"
 
-        if not allowed:
-            # Rate limit exceeded
-            return JSONResponse(
-                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                content={"detail": "Rate limit exceeded", "retry_after": retry_after},
-                headers={"Retry-After": str(retry_after)}
-            )
+    # Get IP from headers (handle proxies)
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        # Take first IP in chain
+        ip = forwarded_for.split(",")[0].strip()
+    else:
+        ip = request.client.host if request.client else "unknown"
 
-        # Add rate limit headers to response
-        response = await call_next(request)
+    return f"ip:{ip}"
 
-        # Get current usage
-        current_count = len(self.limiter.requests.get(key, [])) if isinstance(self.limiter, InMemoryRateLimiter) else 0
+
+# ============================================================================
+# FASTAPI DEPENDENCIES
+# ============================================================================
+
+async def rate_limit_dependency(
+    request: Request,
+    limits: dict = DEFAULT_RATE_LIMITS,
+    user_id: Optional[int] = None
+):
+    """
+    FastAPI dependency for rate limiting
+
+    Usage:
+        @app.get("/endpoint")
+        def my_endpoint(
+            rate_limit: None = Depends(rate_limit_dependency)
+        ):
+            # Endpoint logic
+            pass
+
+    Args:
+        request: FastAPI request
+        limits: Rate limit configuration
+        user_id: User ID (if authenticated)
+
+    Raises:
+        HTTPException: 429 Too Many Requests if rate limit exceeded
+    """
+    if not redis_client:
+        # Rate limiting disabled
+        return
+
+    identifier = get_identifier_from_request(request, user_id)
+
+    allowed, info = check_rate_limit(identifier, limits, redis_client)
+
+    if not allowed:
+        logger.warning(f"Rate limit exceeded for {identifier}: {info}")
+
+        raise HTTPException(
+            status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+            detail={
+                "error": "Rate limit exceeded",
+                "retry_after": info["retry_after"],
+                "limit": info["limit"],
+                "window": info["window"]
+            },
+            headers={
+                "Retry-After": str(info["retry_after"]),
+                "X-RateLimit-Limit": str(info["limit"]),
+                "X-RateLimit-Remaining": "0",
+                "X-RateLimit-Reset": str(int(time.time()) + info["retry_after"])
+            }
+        )
+
+
+def rate_limit_auth(user_id: Optional[int] = None):
+    """
+    Rate limit dependency for authentication endpoints
+
+    Stricter limits to prevent brute force attacks
+
+    Usage:
+        @app.post("/auth/login")
+        def login(
+            rate_limit: None = Depends(rate_limit_auth)
+        ):
+            pass
+    """
+    from functools import partial
+    return partial(rate_limit_dependency, limits=AUTH_RATE_LIMITS, user_id=user_id)
+
+
+def rate_limit_api(user_id: Optional[int] = None):
+    """
+    Rate limit dependency for authenticated API endpoints
+
+    More generous limits for normal API usage
+
+    Usage:
+        @app.get("/properties")
+        def list_properties(
+            rate_limit: None = Depends(lambda: rate_limit_api(current_user.id)),
+            current_user: User = Depends(get_current_user)
+        ):
+            pass
+    """
+    from functools import partial
+    return partial(rate_limit_dependency, limits=API_RATE_LIMITS, user_id=user_id)
+
+
+# ============================================================================
+# MIDDLEWARE (Global Rate Limiting)
+# ============================================================================
+
+async def rate_limit_middleware(request: Request, call_next):
+    """
+    Global rate limiting middleware
+
+    Applies default rate limits to all requests
+
+    Add to FastAPI app:
+        app.middleware("http")(rate_limit_middleware)
+    """
+    if not redis_client:
+        # Rate limiting disabled
+        return await call_next(request)
+
+    # Skip rate limiting for health check endpoints
+    if request.url.path in ["/health", "/ping", "/metrics"]:
+        return await call_next(request)
+
+    # Get identifier (IP-based for global middleware)
+    identifier = get_identifier_from_request(request, user_id=None)
+
+    # Check rate limit
+    allowed, info = check_rate_limit(identifier, DEFAULT_RATE_LIMITS, redis_client)
+
+    if not allowed:
+        logger.warning(f"Rate limit exceeded (global) for {identifier}: {info}")
+
+        return JSONResponse(
+            status_code=429,
+            content={
+                "error": "Rate limit exceeded",
+                "retry_after": info["retry_after"],
+                "limit": info["limit"],
+                "window": info["window"]
+            },
+            headers={
+                "Retry-After": str(info["retry_after"]),
+                "X-RateLimit-Limit": str(info["limit"]),
+                "X-RateLimit-Remaining": "0"
+            }
+        )
+
+    # Process request
+    response = await call_next(request)
+
+    # Add rate limit headers to response
+    try:
+        minute_key = get_rate_limit_key(identifier, "minute")
+        current = int(redis_client.get(minute_key) or 0)
+        limit = DEFAULT_RATE_LIMITS["per_minute"]
+        remaining = max(0, limit - current)
 
         response.headers["X-RateLimit-Limit"] = str(limit)
-        response.headers["X-RateLimit-Remaining"] = str(max(0, limit - current_count))
-        response.headers["X-RateLimit-Reset"] = str(int(time.time()) + window)
+        response.headers["X-RateLimit-Remaining"] = str(remaining)
+    except Exception as e:
+        logger.error(f"Failed to add rate limit headers: {str(e)}")
 
-        return response
+    return response
+
+
+# ============================================================================
+# UTILITY FUNCTIONS
+# ============================================================================
+
+def reset_rate_limit(identifier: str):
+    """
+    Reset rate limit for specific identifier
+
+    Useful for testing or manual intervention
+
+    Args:
+        identifier: User ID or IP to reset
+    """
+    if not redis_client:
+        return
+
+    windows = ["minute", "hour", "day"]
+
+    for window in windows:
+        key = get_rate_limit_key(identifier, window)
+        redis_client.delete(key)
+
+    logger.info(f"Rate limit reset for {identifier}")
+
+
+def get_current_rate_limit_status(identifier: str) -> dict:
+    """
+    Get current rate limit status for identifier
+
+    Args:
+        identifier: User ID or IP
+
+    Returns:
+        Dict with current counts and limits
+    """
+    if not redis_client:
+        return {"enabled": False}
+
+    status = {"enabled": True}
+
+    windows = {
+        "minute": DEFAULT_RATE_LIMITS["per_minute"],
+        "hour": DEFAULT_RATE_LIMITS["per_hour"],
+        "day": DEFAULT_RATE_LIMITS["per_day"]
+    }
+
+    for window, limit in windows.items():
+        key = get_rate_limit_key(identifier, window)
+        current = int(redis_client.get(key) or 0)
+        ttl = redis_client.ttl(key)
+
+        status[window] = {
+            "current": current,
+            "limit": limit,
+            "remaining": max(0, limit - current),
+            "reset_in": ttl if ttl > 0 else 0
+        }
+
+    return status
+
+
+# ============================================================================
+# LOGIN LOCKOUT & AUTHENTICATION SECURITY
+# ============================================================================
+
+# Lockout configuration
+MAX_LOGIN_ATTEMPTS = 5  # Lock after 5 failed attempts
+LOCKOUT_DURATION_MINUTES = 15  # Lock for 15 minutes
+PROGRESSIVE_BACKOFF = True  # Increase lockout duration with repeated failures
+
+
+def get_login_attempts_key(identifier: str) -> str:
+    """Get Redis key for login attempts counter"""
+    return f"auth:login_attempts:{identifier}"
+
+
+def get_lockout_key(identifier: str) -> str:
+    """Get Redis key for lockout status"""
+    return f"auth:lockout:{identifier}"
+
+
+def get_lockout_count_key(identifier: str) -> str:
+    """Get Redis key for total lockout count (for progressive backoff)"""
+    return f"auth:lockout_count:{identifier}"
+
+
+def is_locked_out(identifier: str) -> tuple[bool, Optional[int]]:
+    """
+    Check if identifier is currently locked out
+
+    Args:
+        identifier: Email or IP address
+
+    Returns:
+        Tuple of (is_locked, seconds_until_unlock)
+    """
+    if not redis_client:
+        return False, None
+
+    lockout_key = get_lockout_key(identifier)
+    ttl = redis_client.ttl(lockout_key)
+
+    if ttl > 0:
+        return True, ttl
+
+    return False, None
+
+
+def record_failed_login(identifier: str):
+    """
+    Record a failed login attempt
+
+    Implements progressive backoff:
+    - First lockout: 15 minutes
+    - Second lockout: 30 minutes
+    - Third lockout: 1 hour
+    - Fourth+ lockout: 4 hours
+
+    Args:
+        identifier: Email or IP address
+    """
+    if not redis_client:
+        return
+
+    attempts_key = get_login_attempts_key(identifier)
+    lockout_key = get_lockout_key(identifier)
+    lockout_count_key = get_lockout_count_key(identifier)
+
+    # Increment failed attempts counter
+    attempts = redis_client.incr(attempts_key)
+
+    # Set expiry on attempts counter (reset after 15 minutes)
+    if attempts == 1:
+        redis_client.expire(attempts_key, 15 * 60)
+
+    # Check if we should lock out
+    if attempts >= MAX_LOGIN_ATTEMPTS:
+        # Get total lockout count for progressive backoff
+        lockout_count = int(redis_client.get(lockout_count_key) or 0)
+
+        # Calculate lockout duration
+        if PROGRESSIVE_BACKOFF:
+            # Progressive backoff: 15min, 30min, 1hr, 4hr
+            durations = [15, 30, 60, 240]  # minutes
+            duration_minutes = durations[min(lockout_count, len(durations) - 1)]
+        else:
+            duration_minutes = LOCKOUT_DURATION_MINUTES
+
+        # Set lockout
+        redis_client.setex(lockout_key, duration_minutes * 60, "locked")
+
+        # Increment lockout count (expires after 24 hours)
+        redis_client.incr(lockout_count_key)
+        redis_client.expire(lockout_count_key, 24 * 60 * 60)
+
+        # Clear attempts counter (will start fresh after lockout)
+        redis_client.delete(attempts_key)
+
+        logger.warning(
+            f"Account locked out: {identifier}",
+            extra={
+                "identifier": identifier,
+                "attempts": attempts,
+                "lockout_duration_minutes": duration_minutes,
+                "lockout_number": lockout_count + 1
+            }
+        )
+
+
+def record_successful_login(identifier: str):
+    """
+    Record a successful login
+
+    Clears failed attempts counter but preserves lockout history
+    (for progressive backoff)
+
+    Args:
+        identifier: Email or IP address
+    """
+    if not redis_client:
+        return
+
+    attempts_key = get_login_attempts_key(identifier)
+
+    # Clear failed attempts
+    redis_client.delete(attempts_key)
+
+    logger.info(f"Successful login: {identifier}")
+
+
+def get_remaining_attempts(identifier: str) -> int:
+    """
+    Get remaining login attempts before lockout
+
+    Args:
+        identifier: Email or IP address
+
+    Returns:
+        Number of remaining attempts (0 if locked out)
+    """
+    if not redis_client:
+        return MAX_LOGIN_ATTEMPTS
+
+    # Check if locked out
+    locked, _ = is_locked_out(identifier)
+    if locked:
+        return 0
+
+    # Get current attempts
+    attempts_key = get_login_attempts_key(identifier)
+    attempts = int(redis_client.get(attempts_key) or 0)
+
+    return max(0, MAX_LOGIN_ATTEMPTS - attempts)
+
+
+def reset_lockout(identifier: str):
+    """
+    Reset lockout for an identifier (admin action)
+
+    Args:
+        identifier: Email or IP address
+    """
+    if not redis_client:
+        return
+
+    attempts_key = get_login_attempts_key(identifier)
+    lockout_key = get_lockout_key(identifier)
+    lockout_count_key = get_lockout_count_key(identifier)
+
+    redis_client.delete(attempts_key)
+    redis_client.delete(lockout_key)
+    redis_client.delete(lockout_count_key)
+
+    logger.info(f"Lockout reset for {identifier}")
+
+
+def get_lockout_status(identifier: str) -> dict:
+    """
+    Get detailed lockout status
+
+    Args:
+        identifier: Email or IP address
+
+    Returns:
+        Dict with lockout status details
+    """
+    if not redis_client:
+        return {"enabled": False}
+
+    locked, ttl = is_locked_out(identifier)
+    attempts = int(redis_client.get(get_login_attempts_key(identifier)) or 0)
+    lockout_count = int(redis_client.get(get_lockout_count_key(identifier)) or 0)
+
+    return {
+        "enabled": True,
+        "locked_out": locked,
+        "unlock_in_seconds": ttl if locked else 0,
+        "failed_attempts": attempts,
+        "remaining_attempts": get_remaining_attempts(identifier),
+        "total_lockouts_today": lockout_count,
+        "max_attempts": MAX_LOGIN_ATTEMPTS
+    }

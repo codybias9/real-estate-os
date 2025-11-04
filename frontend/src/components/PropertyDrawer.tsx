@@ -1,260 +1,423 @@
-'use client';
+'use client'
 
-/**
- * Property detail drawer with tabs for overview, score, timeline, outreach
- */
-
-import { useState, useEffect } from 'react';
-import { useProperty, usePropertyScore } from '@/hooks';
-import { LoadingSpinner } from './LoadingSpinner';
-import { ScoreVisualization } from './ScoreVisualization';
-import { Timeline } from './Timeline';
-import { formatNumber, formatDate, getStateBadgeColor } from '@/lib/utils';
+import { useEffect, useState, Fragment } from 'react'
+import { apiClient } from '@/lib/api'
+import type { Property, TimelineEvent, Communication, Task } from '@/types'
+import {
+  X,
+  MapPin,
+  User,
+  Calendar,
+  Mail,
+  Phone,
+  FileText,
+  Clock,
+  CheckCircle,
+  TrendingUp,
+  Building2,
+  Tag,
+  ExternalLink,
+} from 'lucide-react'
+import { format } from 'date-fns'
 
 interface PropertyDrawerProps {
-  propertyId: string | undefined;
-  open: boolean;
-  onClose: () => void;
+  propertyId: number | null
+  isOpen: boolean
+  onClose: () => void
 }
 
-type Tab = 'overview' | 'score' | 'timeline' | 'outreach';
+export default function PropertyDrawer({ propertyId, isOpen, onClose }: PropertyDrawerProps) {
+  const [property, setProperty] = useState<Property | null>(null)
+  const [timeline, setTimeline] = useState<TimelineEvent[]>([])
+  const [communications, setCommunications] = useState<Communication[]>([])
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [activeTab, setActiveTab] = useState<'overview' | 'timeline' | 'communications'>('overview')
+  const [loading, setLoading] = useState(false)
 
-export function PropertyDrawer({ propertyId, open, onClose }: PropertyDrawerProps) {
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
-  const { data: property, isLoading } = useProperty(propertyId);
-  const { data: scoreResult } = usePropertyScore(propertyId);
-
-  // Reset tab when drawer opens
   useEffect(() => {
-    if (open) {
-      setActiveTab('overview');
+    if (propertyId && isOpen) {
+      fetchPropertyData()
     }
-  }, [open]);
+  }, [propertyId, isOpen])
 
-  if (!open) return null;
+  const fetchPropertyData = async () => {
+    if (!propertyId) return
 
-  const address = property
-    ? [property.street, property.city, property.state, property.zip].filter(Boolean).join(', ')
-    : '';
+    try {
+      setLoading(true)
+
+      // Fetch property details
+      const propertyData = await apiClient.properties.get(propertyId)
+      setProperty(propertyData)
+
+      // Fetch timeline
+      const timelineData = await apiClient.properties.getTimeline(propertyId)
+      setTimeline(timelineData)
+
+      // Fetch communications
+      const commsData = await apiClient.communications.list(propertyId)
+      setCommunications(commsData)
+
+      // Fetch tasks
+      const tasksData = await apiClient.tasks.list(propertyId)
+      setTasks(tasksData)
+    } catch (error) {
+      console.error('Failed to fetch property data:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (!isOpen || !property) return null
+
+  const getStageColor = (stage: string) => {
+    const colors: Record<string, string> = {
+      new: 'bg-blue-100 text-blue-700',
+      outreach: 'bg-yellow-100 text-yellow-700',
+      qualified: 'bg-green-100 text-green-700',
+      negotiation: 'bg-purple-100 text-purple-700',
+      under_contract: 'bg-indigo-100 text-indigo-700',
+      closed_won: 'bg-green-200 text-green-800',
+      closed_lost: 'bg-gray-100 text-gray-700',
+    }
+    return colors[stage] || 'bg-gray-100 text-gray-700'
+  }
+
+  const getEventIcon = (eventType: string) => {
+    const icons: Record<string, any> = {
+      property_created: Building2,
+      stage_changed: TrendingUp,
+      memo_generated: FileText,
+      communication_sent: Mail,
+      communication_received: Mail,
+      task_created: CheckCircle,
+      task_completed: CheckCircle,
+      note_added: FileText,
+    }
+    const Icon = icons[eventType] || Clock
+    return <Icon className="h-4 w-4" />
+  }
 
   return (
     <>
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity z-40"
+        className={`fixed inset-0 bg-black bg-opacity-50 transition-opacity z-40 ${
+          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
         onClick={onClose}
       />
 
       {/* Drawer */}
-      <div className="fixed inset-y-0 right-0 max-w-3xl w-full bg-white shadow-xl z-50 overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200">
-          <div className="flex items-center justify-between">
-            <div className="flex-1 min-w-0">
-              {isLoading ? (
-                <div className="h-8 w-64 bg-gray-200 animate-pulse rounded" />
-              ) : (
-                <>
-                  <h2 className="text-2xl font-bold text-gray-900 truncate">{address}</h2>
-                  <div className="mt-1 flex items-center space-x-3">
-                    <span className="text-sm text-gray-500">APN: {property?.apn}</span>
-                    {property && (
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStateBadgeColor(
-                          property.state
-                        )}`}
-                      >
-                        {property.state.replace('_', ' ')}
-                      </span>
-                    )}
+      <div
+        className={`fixed right-0 top-0 h-full w-full md:w-[600px] bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${
+          isOpen ? 'translate-x-0' : 'translate-x-full'
+        }`}
+      >
+        {loading ? (
+          <div className="flex items-center justify-center h-full">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600" />
+          </div>
+        ) : (
+          <div className="flex flex-col h-full">
+            {/* Header */}
+            <div className="flex items-start justify-between p-6 border-b border-gray-200">
+              <div className="flex-1">
+                <div className="flex items-center space-x-3 mb-2">
+                  <h2 className="text-2xl font-bold text-gray-900">{property.address}</h2>
+                  <button
+                    onClick={onClose}
+                    className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <X className="h-5 w-5 text-gray-500" />
+                  </button>
+                </div>
+                <div className="flex items-center text-sm text-gray-600">
+                  <MapPin className="h-4 w-4 mr-1" />
+                  {property.city}, {property.state} {property.zip_code}
+                </div>
+                <div className="flex items-center space-x-2 mt-3">
+                  <span
+                    className={`text-xs font-medium px-2.5 py-1 rounded-full ${getStageColor(
+                      property.current_stage
+                    )}`}
+                  >
+                    {property.current_stage.replace('_', ' ').toUpperCase()}
+                  </span>
+                  <div className="flex items-center space-x-1 text-sm text-gray-600">
+                    <TrendingUp className="h-4 w-4" />
+                    <span>Score: {Math.round(property.bird_dog_score * 100)}</span>
                   </div>
-                </>
+                </div>
+              </div>
+            </div>
+
+            {/* Tabs */}
+            <div className="flex border-b border-gray-200 px-6">
+              <button
+                onClick={() => setActiveTab('overview')}
+                className={`py-3 px-4 font-medium text-sm border-b-2 transition-colors ${
+                  activeTab === 'overview'
+                    ? 'border-primary-600 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Overview
+              </button>
+              <button
+                onClick={() => setActiveTab('timeline')}
+                className={`py-3 px-4 font-medium text-sm border-b-2 transition-colors ${
+                  activeTab === 'timeline'
+                    ? 'border-primary-600 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Timeline
+              </button>
+              <button
+                onClick={() => setActiveTab('communications')}
+                className={`py-3 px-4 font-medium text-sm border-b-2 transition-colors ${
+                  activeTab === 'communications'
+                    ? 'border-primary-600 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Communications ({communications.length})
+              </button>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              {activeTab === 'overview' && (
+                <div className="space-y-6">
+                  {/* Property Details */}
+                  <div>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-3">Property Details</h3>
+                    <div className="space-y-3">
+                      {property.owner_name && (
+                        <div className="flex items-start">
+                          <User className="h-4 w-4 text-gray-400 mt-0.5 mr-3" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-700">Owner</p>
+                            <p className="text-sm text-gray-900">{property.owner_name}</p>
+                          </div>
+                        </div>
+                      )}
+                      {property.apn && (
+                        <div className="flex items-start">
+                          <FileText className="h-4 w-4 text-gray-400 mt-0.5 mr-3" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-700">APN</p>
+                            <p className="text-sm text-gray-900 font-mono">{property.apn}</p>
+                          </div>
+                        </div>
+                      )}
+                      {property.last_contact_at && (
+                        <div className="flex items-start">
+                          <Calendar className="h-4 w-4 text-gray-400 mt-0.5 mr-3" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-700">Last Contact</p>
+                            <p className="text-sm text-gray-900">
+                              {format(new Date(property.last_contact_at), 'MMM d, yyyy')}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Tags */}
+                  {property.tags && property.tags.length > 0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900 mb-3">Tags</h3>
+                      <div className="flex flex-wrap gap-2">
+                        {property.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="inline-flex items-center text-sm bg-gray-100 text-gray-700 px-3 py-1 rounded-full"
+                          >
+                            <Tag className="h-3 w-3 mr-1" />
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Notes */}
+                  {property.notes && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900 mb-3">Notes</h3>
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap">{property.notes}</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Memo */}
+                  {property.memo_content && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900 mb-3">Generated Memo</h3>
+                      <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                          {property.memo_content}
+                        </p>
+                        {property.memo_generated_at && (
+                          <p className="text-xs text-gray-500 mt-3">
+                            Generated {format(new Date(property.memo_generated_at), 'MMM d, yyyy')}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Open Tasks */}
+                  {tasks.filter((t) => t.status !== 'completed' && t.status !== 'cancelled').length >
+                    0 && (
+                    <div>
+                      <h3 className="text-sm font-semibold text-gray-900 mb-3">Open Tasks</h3>
+                      <div className="space-y-2">
+                        {tasks
+                          .filter((t) => t.status !== 'completed' && t.status !== 'cancelled')
+                          .map((task) => (
+                            <div key={task.id} className="flex items-start bg-gray-50 rounded-lg p-3">
+                              <CheckCircle className="h-4 w-4 text-gray-400 mt-0.5 mr-3 flex-shrink-0" />
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-gray-900">{task.title}</p>
+                                {task.due_date && (
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Due: {format(new Date(task.due_date), 'MMM d, yyyy')}
+                                  </p>
+                                )}
+                              </div>
+                              <span
+                                className={`text-xs px-2 py-0.5 rounded ${
+                                  task.priority === 'urgent'
+                                    ? 'bg-red-100 text-red-700'
+                                    : task.priority === 'high'
+                                    ? 'bg-orange-100 text-orange-700'
+                                    : 'bg-gray-100 text-gray-700'
+                                }`}
+                              >
+                                {task.priority}
+                              </span>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'timeline' && (
+                <div className="space-y-4">
+                  {timeline.length === 0 ? (
+                    <p className="text-sm text-gray-500 text-center py-8">No timeline events yet</p>
+                  ) : (
+                    <div className="relative">
+                      {/* Timeline line */}
+                      <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200" />
+
+                      {/* Events */}
+                      {timeline.map((event, index) => (
+                        <div key={event.id} className="relative flex items-start mb-6 last:mb-0">
+                          {/* Icon */}
+                          <div className="relative z-10 flex items-center justify-center w-8 h-8 bg-white border-2 border-primary-500 rounded-full">
+                            {getEventIcon(event.event_type)}
+                          </div>
+
+                          {/* Content */}
+                          <div className="ml-4 flex-1">
+                            <div className="bg-white border border-gray-200 rounded-lg p-4">
+                              <h4 className="text-sm font-semibold text-gray-900">
+                                {event.event_title}
+                              </h4>
+                              <p className="text-sm text-gray-600 mt-1">{event.event_description}</p>
+                              <p className="text-xs text-gray-500 mt-2">
+                                {format(new Date(event.created_at), 'MMM d, yyyy h:mm a')}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'communications' && (
+                <div className="space-y-4">
+                  {communications.length === 0 ? (
+                    <p className="text-sm text-gray-500 text-center py-8">
+                      No communications yet
+                    </p>
+                  ) : (
+                    communications.map((comm) => (
+                      <div
+                        key={comm.id}
+                        className={`border rounded-lg p-4 ${
+                          comm.direction === 'inbound'
+                            ? 'bg-blue-50 border-blue-200'
+                            : 'bg-gray-50 border-gray-200'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex items-center space-x-2">
+                            {comm.channel === 'email' ? (
+                              <Mail className="h-4 w-4 text-gray-500" />
+                            ) : comm.channel === 'sms' ? (
+                              <Phone className="h-4 w-4 text-gray-500" />
+                            ) : (
+                              <Phone className="h-4 w-4 text-gray-500" />
+                            )}
+                            <span className="text-xs font-medium text-gray-700">
+                              {comm.direction === 'inbound' ? 'Received' : 'Sent'}
+                            </span>
+                          </div>
+                          <span
+                            className={`text-xs px-2 py-0.5 rounded ${
+                              comm.status === 'delivered'
+                                ? 'bg-green-100 text-green-700'
+                                : comm.status === 'sent'
+                                ? 'bg-blue-100 text-blue-700'
+                                : comm.status === 'failed'
+                                ? 'bg-red-100 text-red-700'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}
+                          >
+                            {comm.status}
+                          </span>
+                        </div>
+
+                        {comm.subject && (
+                          <h4 className="text-sm font-semibold text-gray-900 mb-1">
+                            {comm.subject}
+                          </h4>
+                        )}
+
+                        <p className="text-sm text-gray-700 whitespace-pre-wrap line-clamp-3">
+                          {comm.content}
+                        </p>
+
+                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-200">
+                          <p className="text-xs text-gray-500">
+                            {format(new Date(comm.created_at), 'MMM d, yyyy h:mm a')}
+                          </p>
+                          <div className="flex items-center text-xs text-gray-500">
+                            <span className="mr-1">
+                              {comm.direction === 'inbound' ? comm.from_address : comm.to_address}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
               )}
             </div>
-            <button
-              onClick={onClose}
-              className="ml-4 text-gray-400 hover:text-gray-500 focus:outline-none"
-            >
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
-              </svg>
-            </button>
           </div>
-
-          {/* Tabs */}
-          <div className="mt-4 flex space-x-4 border-b border-gray-200">
-            <button
-              onClick={() => setActiveTab('overview')}
-              className={`pb-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'overview'
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Overview
-            </button>
-            <button
-              onClick={() => setActiveTab('score')}
-              className={`pb-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'score'
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Score
-            </button>
-            <button
-              onClick={() => setActiveTab('timeline')}
-              className={`pb-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'timeline'
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Timeline
-            </button>
-            <button
-              onClick={() => setActiveTab('outreach')}
-              className={`pb-2 px-1 border-b-2 font-medium text-sm ${
-                activeTab === 'outreach'
-                  ? 'border-primary-500 text-primary-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              Outreach
-            </button>
-          </div>
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-6">
-          {isLoading ? (
-            <div className="flex justify-center items-center h-full">
-              <LoadingSpinner size="large" />
-            </div>
-          ) : !property ? (
-            <div className="text-center text-gray-500">Property not found</div>
-          ) : (
-            <>
-              {activeTab === 'overview' && <OverviewTab property={property} />}
-              {activeTab === 'score' && (
-                <ScoreVisualization
-                  score={property.score}
-                  scoreResult={scoreResult}
-                  isLoading={!scoreResult}
-                />
-              )}
-              {activeTab === 'timeline' && <Timeline propertyId={property.id} />}
-              {activeTab === 'outreach' && <OutreachTab propertyId={property.id} />}
-            </>
-          )}
-        </div>
+        )}
       </div>
     </>
-  );
-}
-
-function OverviewTab({ property }: { property: any }) {
-  return (
-    <div className="space-y-6">
-      {/* Property Details */}
-      <section>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Property Details</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <dt className="text-sm font-medium text-gray-500">Bedrooms</dt>
-            <dd className="mt-1 text-sm text-gray-900">{property.beds || 'N/A'}</dd>
-          </div>
-          <div>
-            <dt className="text-sm font-medium text-gray-500">Bathrooms</dt>
-            <dd className="mt-1 text-sm text-gray-900">{property.baths || 'N/A'}</dd>
-          </div>
-          <div>
-            <dt className="text-sm font-medium text-gray-500">Square Feet</dt>
-            <dd className="mt-1 text-sm text-gray-900">{formatNumber(property.sqft)}</dd>
-          </div>
-          <div>
-            <dt className="text-sm font-medium text-gray-500">Lot Size</dt>
-            <dd className="mt-1 text-sm text-gray-900">{formatNumber(property.lot_sqft)} sqft</dd>
-          </div>
-          <div>
-            <dt className="text-sm font-medium text-gray-500">Year Built</dt>
-            <dd className="mt-1 text-sm text-gray-900">{property.year_built || 'N/A'}</dd>
-          </div>
-          <div>
-            <dt className="text-sm font-medium text-gray-500">Stories</dt>
-            <dd className="mt-1 text-sm text-gray-900">{property.stories || 'N/A'}</dd>
-          </div>
-          <div>
-            <dt className="text-sm font-medium text-gray-500">Garage</dt>
-            <dd className="mt-1 text-sm text-gray-900">
-              {property.garage_spaces ? `${property.garage_spaces} spaces` : 'N/A'}
-            </dd>
-          </div>
-          <div>
-            <dt className="text-sm font-medium text-gray-500">Pool</dt>
-            <dd className="mt-1 text-sm text-gray-900">{property.pool ? 'Yes' : 'No'}</dd>
-          </div>
-        </div>
-      </section>
-
-      {/* Owner Information */}
-      {property.owner && (
-        <section>
-          <h3 className="text-lg font-medium text-gray-900 mb-4">Owner Information</h3>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <dt className="text-sm font-medium text-gray-500">Name</dt>
-              <dd className="mt-1 text-sm text-gray-900">{property.owner.name || 'N/A'}</dd>
-            </div>
-            <div>
-              <dt className="text-sm font-medium text-gray-500">Type</dt>
-              <dd className="mt-1 text-sm text-gray-900">{property.owner.type || 'N/A'}</dd>
-            </div>
-            {property.owner.email && (
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Email</dt>
-                <dd className="mt-1 text-sm text-gray-900">{property.owner.email}</dd>
-              </div>
-            )}
-            {property.owner.phone && (
-              <div>
-                <dt className="text-sm font-medium text-gray-500">Phone</dt>
-                <dd className="mt-1 text-sm text-gray-900">{property.owner.phone}</dd>
-              </div>
-            )}
-          </div>
-        </section>
-      )}
-
-      {/* Timestamps */}
-      <section>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Timestamps</h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <dt className="text-sm font-medium text-gray-500">Discovered</dt>
-            <dd className="mt-1 text-sm text-gray-900">{formatDate(property.created_at)}</dd>
-          </div>
-          <div>
-            <dt className="text-sm font-medium text-gray-500">Last Updated</dt>
-            <dd className="mt-1 text-sm text-gray-900">{formatDate(property.updated_at)}</dd>
-          </div>
-        </div>
-      </section>
-    </div>
-  );
-}
-
-function OutreachTab({ propertyId }: { propertyId: string }) {
-  return (
-    <div className="text-center text-gray-500 py-12">
-      <p>Outreach campaigns will be displayed here</p>
-      <p className="text-sm mt-2">Coming soon...</p>
-    </div>
-  );
+  )
 }

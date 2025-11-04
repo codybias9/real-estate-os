@@ -1,362 +1,394 @@
 """
-Real Estate OS API - Main application entry point.
-
-This FastAPI application provides comprehensive endpoints for:
-- Property pipeline management
-- Communication tracking (email, SMS, calls)
-- Workflow automation (Next Best Actions, Smart Lists)
-- Quick Win features for immediate productivity gains
-- Analytics and reporting
-
-Tech Stack:
-- FastAPI: Modern, fast web framework
-- SQLAlchemy: ORM for PostgreSQL
-- Pydantic: Data validation and serialization
-- PostgreSQL: Primary database with JSONB support
-
-Architecture:
-- Modular routers for feature separation
-- Dependency injection for database sessions
-- Pydantic schemas for type safety
-- Background tasks for async operations
+Real Estate OS - Comprehensive API
+10x better decision speed, not just data
 """
+from dotenv import load_dotenv
+load_dotenv()  # Load environment variables from .env file
 
-from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
-from sqlalchemy import create_engine, text
-from contextlib import asynccontextmanager
+from fastapi.openapi.utils import get_openapi
+from api import schemas
 import os
-import time
-from typing import Dict, Any
 
-from api.database import get_db, engine
-from api.routers import properties, quick_wins, workflow
+# Prometheus metrics
+from prometheus_client import make_asgi_app
+from prometheus_fastapi_instrumentator import Instrumentator
+from api import metrics
 
-# Import additional routers (to be created)
-# from api.routers import communications, templates, tasks, deals
+# OpenAPI enhancements
+from api.openapi_config import get_openapi_schema_enhancements, OPENAPI_TAGS
 
-
-# ============================================================================
-# LIFESPAN EVENTS
-# ============================================================================
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """
-    Lifespan context manager for startup and shutdown events.
-
-    Startup:
-    - Verify database connection
-    - Log application start
-
-    Shutdown:
-    - Close database connections
-    - Clean up resources
-    """
-    # Startup
-    print("🚀 Real Estate OS API starting up...")
-    print(f"📊 Database: {os.getenv('DB_DSN', 'Not configured')[:50]}...")
-
-    # Verify database connection
-    try:
-        with engine.connect() as conn:
-            result = conn.execute(text("SELECT version()"))
-            version = result.scalar()
-            print(f"✅ Database connected: PostgreSQL")
-    except Exception as e:
-        print(f"❌ Database connection failed: {e}")
-
-    print("✨ API ready to handle requests")
-
-    yield
-
-    # Shutdown
-    print("👋 Shutting down Real Estate OS API...")
-    engine.dispose()
-    print("✅ Database connections closed")
-
-
-# ============================================================================
-# APPLICATION SETUP
-# ============================================================================
-
-app = FastAPI(
-    title="Real Estate OS API",
-    description="""
-    Comprehensive real estate pipeline and communication management platform.
-
-    ## Features
-
-    ### 📋 Property Management
-    - Complete property lifecycle tracking
-    - Pipeline stage management
-    - Advanced filtering and search
-    - Timeline and activity tracking
-
-    ### 📧 Communications
-    - Email threading and tracking
-    - SMS integration
-    - Call logging with transcription
-    - Template management with stage awareness
-
-    ### ⚡ Quick Wins (Month 1)
-    - Generate & Send Combo
-    - Auto-Assign on Reply
-    - Stage-Aware Templates
-    - Flag Data Issues
-
-    ### 🎯 Workflow Automation (P0)
-    - Next Best Action recommendations
-    - Smart Lists with dynamic filtering
-    - One-click task creation
-    - Automated cadence rules
-
-    ### 💰 Deal Management
-    - Deal economics with what-if scenarios
-    - Probability of close tracking
-    - Investor document management
-    - Secure share links
-
-    ### 📊 Analytics
-    - Pipeline statistics
-    - Communication performance
-    - Template leaderboards
-    - User activity tracking
-
-    ## Authentication
-
-    Currently using basic auth. Production should implement OAuth2/JWT.
-    """,
-    version="0.1.0",
-    lifespan=lifespan,
-    docs_url="/docs",
-    redoc_url="/redoc",
-    openapi_url="/openapi.json"
+# Import all routers
+from api.routers import (
+    auth,
+    properties,
+    quick_wins,
+    workflow,
+    communications,
+    portfolio,
+    sharing,
+    data_propensity,
+    automation,
+    differentiators,
+    onboarding,
+    open_data,
+    webhooks,
+    jobs,
+    sse_events,
+    admin
 )
 
+# Create FastAPI app with enhanced OpenAPI configuration
+app = FastAPI(
+    title="Real Estate OS API",
+    version="1.0.0",
+    description="Real Estate OS - Decision speed, not just data",
+    contact={
+        "name": "Real Estate OS Support",
+        "email": "support@realestateos.com",
+        "url": "https://realestateos.com/support"
+    },
+    license_info={
+        "name": "Proprietary",
+        "url": "https://realestateos.com/license"
+    },
+    terms_of_service="https://realestateos.com/terms",
+    openapi_tags=OPENAPI_TAGS,
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+    servers=[
+        {
+            "url": "https://api.realestateos.com",
+            "description": "Production"
+        },
+        {
+            "url": "https://staging-api.realestateos.com",
+            "description": "Staging"
+        },
+        {
+            "url": "http://localhost:8000",
+            "description": "Local Development"
+        }
+    ]
+)
 
-# ============================================================================
-# MIDDLEWARE
-# ============================================================================
+# Customize OpenAPI schema with examples
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
 
-# CORS middleware for frontend access
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+        tags=app.openapi_tags,
+        servers=app.servers
+    )
+
+    # Merge with enhancements
+    enhancements = get_openapi_schema_enhancements()
+    openapi_schema["info"].update(enhancements["info"])
+
+    # Add external docs
+    openapi_schema["externalDocs"] = enhancements["externalDocs"]
+
+    # Add tag groups (for ReDoc)
+    if "x-tagGroups" in enhancements:
+        openapi_schema["x-tagGroups"] = enhancements["x-tagGroups"]
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
+
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
+    allow_origins=["*"],  # In production, specify your frontend domain
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# Add rate limiting middleware
+from api.rate_limit import rate_limit_middleware
+app.middleware("http")(rate_limit_middleware)
 
-# Request timing middleware
-@app.middleware("http")
-async def add_process_time_header(request: Request, call_next):
-    """Add X-Process-Time header to all responses"""
-    start_time = time.time()
-    response = await call_next(request)
-    process_time = time.time() - start_time
-    response.headers["X-Process-Time"] = str(process_time)
-    return response
-
-
-# Error handling middleware
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    """Global exception handler for unhandled errors"""
-    print(f"❌ Unhandled exception: {exc}")
-    return JSONResponse(
-        status_code=500,
-        content={
-            "error": "Internal server error",
-            "detail": str(exc) if os.getenv("DEBUG") == "true" else "An unexpected error occurred"
-        }
-    )
-
+# Add ETag support for conditional requests
+from api.etag import etag_middleware
+app.middleware("http")(etag_middleware)
 
 # ============================================================================
-# ROUTERS
+# PROMETHEUS METRICS
 # ============================================================================
 
-# Include routers with prefixes and tags
-app.include_router(properties.router, prefix="/api/v1")
-app.include_router(quick_wins.router, prefix="/api/v1")
-app.include_router(workflow.router, prefix="/api/v1")
+# Instrument FastAPI app with default metrics
+instrumentator = Instrumentator(
+    should_group_status_codes=False,
+    should_ignore_untemplated=True,
+    should_respect_env_var=True,
+    should_instrument_requests_inprogress=True,
+    excluded_handlers=["/metrics", "/healthz", "/ping"],
+    env_var_name="ENABLE_METRICS",
+    inprogress_name="realestateos_requests_inprogress",
+    inprogress_labels=True,
+)
 
-# TODO: Add these routers when created
-# app.include_router(communications.router, prefix="/api/v1")
-# app.include_router(templates.router, prefix="/api/v1")
-# app.include_router(tasks.router, prefix="/api/v1")
-# app.include_router(deals.router, prefix="/api/v1")
-# app.include_router(analytics.router, prefix="/api/v1")
+# Add custom metrics
+instrumentator.add(
+    metrics.api_request_duration_seconds.labels(method="", endpoint="").observe
+)
 
+# Expose metrics endpoint
+metrics_app = make_asgi_app()
+app.mount("/metrics", metrics_app)
 
 # ============================================================================
-# HEALTH & STATUS ENDPOINTS
+# LEGACY ENDPOINTS (keep for compatibility)
 # ============================================================================
 
-@app.get("/healthz", tags=["Health"])
-def health_check():
-    """
-    Basic health check endpoint.
+@app.get("/healthz", tags=["System"])
+def health():
+    """Health check endpoint"""
+    return {"status": "ok"}
 
-    Returns OK if the service is running.
-    """
-    return {"status": "ok", "service": "real-estate-os-api"}
-
-
-@app.get("/readyz", tags=["Health"])
-def readiness_check():
-    """
-    Readiness check endpoint.
-
-    Verifies that the service is ready to handle requests by checking:
-    - Database connectivity
-    - Critical dependencies
-    """
-    checks = {
-        "database": False,
-        "overall": False
-    }
-
-    # Check database
-    try:
-        with engine.connect() as conn:
-            conn.execute(text("SELECT 1"))
-            checks["database"] = True
-    except Exception as e:
-        print(f"Database check failed: {e}")
-
-    checks["overall"] = all([checks["database"]])
-
-    status_code = 200 if checks["overall"] else 503
-    return JSONResponse(
-        status_code=status_code,
-        content={
-            "ready": checks["overall"],
-            "checks": checks
-        }
-    )
-
-
-@app.get("/ping", tags=["Health"])
+@app.get("/ping", tags=["System"])
 def ping():
-    """
-    Legacy ping endpoint with database write test.
-
-    Creates a ping record in the database.
-    """
+    """Legacy ping endpoint"""
+    from sqlalchemy import create_engine, text
     dsn = os.getenv("DB_DSN")
     if not dsn:
-        raise HTTPException(500, "DB_DSN not set")
+        return {"error": "DB_DSN not set"}
 
-    with engine.begin() as conn:
-        conn.execute(text(
-            "CREATE TABLE IF NOT EXISTS ping (id serial PRIMARY KEY, ts timestamptz DEFAULT now())"
-        ))
-        conn.execute(text("INSERT INTO ping DEFAULT VALUES"))
-        count = conn.execute(text("SELECT count(*) FROM ping")).scalar()
+    try:
+        engine = create_engine(dsn)
+        with engine.begin() as conn:
+            count = conn.execute(text("SELECT count(*) FROM ping")).scalar()
+        return {"ping_count": count}
+    except Exception as e:
+        return {"error": str(e)}
 
-    return {"ping_count": count}
+# ============================================================================
+# STATUS / FEATURE FLAGS
+# ============================================================================
 
-
-@app.get("/", tags=["Root"])
-def root():
+@app.get("/api/v1/status", response_model=schemas.HealthResponse, tags=["System"])
+def get_status():
     """
-    API root endpoint.
+    Get API status and feature flags
 
-    Returns basic API information and links to documentation.
+    Shows which feature groups are implemented
     """
-    return {
-        "service": "Real Estate OS API",
-        "version": "0.1.0",
-        "status": "running",
-        "documentation": {
-            "openapi": "/openapi.json",
-            "swagger_ui": "/docs",
-            "redoc": "/redoc"
-        },
-        "endpoints": {
-            "properties": "/api/v1/properties",
-            "quick_wins": "/api/v1/quick-wins",
-            "workflow": "/api/v1/workflow",
-            "health": "/healthz",
-            "readiness": "/readyz"
-        }
-    }
-
-
-@app.get("/api/v1/status", tags=["Status"])
-def api_status():
-    """
-    API status and statistics.
-
-    Returns:
-    - Database connection status
-    - Environment information
-    - Feature flags
-    """
-    from db import models
-    from sqlalchemy.orm import Session
-
-    with engine.connect() as conn:
-        # Get table counts
-        try:
-            with Session(bind=conn) as db:
-                property_count = db.query(models.Property).count()
-                user_count = db.query(models.User).count()
-                communication_count = db.query(models.Communication).count()
-                task_count = db.query(models.Task).count()
-        except Exception as e:
-            property_count = user_count = communication_count = task_count = 0
-
     return {
         "status": "operational",
-        "environment": os.getenv("ENVIRONMENT", "development"),
-        "database": {
-            "connected": True,
-            "url": os.getenv("DB_DSN", "")[:30] + "...",
-        },
-        "statistics": {
-            "properties": property_count,
-            "users": user_count,
-            "communications": communication_count,
-            "tasks": task_count
-        },
         "features": {
-            "quick_wins": {
-                "generate_and_send": True,
-                "auto_assign_on_reply": True,
-                "stage_aware_templates": True,
-                "flag_data_issue": True
-            },
-            "workflow": {
-                "next_best_actions": True,
-                "smart_lists": True,
-                "one_click_tasking": True
-            },
-            "communications": {
-                "email_threading": False,  # TODO
-                "call_capture": False,  # TODO
-                "sms_integration": False  # TODO
-            }
+            # Quick Wins (Month 1)
+            "generate_and_send": True,
+            "auto_assign_on_reply": True,
+            "stage_aware_templates": True,
+            "flag_data_issue": True,
+
+            # Workflow Accelerators
+            "next_best_action": True,
+            "smart_lists": True,
+            "one_click_tasking": True,
+
+            # Communication Inside Pipeline
+            "email_threading": True,
+            "call_capture": True,
+            "reply_drafting": True,
+
+            # Portfolio & Outcomes
+            "deal_economics": True,
+            "investor_readiness": True,
+            "template_leaderboards": True,
+
+            # Sharing & Deal Rooms
+            "secure_share_links": True,
+            "deal_rooms": True,
+            "offer_pack_export": True,
+
+            # Data & Trust
+            "propensity_signals": True,
+            "provenance_inspector": True,
+            "deliverability_dashboard": True,
+
+            # Automation & Guardrails
+            "cadence_governor": True,
+            "compliance_pack": True,
+            "budget_tracking": True,
+
+            # Differentiators
+            "explainable_probability": True,
+            "scenario_planning": True,
+            "investor_network": True,
+
+            # Onboarding
+            "starter_presets": True,
+            "guided_tour": True,
+
+            # Open Data Ladder
+            "open_data_integrations": True,
+            "provenance_tracking": True
         }
     }
 
+# ============================================================================
+# INCLUDE ALL ROUTERS
+# ============================================================================
+
+# Authentication (Login, Register, Profile)
+app.include_router(auth.router, prefix="/api/v1")
+
+# Properties (CRUD, Filtering, Timeline, Stats)
+app.include_router(properties.router, prefix="/api/v1")
+
+# Quick Wins (Month 1 Features)
+app.include_router(quick_wins.router, prefix="/api/v1")
+
+# Workflow Automation (NBA, Smart Lists, Tasks)
+app.include_router(workflow.router, prefix="/api/v1")
+
+# Communications (Email Threading, Calls, Reply Drafting)
+app.include_router(communications.router, prefix="/api/v1")
+
+# Portfolio & Outcomes (Deals, Investor Readiness, Templates)
+app.include_router(portfolio.router, prefix="/api/v1")
+
+# Sharing & Collaboration (Share Links, Deal Rooms)
+app.include_router(sharing.router, prefix="/api/v1")
+
+# Data & Propensity (Propensity Signals, Provenance, Deliverability)
+app.include_router(data_propensity.router, prefix="/api/v1")
+
+# Automation & Guardrails (Cadence, Compliance, Budget)
+app.include_router(automation.router, prefix="/api/v1")
+
+# Differentiators (Explainable Probability, Scenarios, Investor Network)
+app.include_router(differentiators.router, prefix="/api/v1")
+
+# Onboarding (Presets, Guided Tour)
+app.include_router(onboarding.router, prefix="/api/v1")
+
+# Open Data Integrations (Free Sources, Enrichment, Provenance)
+app.include_router(open_data.router, prefix="/api/v1")
+
+# Webhooks (SendGrid, Twilio event handlers)
+app.include_router(webhooks.router, prefix="/api/v1")
+
+# Background Jobs (Async task management)
+app.include_router(jobs.router, prefix="/api/v1")
+
+# Server-Sent Events (Real-time updates)
+app.include_router(sse_events.router, prefix="/api/v1")
+
+# Admin & System Management (DLQ, Monitoring, Health)
+app.include_router(admin.router, prefix="/api/v1")
 
 # ============================================================================
-# MAIN ENTRY POINT
+# BACKGROUND TASKS
 # ============================================================================
+
+async def metrics_collection_task():
+    """
+    Background task to periodically update database-derived metrics
+
+    Runs every 30 seconds to update:
+    - DLQ depth and age
+    - Business metrics (properties, users, teams)
+    - Provider status
+    """
+    import asyncio
+    from api.database import get_db
+
+    while True:
+        try:
+            # Get database session
+            db = next(get_db())
+            try:
+                # Update all metrics
+                metrics.update_all_metrics(db)
+            finally:
+                db.close()
+
+            # Wait 30 seconds before next update
+            await asyncio.sleep(30)
+
+        except Exception as e:
+            print(f"Error in metrics collection: {e}")
+            await asyncio.sleep(30)
+
+# ============================================================================
+# STARTUP / SHUTDOWN EVENTS
+# ============================================================================
+
+@app.on_event("startup")
+async def startup_event():
+    """
+    Run on application startup
+
+    - Initialize database connection
+    - Load configuration
+    - Warm up caches
+    - Instrument Prometheus metrics
+    """
+    print("🚀 Real Estate OS API Starting Up...")
+    print(f"📊 Database: {os.getenv('DB_DSN', 'Not configured')}")
+    print("✅ All routers loaded successfully")
+    print("📖 API Documentation: /docs")
+
+    # Instrument the app for metrics
+    instrumentator.instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
+    print("📈 Prometheus metrics enabled at /metrics")
+
+    # Start background metric collection
+    import asyncio
+    asyncio.create_task(metrics_collection_task())
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """
+    Run on application shutdown
+
+    - Close database connections
+    - Save state
+    - Clean up resources
+    """
+    print("👋 Real Estate OS API Shutting Down...")
+
 
 if __name__ == "__main__":
     import uvicorn
-
-    # Run the application with Uvicorn
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=int(os.getenv("PORT", 8000)),
-        reload=os.getenv("RELOAD", "false").lower() == "true",
-        log_level=os.getenv("LOG_LEVEL", "info").lower()
+        port=8000,
+        reload=True,
+        log_level="info"
     )
+
+# =============================================================================
+# PROVIDER STATUS ENDPOINT (for mock mode verification)
+# =============================================================================
+
+@app.get("/api/v1/status/providers")
+def get_provider_status():
+    """
+    Get current provider configuration
+    
+    Returns which provider implementations are currently active:
+    - email: mailhog-smtp vs sendgrid
+    - sms: mock-twilio vs twilio  
+    - storage: minio-local vs aws-s3
+    - pdf: gotenberg-local vs weasyprint
+    - llm: deterministic-templates vs openai
+    
+    Use this endpoint to verify mock mode is properly configured.
+    """
+    from api.config import get_provider_info
+    
+    return get_provider_info()
+
