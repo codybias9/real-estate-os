@@ -2,6 +2,9 @@
 Authentication Utilities
 JWT token generation, validation, password hashing
 """
+from dotenv import load_dotenv
+load_dotenv()  # Load environment variables first
+
 from datetime import datetime, timedelta
 from typing import Optional
 import os

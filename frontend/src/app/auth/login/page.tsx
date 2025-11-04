@@ -43,14 +43,11 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      // Call API
+      // Call API - response includes both tokens and user
       const response = await apiClient.auth.login(data.email, data.password)
 
-      // Get user details
-      const user = await apiClient.auth.getCurrentUser()
-
       // Store in Zustand
-      login(response, user)
+      login(response, response.user)
 
       // Redirect to dashboard
       router.push('/dashboard')

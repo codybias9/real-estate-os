@@ -51,20 +51,16 @@ export default function RegisterPage() {
     setError(null)
 
     try {
-      // Call registration API
-      await apiClient.auth.register({
+      // Call registration API - response includes both tokens and user
+      const response = await apiClient.auth.register({
         email: data.email,
         password: data.password,
         full_name: data.full_name,
         team_name: data.team_name,
       })
 
-      // Auto-login after registration
-      const response = await apiClient.auth.login(data.email, data.password)
-      const user = await apiClient.auth.getCurrentUser()
-
-      // Store in Zustand
-      login(response, user)
+      // Store in Zustand (no need to login separately)
+      login(response, response.user)
 
       // Redirect to dashboard
       router.push('/dashboard')

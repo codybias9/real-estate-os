@@ -8,6 +8,7 @@ export interface User {
   full_name: string
   role: UserRole
   team_id: number
+  is_active: boolean
   created_at: string
   last_login: string | null
 }
@@ -29,6 +30,7 @@ export interface RegisterData {
 export interface AuthTokens {
   access_token: string
   token_type: string
+  user: User
 }
 
 // ============================================================================
