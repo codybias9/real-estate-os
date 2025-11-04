@@ -230,3 +230,68 @@ fb3c6b29453b (initial_schema_with_rls)
 
 ---
 
+### Entry 2.1 - Docker Compose Mock Configuration Complete
+**Time**: 2025-11-04T18:10:00Z
+**Action**: Created Docker compose override and mock environment
+
+**Created Files**:
+1. **env/.env.mock** (206 lines):
+   - Complete mock mode configuration with NO external credentials
+   - All services use Docker internal networking
+   - Mock providers: MailHog (email), Mock Twilio (SMS), MinIO (storage), Gotenberg (PDF)
+   - Safe defaults: APP_MODE=mock, FEATURE_EXTERNAL_SENDS=false, FEATURE_USE_LLM=false
+   - Audit artifacts directory configured
+
+2. **docker-compose.override.mock.yml** (287 lines):
+   - Extends base docker-compose.yml with 8 additional services:
+     - api: FastAPI application (port 8000) with health checks
+     - celery-worker: Background task processor (4 workers, 3 queues)
+     - celery-beat: Scheduled task manager
+     - frontend: Next.js 14 development server (port 3000)
+     - nginx: Reverse proxy (port 80)
+     - prometheus: Metrics collection (port 9090)
+     - grafana: Metrics visualization (port 3001, admin/admin)
+     - flower: Celery monitoring (port 5555)
+   - All services have health checks and proper dependencies
+   - Volumes for hot-reload development
+
+3. **frontend/Dockerfile** (87 lines):
+   - Multi-stage build: base → dependencies → development → build → production
+   - Development stage with hot reload
+   - Production stage optimized
+
+**Total Docker Services**: 15
+- Infrastructure (7): postgres, redis, rabbitmq, minio, gotenberg, mailhog, mock-twilio
+- Application (8): api, celery-worker, celery-beat, frontend, nginx, prometheus, grafana, flower
+
+**All Healthchecks Configured**: ✅
+- Every service has health check (curl/pg_isready/redis-cli/etc.)
+- Dependencies use `condition: service_healthy`
+- Stack waits for dependencies before starting
+
+**Mock Mode Guarantees**:
+- ❌ No external API calls (all providers mocked)
+- ❌ No real email sends (MailHog captures)
+- ❌ No real SMS sends (Mock Twilio captures)
+- ❌ No external data enrichment
+- ✅ All services self-contained in Docker
+
+**Usage**:
+```bash
+# Copy mock env
+cp env/.env.mock .env
+
+# Start full stack (15 services)
+docker compose -f docker-compose.yml -f docker-compose.override.mock.yml up -d
+
+# Or create symlink for convenience
+ln -sf docker-compose.override.mock.yml docker-compose.override.yml
+docker compose up -d
+```
+
+**Status**: ✅ Phase 2.1 Complete (Mock configuration ready)
+
+**Next**: Phase 2.2 - Verify all healthchecks, bring up stack, run introspection
+
+---
+
