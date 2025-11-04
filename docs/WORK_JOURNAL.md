@@ -189,3 +189,44 @@ fb3c6b29453b (initial_schema_with_rls)
 
 ---
 
+### Entry 1.4 - Introspection Scripts Created
+**Time**: 2025-11-04T18:00:00Z
+**Action**: Created endpoint and model introspection scripts
+
+**Created Scripts**:
+1. **scripts/introspect_endpoints.py**:
+   - Reflects FastAPI app.routes via introspection
+   - Generates endpoints.json with HTTP methods, paths, routers
+   - Groups by router, counts by method
+   - Provides evidence of 118 endpoints claimed in audit
+
+2. **scripts/introspect_models.py**:
+   - Reflects SQLAlchemy Base.registry.mappers
+   - Generates models.json with tables, columns, relationships
+   - Extracts column types, constraints, foreign keys
+   - Provides evidence of 35+ models claimed in audit
+
+3. **scripts/run_introspection.sh**:
+   - Wrapper script that runs both introspections
+   - Outputs to audit_artifacts/<timestamp>/
+   - Validates with jq and displays statistics
+
+**Execution**:
+- Scripts require running API and DB (will execute in Phase 2)
+- Usage: `./scripts/run_introspection.sh [output_dir]`
+- Default output: `audit_artifacts/<timestamp>/`
+
+**Why Defer Execution**:
+- Introspection requires imports from api.main and db.models
+- Needs database connection for SQLAlchemy reflection
+- Will run in Phase 2 after Docker stack is up
+
+**Status**: ✅ Phase 1 Complete (Consolidation & Canonicalization)
+- Provider factory pattern established
+- Migration chain reconciled (9 migrations, linear)
+- Introspection scripts ready for Phase 2 execution
+
+**Next**: Phase 2 - Runtime Bring-Up (Docker Compose)
+
+---
+
