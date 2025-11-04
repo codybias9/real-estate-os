@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Property Investment Memo - {{ property.address.line1 }}</title>
+    <style>
+        @page {
+            size: letter;
+            margin: 0.75in;
+        }
+
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: #333;
+        }
+
+        .header {
+            border-bottom: 3px solid #2c3e50;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 18pt;
+            color: #2c3e50;
+        }
+
+        h2 {
+            font-size: 14pt;
+            color: #34495e;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            border-bottom: 1px solid #bdc3c7;
+            padding-bottom: 5px;
+        }
+
+        h3 {
+            font-size: 12pt;
+            color: #34495e;
+            margin-top: 15px;
+            margin-bottom: 8px;
+        }
+
+        .meta {
+            color: #7f8c8d;
+            font-size: 9pt;
+            margin-top: 5px;
+        }
+
+        .score-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .score-value {
+            font-size: 48pt;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        .score-label {
+            font-size: 12pt;
+            margin-top: 5px;
+            opacity: 0.9;
+        }
+
+        .score-reasons {
+            margin-top: 15px;
+        }
+
+        .reason {
+            background: #ecf0f1;
+            padding: 10px;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+        }
+
+        .reason.positive {
+            border-left-color: #27ae60;
+        }
+
+        .reason.negative {
+            border-left-color: #e74c3c;
+        }
+
+        .reason-header {
+            display: flex;
+            justify-content: space-between;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .reason-note {
+            font-size: 10pt;
+            color: #555;
+        }
+
+        .property-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .property-item {
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+
+        .property-label {
+            font-size: 9pt;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .property-value {
+            font-size: 12pt;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-top: 3px;
+        }
+
+        .map-placeholder {
+            background: #e8f4f8;
+            border: 2px dashed #3498db;
+            border-radius: 8px;
+            height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #3498db;
+            font-size: 14pt;
+            margin: 15px 0;
+        }
+
+        .provenance {
+            background: #fef9e7;
+            border-left: 4px solid #f39c12;
+            padding: 10px;
+            margin-top: 15px;
+            font-size: 9pt;
+        }
+
+        .provenance-item {
+            margin-bottom: 5px;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid #bdc3c7;
+            font-size: 8pt;
+            color: #7f8c8d;
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        td {
+            padding: 8px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        td:first-child {
+            font-weight: 600;
+            color: #7f8c8d;
+            width: 40%;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 9pt;
+            font-weight: 600;
+            background: #e8f4f8;
+            color: #3498db;
+        }
+
+        .badge.high {
+            background: #d5f4e6;
+            color: #27ae60;
+        }
+
+        .badge.medium {
+            background: #fff3cd;
+            color: #f39c12;
+        }
+
+        .badge.low {
+            background: #f8d7da;
+            color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Property Investment Memo</h1>
+        <div class="meta">
+            Generated {{ generated_at }} | Tenant: {{ tenant_id[:8] }}... | APN: {{ property.apn }}
+        </div>
+    </div>
+
+    <!-- Investment Score -->
+    <div class="score-box">
+        <div class="score-value">{{ score.score }}</div>
+        <div class="score-label">Investment Score (0-100)</div>
+        <div class="meta" style="margin-top: 10px;">
+            Model: {{ score.model_version }} | Computed: {{ score.computed_at }}
+        </div>
+    </div>
+
+    <!-- Property Address -->
+    <h2>Property Information</h2>
+    <h3 style="font-size: 14pt; margin: 10px 0;">
+        {{ property.address.line1 }}<br>
+        {{ property.address.city }}, {{ property.address.state }} {{ property.address.zip }}
+    </h3>
+
+    <!-- Map Placeholder -->
+    <div class="map-placeholder">
+        📍 Map: {{ property.geo.lat if property.geo else 'N/A' }}, {{ property.geo.lng if property.geo else 'N/A' }}
+    </div>
+
+    <!-- Score Explanation -->
+    <h2>Score Analysis</h2>
+    <div class="score-reasons">
+        {% for reason in score.reasons %}
+        <div class="reason {{ reason.direction }}">
+            <div class="reason-header">
+                <span>{{ reason.feature.replace('_', ' ').title() }}</span>
+                <span>
+                    {% if reason.direction == 'positive' %}✓ +{{ (reason.weight * 100)|round(1) }}%{% endif %}
+                    {% if reason.direction == 'negative' %}✗ -{{ (reason.weight * 100)|round(1) }}%{% endif %}
+                    {% if reason.direction == 'neutral' %}● {{ (reason.weight * 100)|round(1) }}%{% endif %}
+                </span>
+            </div>
+            <div class="reason-note">{{ reason.note }}</div>
+            {% if reason.raw_value is not none %}
+            <div class="reason-note" style="margin-top: 3px; color: #7f8c8d;">
+                Value: {{ reason.raw_value }}
+                {% if reason.benchmark is not none %}| Benchmark: {{ reason.benchmark }}{% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Property Attributes -->
+    <h2>Property Details</h2>
+    <div class="property-grid">
+        {% if property.attrs %}
+        <div class="property-item">
+            <div class="property-label">Bedrooms</div>
+            <div class="property-value">{{ property.attrs.beds if property.attrs.beds else 'N/A' }}</div>
+        </div>
+        <div class="property-item">
+            <div class="property-label">Bathrooms</div>
+            <div class="property-value">{{ property.attrs.baths if property.attrs.baths else 'N/A' }}</div>
+        </div>
+        <div class="property-item">
+            <div class="property-label">Square Feet</div>
+            <div class="property-value">{{ '{:,}'.format(property.attrs.sqft) if property.attrs.sqft else 'N/A' }}</div>
+        </div>
+        <div class="property-item">
+            <div class="property-label">Year Built</div>
+            <div class="property-value">{{ property.attrs.year_built if property.attrs.year_built else 'N/A' }}</div>
+        </div>
+        <div class="property-item">
+            <div class="property-label">Lot Size</div>
+            <div class="property-value">{{ '{:,}'.format(property.attrs.lot_sqft)|default('N/A') }} sqft</div>
+        </div>
+        <div class="property-item">
+            <div class="property-label">Property Type</div>
+            <div class="property-value">{{ property.attrs.property_type|default('N/A') }}</div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Owner Information -->
+    {% if property.owner %}
+    <h2>Owner Information</h2>
+    <table>
+        <tr>
+            <td>Owner Name</td>
+            <td>{{ property.owner.name if property.owner.name else 'N/A' }}</td>
+        </tr>
+        <tr>
+            <td>Owner Type</td>
+            <td>
+                <span class="badge">{{ property.owner.type if property.owner.type else 'Unknown' }}</span>
+            </td>
+        </tr>
+    </table>
+    {% endif %}
+
+    <!-- Provenance -->
+    {% if property.provenance %}
+    <h2>Data Provenance</h2>
+    <div class="provenance">
+        <strong>Data Sources:</strong>
+        <div style="margin-top: 8px;">
+        {% for prov in property.provenance[:5] %}
+            <div class="provenance-item">
+                • <strong>{{ prov.field }}</strong>: {{ prov.source }}
+                (confidence: {{ (prov.confidence * 100)|round(0)|int }}%,
+                fetched: {{ prov.fetched_at[:10] }})
+            </div>
+        {% endfor %}
+        {% if property.provenance|length > 5 %}
+            <div class="provenance-item" style="margin-top: 5px; font-style: italic;">
+                ... and {{ property.provenance|length - 5 }} more sources
+            </div>
+        {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Discovery Metadata -->
+    <h2>Discovery Metadata</h2>
+    <table>
+        <tr>
+            <td>APN (Assessor Parcel Number)</td>
+            <td><code>{{ property.apn }}</code></td>
+        </tr>
+        <tr>
+            <td>Source</td>
+            <td>{{ property.source }}</td>
+        </tr>
+        <tr>
+            <td>Source ID</td>
+            <td><code>{{ property.source_id }}</code></td>
+        </tr>
+        <tr>
+            <td>Discovered At</td>
+            <td>{{ property.discovered_at }}</td>
+        </tr>
+        {% if property.url %}
+        <tr>
+            <td>Source URL</td>
+            <td style="font-size: 9pt; word-break: break-all;">{{ property.url }}</td>
+        </tr>
+        {% endif %}
+    </table>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>
+            This memo is generated by Real Estate OS for internal analysis purposes only.<br>
+            Property data is sourced from public records and third-party data providers.<br>
+            Investment scores are algorithmic estimates and should not be the sole basis for investment decisions.
+        </p>
+    </div>
+</body>
+</html>
