@@ -1,0 +1,89 @@
+name: Smoke Tests
+
+on:
+  push:
+    branches: [ main, develop, 'claude/**' ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  smoke-verification:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgis/postgis:15-3.3
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+      qdrant:
+        image: qdrant/qdrant:latest
+        ports:
+          - 6333:6333
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          poetry install
+
+      - name: Make smoke script executable
+        run: chmod +x scripts/smoke-verify.sh
+
+      - name: Run smoke verification
+        env:
+          DB_DSN: postgresql://postgres:postgres@localhost:5432/test_db
+          REDIS_URL: redis://localhost:6379
+          QDRANT_URL: http://localhost:6333
+        run: |
+          bash scripts/smoke-verify.sh
+
+      - name: Upload smoke test artifacts
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: smoke-test-results
+          path: artifacts/verification/
+
+      - name: Check smoke test results
+        run: |
+          if [ -f "artifacts/verification/smoke-results.json" ]; then
+            FAILURES=$(jq '.failures' artifacts/verification/smoke-results.json)
+            if [ "$FAILURES" -gt "0" ]; then
+              echo "Smoke tests failed with $FAILURES failures"
+              exit 1
+            fi
+          else
+            echo "Smoke test results not found"
+            exit 1
+          fi

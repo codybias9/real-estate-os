@@ -1,0 +1,13 @@
+Thompson Sampling Bandit Logs (Send-Time Optimization)
+============================================================
+
+Trial 1: Arm=morning, Time=10:25, Reward=0.0, α=15, β=6
+Trial 2: Arm=afternoon, Time=15:20, Reward=1.0, α=21, β=8
+Trial 3: Arm=evening, Time=18:22, Reward=1.0, α=26, β=10
+Trial 4: Arm=afternoon, Time=16:23, Reward=0.0, α=21, β=9
+Trial 5: Arm=evening, Time=19:07, Reward=1.0, α=27, β=10
+Trial 6: Arm=evening, Time=18:26, Reward=1.0, α=28, β=10
+Trial 7: Arm=morning, Time=09:27, Reward=1.0, α=16, β=6
+Trial 8: Arm=morning, Time=09:25, Reward=0.0, α=16, β=7
+Trial 9: Arm=evening, Time=19:47, Reward=1.0, α=29, β=10
+Trial 10: Arm=evening, Time=19:05, Reward=0.0, α=29, β=11

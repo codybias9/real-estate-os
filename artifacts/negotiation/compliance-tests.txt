@@ -1,0 +1,16 @@
+Negotiation Compliance Test Results
+============================================================
+
+✅ DNC_SUPPRESSION: Expected FAIL, Got FAIL
+   - DNC_LIST: +1234567890 is on Do Not Contact list
+   - QUIET_HOURS: 23:10 is outside allowed hours (08:00 - 21:00)
+
+❌ QUIET_HOURS: Expected FAIL, Got PASS
+
+✅ FREQUENCY_CAP: Expected FAIL, Got FAIL
+   - QUIET_HOURS: 22:10 is outside allowed hours (08:00 - 21:00)
+   - FREQUENCY_CAP: 3 contacts in last 7 days (max: 3)
+   - MIN_INTERVAL: Only 24.0 hours since last contact (min: 48)
+
+✅ VALID_SEND: Expected PASS, Got PASS
+

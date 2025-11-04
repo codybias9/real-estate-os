@@ -1,0 +1,97 @@
+# Great Expectations Configuration
+config_version: 3.0
+
+# Datasources
+datasources:
+  postgres_datasource:
+    class_name: Datasource
+    execution_engine:
+      class_name: SqlAlchemyExecutionEngine
+      connection_string: ${POSTGRES_CONNECTION_STRING}
+    data_connectors:
+      default_runtime_data_connector_name:
+        class_name: RuntimeDataConnector
+        batch_identifiers:
+          - default_identifier_name
+      properties_connector:
+        class_name: ConfiguredAssetSqlDataConnector
+        assets:
+          properties:
+            class_name: Asset
+            schema_name: public
+            table_name: properties
+      prospects_connector:
+        class_name: ConfiguredAssetSqlDataConnector
+        assets:
+          prospects:
+            class_name: Asset
+            schema_name: public
+            table_name: prospects
+      ownership_connector:
+        class_name: ConfiguredAssetSqlDataConnector
+        assets:
+          ownership:
+            class_name: Asset
+            schema_name: public
+            table_name: ownership
+      leases_connector:
+        class_name: ConfiguredAssetSqlDataConnector
+        assets:
+          leases:
+            class_name: Asset
+            schema_name: public
+            table_name: leases
+
+# Stores
+config_variables_file_path: uncommitted/config_variables.yml
+
+# Stores
+stores:
+  expectations_store:
+    class_name: ExpectationsStore
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: expectations/
+
+  validations_store:
+    class_name: ValidationsStore
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: uncommitted/validations/
+
+  checkpoint_store:
+    class_name: CheckpointStore
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: checkpoints/
+
+  evaluation_parameter_store:
+    class_name: EvaluationParameterStore
+
+  profiler_store:
+    class_name: ProfilerStore
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: profilers/
+
+expectations_store_name: expectations_store
+validations_store_name: validations_store
+checkpoint_store_name: checkpoint_store
+evaluation_parameter_store_name: evaluation_parameter_store
+
+# Data Docs
+data_docs_sites:
+  local_site:
+    class_name: SiteBuilder
+    show_how_to_buttons: true
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: uncommitted/data_docs/local_site/
+    site_index_builder:
+      class_name: DefaultSiteIndexBuilder
+
+anonymous_usage_statistics:
+  enabled: false
+  data_context_id: real-estate-os-gx
+
+notebooks:

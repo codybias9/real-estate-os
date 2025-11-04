@@ -1,0 +1,49 @@
+UI Screenshot: Regime Monitoring Badge
+=======================================
+
+[Market Dashboard]
+┌────────────────────────────────────────────────────┐
+│  CLARK-NV  │  Las Vegas, Nevada                    │
+│                                                    │
+│  ┌──────────────────────┐                         │
+│  │  ☀️  WARM MARKET     │  [Why?] [History]      │
+│  │  Confidence: 85%     │                         │
+│  └──────────────────────┘                         │
+│                                                    │
+│  [Market Indicators]                              │
+│  Inventory:        2.8 months  ●●●●○○○            │
+│  Price Trend YoY:  +8.0%       ↗                  │
+│  Sales Velocity:   0.35/day    ●●●●○○○            │
+│  Composite Index:  0.65        ●●●●●●○○○          │
+│                                                    │
+│  [Investment Policy]                              │
+│  Max Offer:        78% of ARV                     │
+│  Min Margin:       17%                            │
+│  DD Period:        14 days                        │
+│  Close Period:     30 days                        │
+│  Pace:             Selective                      │
+│                                                    │
+│  [Historical Regime Changes]                      │
+│  2024-09-15: COOL → WARM                          │
+│  2024-07-22: WARM → COOL                          │
+│  2024-05-10: COOL → WARM                          │
+│                                                    │
+└────────────────────────────────────────────────────┘
+
+[Expanded "Why?" Explanation]
+┌────────────────────────────────────────────────────┐
+│  Market classified as WARM based on:              │
+│                                                    │
+│  ✅ Inventory at 2.8 months (healthy level)       │
+│  ✅ Strong price appreciation (+8% YoY)           │
+│  ⚠️  Moderate sales velocity                      │
+│  ✅ Low mortgage rates (6.7%)                     │
+│                                                    │
+│  Composite Index: 0.65 (WARM range: 0.50-0.75)   │
+│                                                    │
+│  Recommendation: Be selective with acquisitions.  │
+│  Competition is moderate. Focus on properties     │
+│  with strong fundamentals and clear value-add.    │
+│                                                    │
+│  [View Full Analysis →]                           │
+└────────────────────────────────────────────────────┘

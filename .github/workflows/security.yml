@@ -1,0 +1,213 @@
+name: Security Scanning
+
+on:
+  push:
+    branches: [ main, develop, 'claude/**' ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    - cron: '0 0 * * 0'  # Weekly on Sunday at midnight
+
+jobs:
+  trivy-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: |
+          docker build -t real-estate-os:${{ github.sha }} .
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'real-estate-os:${{ github.sha }}'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '1'
+
+      - name: Generate Trivy summary report
+        if: always()
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'real-estate-os:${{ github.sha }}'
+          format: 'table'
+          output: 'artifacts/security/trivy-summary.txt'
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v2
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Upload Trivy artifacts
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: trivy-results
+          path: artifacts/security/trivy-summary.txt
+
+  pip-audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install pip-audit
+        run: pip install pip-audit
+
+      - name: Export requirements
+        run: |
+          poetry export -f requirements.txt --output requirements.txt --without-hashes
+
+      - name: Run pip-audit
+        run: |
+          pip-audit -r requirements.txt --desc --format json > pip-audit-results.json || true
+
+      - name: Check for HIGH vulnerabilities
+        run: |
+          HIGH_COUNT=$(jq '[.vulnerabilities[] | select(.fix_versions != [])] | length' pip-audit-results.json || echo "0")
+          echo "Found $HIGH_COUNT HIGH vulnerabilities"
+          if [ "$HIGH_COUNT" -gt "0" ]; then
+            echo "FAIL: Found HIGH vulnerabilities in dependencies"
+            cat pip-audit-results.json
+            exit 1
+          fi
+
+      - name: Upload pip-audit results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: pip-audit-results
+          path: pip-audit-results.json
+
+  npm-audit:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
+      - name: Check if frontend exists
+        id: check-frontend
+        run: |
+          if [ -f "frontend/package.json" ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run npm audit
+        if: steps.check-frontend.outputs.exists == 'true'
+        working-directory: frontend
+        run: |
+          npm audit --audit-level=high --json > npm-audit-results.json || true
+          VULNS=$(jq '.metadata.vulnerabilities.high + .metadata.vulnerabilities.critical' npm-audit-results.json)
+          echo "Found $VULNS HIGH/CRITICAL vulnerabilities"
+          if [ "$VULNS" -gt "0" ]; then
+            echo "FAIL: Found HIGH/CRITICAL vulnerabilities"
+            cat npm-audit-results.json
+            exit 1
+          fi
+
+      - name: Upload npm audit results
+        if: steps.check-frontend.outputs.exists == 'true'
+        uses: actions/upload-artifact@v3
+        with:
+          name: npm-audit-results
+          path: frontend/npm-audit-results.json
+
+  zap-scan:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Install dependencies
+        run: |
+          poetry install
+
+      - name: Start API server
+        env:
+          DB_DSN: postgresql://postgres:postgres@localhost:5432/test_db
+        run: |
+          poetry run uvicorn api.main:app --host 0.0.0.0 --port 8000 &
+          sleep 10
+
+      - name: Wait for API to be ready
+        run: |
+          for i in {1..30}; do
+            if curl -f http://localhost:8000/healthz; then
+              echo "API is ready"
+              break
+            fi
+            echo "Waiting for API..."
+            sleep 2
+          done
+
+      - name: Run OWASP ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.7.0
+        with:
+          target: 'http://localhost:8000'
+          rules_file_name: '.zap/rules.tsv'
+          cmd_options: '-a -j -l WARN -T 10'
+          fail_action: true
+          allow_issue_writing: false
+
+      - name: Create ZAP report directory
+        if: always()
+        run: mkdir -p artifacts/security
+
+      - name: Copy ZAP report
+        if: always()
+        run: |
+          if [ -f "report_html.html" ]; then
+            cp report_html.html artifacts/security/zap-baseline-report.html
+          fi
+
+      - name: Upload ZAP scan results
+        uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: zap-scan-results
+          path: artifacts/security/zap-baseline-report.html
