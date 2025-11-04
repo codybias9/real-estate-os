@@ -5,11 +5,13 @@ Low-effort, high-impact features for immediate productivity boost
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 from typing import List
 from datetime import datetime, timedelta
 
 from api.database import get_db
 from api import schemas
+from api.auth import get_current_user
 from api.idempotency import IdempotencyHandler, get_idempotency_handler
 from api.integrations import (
     generate_property_memo,
@@ -404,8 +406,8 @@ def auto_assign_on_reply(
 @router.get("/templates/for-stage/{stage}", response_model=List[schemas.TemplateResponse])
 def get_templates_for_stage(
     stage: schemas.PropertyStageEnum,
-    team_id: int,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Quick Win #3: Stage-Aware Templates (4 hours effort)
@@ -419,6 +421,7 @@ def get_templates_for_stage(
     # Get templates that are either:
     # 1. Applicable to this specific stage
     # 2. Have no stage restrictions (applicable to all stages)
+    team_id = current_user.team_id
     templates = (
         db.query(Template)
         .filter(
@@ -446,8 +449,8 @@ def get_templates_for_stage(
 @router.post("/flag-data-issue", response_model=schemas.DataFlagResponse, status_code=201)
 def flag_data_issue(
     flag_data: schemas.DataFlagCreate,
-    user_id: int,  # In production, get from auth token
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Quick Win #4: Flag Data Issue (1 day effort)
@@ -466,6 +469,7 @@ def flag_data_issue(
         raise HTTPException(status_code=404, detail="Property not found")
 
     # Create data flag
+    user_id = current_user.id
     data_flag = DataFlag(
         property_id=flag_data.property_id,
         reported_by_user_id=user_id,

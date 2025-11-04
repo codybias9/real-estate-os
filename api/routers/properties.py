@@ -66,7 +66,7 @@ def create_property(
     return db_property
 
 @router.get("", response_model=List[schemas.PropertyResponse])
-@cache_response_with_etag("properties_list", ttl=60, vary_on=["team_id", "stage", "assigned_user_id"])
+# @cache_response_with_etag("properties_list", ttl=60, vary_on=["team_id", "stage", "assigned_user_id"])  # TODO: Fix cache serialization
 def list_properties(
     request: Request,
     team_id: Optional[int] = Query(None),

@@ -10,9 +10,10 @@ from datetime import datetime, timedelta
 
 from api.database import get_db
 from api import schemas
+from api.auth import get_current_user
 from db.models import (
     Property, NextBestAction, SmartList, Task, TaskStatus, TaskPriority,
-    Communication, PropertyTimeline, PropertyStage, Team
+    Communication, PropertyTimeline, PropertyStage, Team, User
 )
 
 router = APIRouter(prefix="/workflow", tags=["Workflow"])
@@ -221,8 +222,8 @@ def complete_next_best_action(
 @router.post("/smart-lists", response_model=schemas.SmartListResponse, status_code=201)
 def create_smart_list(
     smart_list_data: schemas.SmartListCreate,
-    user_id: int,  # In production, get from auth token
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Create a Smart List (saved query with intent)
@@ -234,6 +235,7 @@ def create_smart_list(
 
     Smart Lists auto-refresh and track property counts
     """
+    user_id = current_user.id
     smart_list = SmartList(
         team_id=smart_list_data.team_id,
         created_by_user_id=user_id,
@@ -337,8 +339,8 @@ def get_smart_list_properties(
 @router.post("/create-task-from-event", response_model=schemas.TaskResponse, status_code=201)
 def create_task_from_event(
     request: schemas.CreateTaskFromEventRequest,
-    user_id: int,  # In production, get from auth token
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """
     One-Click Tasking: Convert any timeline event into a task
@@ -358,6 +360,7 @@ def create_task_from_event(
     # Get communication if provided
     communication = None
     source_event_type = None
+    user_id = current_user.id
 
     if request.communication_id:
         communication = db.query(Communication).filter(Communication.id == request.communication_id).first()
