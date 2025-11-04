@@ -110,7 +110,7 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, index=True)
     full_name = Column(String(255))
     password_hash = Column(String(255), nullable=False)
-    role = Column(SQLEnum(UserRole), nullable=False, default=UserRole.AGENT)
+    role = Column(SQLEnum(UserRole, values_callable=lambda x: [e.value for e in x]), nullable=False, default=UserRole.AGENT)
     team_id = Column(Integer, ForeignKey("teams.id", ondelete="SET NULL"))
     is_active = Column(Boolean, default=True)
 

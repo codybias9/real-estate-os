@@ -93,7 +93,8 @@ def register(request: schemas.RegisterRequest, db: Session = Depends(get_db)):
             "full_name": user.full_name,
             "role": user.role,
             "team_id": user.team_id,
-            "is_active": user.is_active
+            "is_active": user.is_active,
+            "created_at": user.created_at
         }
     }
 
@@ -183,7 +184,8 @@ def login(request: schemas.LoginRequest, http_request: Request, db: Session = De
             "full_name": user.full_name,
             "role": user.role,
             "team_id": user.team_id,
-            "is_active": user.is_active
+            "is_active": user.is_active,
+            "created_at": user.created_at
         }
     }
 
