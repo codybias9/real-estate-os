@@ -4,8 +4,17 @@ Real Estate OS - Comprehensive API
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 from api import schemas
 import os
+
+# Prometheus metrics
+from prometheus_client import make_asgi_app
+from prometheus_fastapi_instrumentator import Instrumentator
+from api import metrics
+
+# OpenAPI enhancements
+from api.openapi_config import get_openapi_schema_enhancements, OPENAPI_TAGS
 
 # Import all routers
 from api.routers import (
@@ -27,84 +36,70 @@ from api.routers import (
     admin
 )
 
-# Create FastAPI app
+# Create FastAPI app with enhanced OpenAPI configuration
 app = FastAPI(
     title="Real Estate OS API",
-    description="""
-# Real Estate OS - Complete UX Platform
-
-## Big Themes
-
-- **Decision speed, not just data**: Surface the one thing to do next for each deal, with context
-- **Fewer tabs**: Bring email, calls, docs, and investor share-outs into the pipeline
-- **Explainable confidence**: Probabilities and money-on-the-table estimates the team can trust
-- **Zero-friction collaboration**: Secure sharing without logins, fully trackable
-- **Operational guardrails**: Automate "don't forgets" - cadence, compliance, cost caps
-
-## Feature Groups
-
-### 🎯 Quick Wins (Month 1)
-- Generate & Send Combo
-- Auto-Assign on Reply
-- Stage-Aware Templates
-- Flag Data Issue
-
-### 🚀 Workflow Accelerators
-- Next Best Action (NBA) Panel
-- Smart Lists (Saved Queries)
-- One-Click Tasking
-
-### 📧 Communication Inside Pipeline
-- Email Threading (Gmail/Outlook)
-- Call Capture + Transcription
-- Reply Drafting & Objection Handling
-
-### 💰 Portfolio & Outcomes
-- Deal Economics Panel
-- Investor Readiness Score
-- Template Leaderboards
-
-### 🔗 Sharing & Deal Rooms
-- Secure Share Links (no login)
-- Deal Room Artifacts
-- Export Offer Packs
-
-### 📊 Data & Trust Upgrades
-- Owner Propensity Signals
-- Provenance Inspector
-- Deliverability Dashboard
-
-### 🤖 Automation & Guardrails
-- Cadence Governor
-- Compliance Pack (DNC, Opt-outs)
-- Budget Tracking
-
-### 🎨 Differentiators
-- Explainable Probability of Close
-- Scenario Planning (What-If)
-- Investor Network Effects
-
-### 📚 Onboarding
-- Starter Presets by Persona
-- Guided Tour Checklist
-
-### 🌍 Open Data Ladder
-- Free sources first (OpenAddresses, OSM, FEMA)
-- Paid sources only when needed
-- Complete provenance tracking
-
-## API Documentation
-
-- Swagger UI: `/docs`
-- ReDoc: `/redoc`
-- OpenAPI JSON: `/openapi.json`
-""",
     version="1.0.0",
+    description="Real Estate OS - Decision speed, not just data",
     contact={
         "name": "Real Estate OS Support",
-        "email": "support@real-estate-os.com"
-    }
+        "email": "support@realestateos.com",
+        "url": "https://realestateos.com/support"
+    },
+    license_info={
+        "name": "Proprietary",
+        "url": "https://realestateos.com/license"
+    },
+    terms_of_service="https://realestateos.com/terms",
+    openapi_tags=OPENAPI_TAGS,
+    docs_url="/docs",
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+    servers=[
+        {
+            "url": "https://api.realestateos.com",
+            "description": "Production"
+        },
+        {
+            "url": "https://staging-api.realestateos.com",
+            "description": "Staging"
+        },
+        {
+            "url": "http://localhost:8000",
+            "description": "Local Development"
+        }
+    ]
 )
+
+# Customize OpenAPI schema with examples
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+        tags=app.openapi_tags,
+        servers=app.servers
+    )
+
+    # Merge with enhancements
+    enhancements = get_openapi_schema_enhancements()
+    openapi_schema["info"].update(enhancements["info"])
+
+    # Add external docs
+    openapi_schema["externalDocs"] = enhancements["externalDocs"]
+
+    # Add tag groups (for ReDoc)
+    if "x-tagGroups" in enhancements:
+        openapi_schema["x-tagGroups"] = enhancements["x-tagGroups"]
+
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
 
 # Add CORS middleware
 app.add_middleware(
@@ -122,6 +117,31 @@ app.middleware("http")(rate_limit_middleware)
 # Add ETag support for conditional requests
 from api.etag import etag_middleware
 app.middleware("http")(etag_middleware)
+
+# ============================================================================
+# PROMETHEUS METRICS
+# ============================================================================
+
+# Instrument FastAPI app with default metrics
+instrumentator = Instrumentator(
+    should_group_status_codes=False,
+    should_ignore_untemplated=True,
+    should_respect_env_var=True,
+    should_instrument_requests_inprogress=True,
+    excluded_handlers=["/metrics", "/healthz", "/ping"],
+    env_var_name="ENABLE_METRICS",
+    inprogress_name="realestateos_requests_inprogress",
+    inprogress_labels=True,
+)
+
+# Add custom metrics
+instrumentator.add(
+    metrics.api_request_duration_seconds.labels(method="", endpoint="").observe
+)
+
+# Expose metrics endpoint
+metrics_app = make_asgi_app()
+app.mount("/metrics", metrics_app)
 
 # ============================================================================
 # LEGACY ENDPOINTS (keep for compatibility)
@@ -266,6 +286,39 @@ app.include_router(sse_events.router, prefix="/api/v1")
 app.include_router(admin.router, prefix="/api/v1")
 
 # ============================================================================
+# BACKGROUND TASKS
+# ============================================================================
+
+async def metrics_collection_task():
+    """
+    Background task to periodically update database-derived metrics
+
+    Runs every 30 seconds to update:
+    - DLQ depth and age
+    - Business metrics (properties, users, teams)
+    - Provider status
+    """
+    import asyncio
+    from db.database import get_db
+
+    while True:
+        try:
+            # Get database session
+            db = next(get_db())
+            try:
+                # Update all metrics
+                metrics.update_all_metrics(db)
+            finally:
+                db.close()
+
+            # Wait 30 seconds before next update
+            await asyncio.sleep(30)
+
+        except Exception as e:
+            print(f"Error in metrics collection: {e}")
+            await asyncio.sleep(30)
+
+# ============================================================================
 # STARTUP / SHUTDOWN EVENTS
 # ============================================================================
 
@@ -277,11 +330,20 @@ async def startup_event():
     - Initialize database connection
     - Load configuration
     - Warm up caches
+    - Instrument Prometheus metrics
     """
     print("🚀 Real Estate OS API Starting Up...")
     print(f"📊 Database: {os.getenv('DB_DSN', 'Not configured')}")
     print("✅ All routers loaded successfully")
     print("📖 API Documentation: /docs")
+
+    # Instrument the app for metrics
+    instrumentator.instrument(app).expose(app, endpoint="/metrics", include_in_schema=False)
+    print("📈 Prometheus metrics enabled at /metrics")
+
+    # Start background metric collection
+    import asyncio
+    asyncio.create_task(metrics_collection_task())
 
 @app.on_event("shutdown")
 async def shutdown_event():
