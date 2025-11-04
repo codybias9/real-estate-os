@@ -1,0 +1,308 @@
+{
+  "dashboard": {
+    "title": "Real Estate OS - DLQ Monitoring",
+    "description": "Dead Letter Queue monitoring dashboard for failed Celery tasks",
+    "tags": ["realestateos", "dlq", "celery", "monitoring"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "30s",
+    "time": {
+      "from": "now-6h",
+      "to": "now"
+    },
+    "timepicker": {
+      "refresh_intervals": ["10s", "30s", "1m", "5m", "15m", "30m", "1h"],
+      "time_options": ["5m", "15m", "1h", "6h", "12h", "24h", "2d", "7d", "30d"]
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "DLQ Depth (Total Failed Tasks)",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "sum(realestateos_dlq_depth) by (queue_name)",
+            "legendFormat": "{{queue_name}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": {"mode": "palette-classic"}
+          }
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": ["last", "max"]
+          },
+          "tooltip": {"mode": "multi", "sort": "desc"}
+        },
+        "alert": {
+          "name": "DLQ Depth Alert",
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [0],
+                "type": "gt"
+              },
+              "operator": {"type": "and"},
+              "query": {"params": ["A", "5m", "now"]},
+              "reducer": {"type": "last"}
+            }
+          ],
+          "executionErrorState": "alerting",
+          "for": "5m",
+          "frequency": "1m",
+          "message": "DLQ has failed tasks that need investigation",
+          "noDataState": "no_data",
+          "notifications": []
+        }
+      },
+      {
+        "id": 2,
+        "title": "DLQ Depth by Task Type",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "realestateos_dlq_depth",
+            "legendFormat": "{{queue_name}} - {{task_name}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": {"mode": "palette-classic"}
+          }
+        },
+        "options": {
+          "legend": {
+            "displayMode": "table",
+            "placement": "right",
+            "calcs": ["last", "max"]
+          },
+          "tooltip": {"mode": "multi"}
+        }
+      },
+      {
+        "id": 3,
+        "title": "Oldest Failure Age",
+        "type": "stat",
+        "gridPos": {"x": 0, "y": 8, "w": 6, "h": 4},
+        "targets": [
+          {
+            "expr": "max(realestateos_dlq_oldest_failure_age_seconds) by (queue_name)",
+            "legendFormat": "{{queue_name}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": null, "color": "green"},
+                {"value": 300, "color": "yellow"},
+                {"value": 3600, "color": "red"}
+              ]
+            }
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          },
+          "text": {"titleSize": 14, "valueSize": 24},
+          "colorMode": "background"
+        }
+      },
+      {
+        "id": 4,
+        "title": "DLQ Replay Rate",
+        "type": "graph",
+        "gridPos": {"x": 6, "y": 8, "w": 12, "h": 4},
+        "targets": [
+          {
+            "expr": "rate(realestateos_dlq_replay_total[5m])",
+            "legendFormat": "{{queue_name}} - {{status}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "color": {"mode": "palette-classic"}
+          }
+        }
+      },
+      {
+        "id": 5,
+        "title": "DLQ Replay Success Rate",
+        "type": "stat",
+        "gridPos": {"x": 18, "y": 8, "w": 6, "h": 4},
+        "targets": [
+          {
+            "expr": "sum(rate(realestateos_dlq_replay_total{status=\"success\"}[5m])) / sum(rate(realestateos_dlq_replay_total[5m])) * 100",
+            "legendFormat": "Success Rate",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": null, "color": "red"},
+                {"value": 80, "color": "yellow"},
+                {"value": 95, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 6,
+        "title": "DLQ Replay Duration (P95)",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 12, "w": 12, "h": 6},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(realestateos_dlq_replay_duration_seconds_bucket[5m]))",
+            "legendFormat": "{{queue_name}} P95",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(realestateos_dlq_replay_duration_seconds_bucket[5m]))",
+            "legendFormat": "{{queue_name}} P50",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "color": {"mode": "palette-classic"}
+          }
+        }
+      },
+      {
+        "id": 7,
+        "title": "Failed Tasks by Queue (Last Hour)",
+        "type": "piechart",
+        "gridPos": {"x": 12, "y": 12, "w": 12, "h": 6},
+        "targets": [
+          {
+            "expr": "sum(realestateos_dlq_depth) by (queue_name)",
+            "legendFormat": "{{queue_name}}",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "legend": {
+            "displayMode": "table",
+            "placement": "right",
+            "values": ["value", "percent"]
+          },
+          "pieType": "pie"
+        }
+      },
+      {
+        "id": 8,
+        "title": "Celery Queue Depth (Active Tasks)",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 18, "w": 24, "h": 6},
+        "targets": [
+          {
+            "expr": "realestateos_celery_queue_depth",
+            "legendFormat": "{{queue_name}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": {"mode": "palette-classic"}
+          }
+        },
+        "options": {
+          "legend": {
+            "displayMode": "table",
+            "placement": "bottom",
+            "calcs": ["last", "max", "mean"]
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "Task Execution Status",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 24, "w": 24, "h": 6},
+        "targets": [
+          {
+            "expr": "rate(realestateos_celery_task_total{status=\"success\"}[5m])",
+            "legendFormat": "{{task_name}} - Success",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(realestateos_celery_task_total{status=\"failure\"}[5m])",
+            "legendFormat": "{{task_name}} - Failure",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "color": {"mode": "palette-classic"},
+            "custom": {
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10
+            }
+          }
+        }
+      }
+    ],
+    "annotations": {
+      "list": [
+        {
+          "name": "Deployments",
+          "datasource": "-- Grafana --",
+          "enable": true,
+          "iconColor": "blue",
+          "tags": ["deployment"]
+        },
+        {
+          "name": "DLQ Replays",
+          "datasource": "Prometheus",
+          "enable": true,
+          "iconColor": "green",
+          "expr": "changes(realestateos_dlq_replay_total[1m]) > 0"
+        }
+      ]
+    },
+    "templating": {
+      "list": [
+        {
+          "name": "queue",
+          "type": "query",
+          "datasource": "Prometheus",
+          "query": "label_values(realestateos_dlq_depth, queue_name)",
+          "refresh": 1,
+          "multi": true,
+          "includeAll": true
+        }
+      ]
+    }
+  }
+}
