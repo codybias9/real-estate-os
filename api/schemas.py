@@ -783,6 +783,54 @@ class AutoAssignOnReplyResponse(BaseSchema):
     task_title: str
 
 # ============================================================================
+# AUTOMATION & COMPLIANCE SCHEMAS
+# ============================================================================
+
+class ToggleCadenceRuleRequest(BaseSchema):
+    is_active: bool
+
+class ApplyCadenceRulesRequest(BaseSchema):
+    event_type: str  # "reply_detected", "email_bounced", etc.
+
+class RecordConsentRequest(BaseSchema):
+    property_id: int
+    consent_type: str  # "email", "sms", "call"
+    granted: bool  # Changed from 'consented' to 'granted' to match test
+    source: str  # Changed from 'consent_method' to 'source' to match test
+    consent_text: Optional[str] = None
+    ip_address: Optional[str] = None
+
+class AddToDNCRequest(BaseSchema):
+    phone_number: str
+    reason: Optional[str] = None
+
+class UnsubscribeRequest(BaseSchema):
+    email: str
+    reason: Optional[str] = None
+
+class ValidateSendRequest(BaseSchema):
+    property_id: int
+    channel: str  # Changed from 'communication_type' to 'channel' to match test
+    recipient: str  # Changed from 'to_address' to 'recipient' to match test
+
+class ValidateDNSRequest(BaseSchema):
+    domain: str
+    dkim_selector: str = "default"
+
+# ============================================================================
+# ONBOARDING SCHEMAS (Additional)
+# ============================================================================
+
+class ApplyPresetRequest(BaseSchema):
+    user_id: int
+    persona: str  # "wholesaler", "fix_and_flip", etc.
+    preset_name: str
+    team_id: int
+
+class CompleteChecklistStepRequest(BaseSchema):
+    step: str  # Changed from 'step_name' to 'step' to match query param
+
+# ============================================================================
 # UTILITY SCHEMAS
 # ============================================================================
 

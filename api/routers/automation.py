@@ -75,7 +75,7 @@ def list_cadence_rules(
 @router.post("/cadence-rules/{rule_id}/toggle")
 def toggle_cadence_rule(
     rule_id: int,
-    is_active: bool,
+    request: schemas.ToggleCadenceRuleRequest,
     db: Session = Depends(get_db)
 ):
     """
@@ -85,16 +85,16 @@ def toggle_cadence_rule(
     if not rule:
         raise HTTPException(status_code=404, detail="Rule not found")
 
-    rule.is_active = is_active
+    rule.is_active = request.is_active
 
     db.commit()
 
-    return {"status": "active" if is_active else "disabled"}
+    return {"status": "active" if request.is_active else "disabled"}
 
 @router.post("/cadence/apply-rules/{property_id}")
 def apply_cadence_rules(
     property_id: int,
-    event_type: str,  # "reply_detected", "email_bounced", "no_opens_3", etc.
+    request: schemas.ApplyCadenceRulesRequest,
     db: Session = Depends(get_db)
 ):
     """
@@ -123,11 +123,11 @@ def apply_cadence_rules(
     actions_taken = []
 
     for rule in rules:
-        if rule.trigger_on == event_type:
+        if rule.trigger_on == request.event_type:
             # Apply the action
             if rule.action_type == "pause":
                 property.cadence_paused = True
-                property.cadence_pause_reason = event_type
+                property.cadence_pause_reason = request.event_type
                 actions_taken.append(f"Paused cadence: {rule.name}")
 
                 # Create timeline event
@@ -136,7 +136,7 @@ def apply_cadence_rules(
                     event_type="cadence_paused",
                     event_title="Cadence Paused",
                     event_description=f"Auto-paused by rule: {rule.name}",
-                    extra_metadata={"rule_id": rule.id, "trigger": event_type}
+                    extra_metadata={"rule_id": rule.id, "trigger": request.event_type}
                 )
                 db.add(timeline_event)
 
@@ -154,7 +154,7 @@ def apply_cadence_rules(
 
     return {
         "property_id": property_id,
-        "event_type": event_type,
+        "event_type": request.event_type,
         "actions_taken": actions_taken
     }
 
@@ -433,8 +433,7 @@ def get_state_disclaimers(state: str):
 
 @router.post("/compliance/unsubscribe")
 def record_email_unsubscribe(
-    email: str,
-    reason: Optional[str] = None,
+    request: schemas.UnsubscribeRequest,
     db: Session = Depends(get_db)
 ):
     """
@@ -497,8 +496,7 @@ def check_unsubscribe_status(email: str, db: Session = Depends(get_db)):
 
 @router.post("/compliance/dnc/add")
 def add_to_do_not_call(
-    phone: str,
-    reason: Optional[str] = None,
+    request: schemas.AddToDNCRequest,
     db: Session = Depends(get_db)
 ):
     """
@@ -555,12 +553,7 @@ def check_dnc_status(phone: str, db: Session = Depends(get_db)):
 
 @router.post("/compliance/consent/record")
 def record_communication_consent(
-    property_id: int,
-    consent_type: str,
-    consented: bool,
-    consent_method: str,
-    consent_text: Optional[str] = None,
-    ip_address: Optional[str] = None,
+    request: schemas.RecordConsentRequest,
     db: Session = Depends(get_db)
 ):
     """
@@ -659,9 +652,7 @@ def check_communication_consent(
 
 @router.post("/compliance/validate-send")
 def validate_communication_before_send(
-    property_id: int,
-    communication_type: str,
-    to_address: str,
+    request: schemas.ValidateSendRequest,
     db: Session = Depends(get_db)
 ):
     """
@@ -700,8 +691,7 @@ def validate_communication_before_send(
 
 @router.post("/deliverability/validate-dns")
 def validate_dns_configuration(
-    domain: str,
-    dkim_selector: str = "default"
+    request: schemas.ValidateDNSRequest
 ):
     """
     Validate DNS configuration for email deliverability
