@@ -1,0 +1,31 @@
+=== EVALUATING REMAINING BRANCHES ===
+
+1. systematic-phase-work (54 commits):
+02f6f9e docs: Complete production audit with model cards
+6885af0 feat(negotiation): Add negotiation brain with NLP, Thompson Sampling, and contextual bandits (PR#24)
+26a028b feat(regime): Add market regime monitoring with Bayesian change-point detection (PR#22)
+365ac99 feat(valuation): Add MF/CRE DCF valuation engine (PR#21)
+9b6eaba feat(monitoring): Add Evidently drift detection (PR#19)
+0951f54 feat(vector): Add Qdrant vector search for portfolio twins (PR#18)
+8cadd6e feat(geo): Add libpostal normalization + enhanced PostGIS (PR#16)
+56d0519 feat(auth): Add Keycloak OIDC integration with hybrid auth support (PR#14)
+4f924a4 docs: Add comprehensive session summary and operations runbook
+f6c8501 feat(ml): Add Feast feature store, Comp-Critic valuation, and offer optimization (PRs #15, #20, #23)
+
+2. systematic-audit-phase (59 commits):
+ccc43bd docs: Add comprehensive systematic test fixing summary
+860079b fix: Complete MinIO test fixes - all 18 tests passing
+06f4faf docs: Update progress summary - 68% failure reduction, 0 errors
+bcbcd64 fix: Auto-skip database tests when aiosqlite not installed
+423ef37 docs: Add comprehensive test fixing progress summary
+cb252b3 fix: Fix API tests and rate limit middleware for test environments
+3f3b945 feat: Add missing rate limit classes and functions
+9d98800 feat: Add method aliases to MinIOClient for test compatibility
+36f7428 fix: Convert unit_number to string in rent roll parser
+fd56073 tests: Complete auth test fixes - all 11 tests passing
+
+=== Ancestry Check ===
+❌ systematic-phase-work NOT ancestor (has unique work)
+   Unique commits: 54
+❌ systematic-audit-phase NOT ancestor (has unique work)
+   Unique commits: 58

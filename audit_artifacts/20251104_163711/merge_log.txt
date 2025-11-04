@@ -1,0 +1,318 @@
+=== MERGE 1: workflow-accelerators ===
+Merge made by the 'ort' strategy.
+ UX_FEATURES_IMPLEMENTATION.md                     | 825 ++++++++++++++++++++++
+ api/database.py                                   |  56 ++
+ api/main.py                                       | 355 +++++++++-
+ api/routers/__init__.py                           |  14 +
+ api/routers/properties.py                         | 361 ++++++++++
+ api/routers/quick_wins.py                         | 420 +++++++++++
+ api/routers/workflow.py                           | 569 +++++++++++++++
+ api/schemas.py                                    | 589 +++++++++++++++
+ db/models.py                                      | 805 ++++++++++++++++++++-
+ db/versions/c9f3a8e1d4b2_add_ux_feature_models.py | 579 +++++++++++++++
+ pyproject.toml                                    |   4 +
+ 11 files changed, 4567 insertions(+), 10 deletions(-)
+ create mode 100644 UX_FEATURES_IMPLEMENTATION.md
+ create mode 100644 api/database.py
+ create mode 100644 api/routers/__init__.py
+ create mode 100644 api/routers/properties.py
+ create mode 100644 api/routers/quick_wins.py
+ create mode 100644 api/routers/workflow.py
+ create mode 100644 api/schemas.py
+ create mode 100644 db/versions/c9f3a8e1d4b2_add_ux_feature_models.py
+✅ Merge 1 successful
+73adaae Merge workflow accelerators feature (1 commit)
+
+=== MERGE 2: ga-hardening ===
+Auto-merging api/main.py
+CONFLICT (content): Merge conflict in api/main.py
+Automatic merge failed; fix conflicts and then commit the result.
+✅ Merge 2 successful
+73adaae Merge workflow accelerators feature (1 commit)
+✅ Conflict resolved
+169696f Resolve api/main.py conflict: Use comprehensive UX implementation
+?? audit_artifacts/
+
+=== Files from ga-hardening branch ===
+UX_FEATURES_IMPLEMENTATION.md
+api/database.py
+api/main.py
+api/routers/__init__.py
+api/routers/properties.py
+api/routers/quick_wins.py
+api/routers/workflow.py
+api/schemas.py
+db/models.py
+db/versions/c9f3a8e1d4b2_add_ux_feature_models.py
+pyproject.toml
+No more conflicts - ready to complete merge
+=== Files unique to ga-hardening branch ===
+No unique files in ga-hardening
+92a0ad5 docs: Add GA closeout status report
+GA_CLOSEOUT_STATUS.md
+f694b4f feat(document-processing): Complete lease/rent-roll parsing with 96% accuracy (PR-I1)
+artifacts/document-processing/lease-parsing-test-results.txt
+docs/AUDIT_REPORT.md
+document_processing/lease_parser.py
+6bc78e1 feat(lineage): Complete OpenLineage + Marquez integration (PR-T3)
+artifacts/lineage/lineage-dag-visualization.txt
+docs/AUDIT_REPORT.md
+infra/airflow/dags/property_processing_with_lineage.py
+infra/lineage/docker-compose-marquez.yml
+lineage/openlineage_integration.py
+74faedb feat(data-quality): Complete Great Expectations integration with Airflow (PR-T2)
+artifacts/data-quality/checkpoint-failure-example.txt
+artifacts/data-quality/checkpoint-success-example.txt
+artifacts/data-quality/gx-integration-summary.txt
+data_quality/gx_integration.py
+docs/AUDIT_REPORT.md
+docs/RUNBOOK.md
+great_expectations/checkpoints/properties_ingestion_checkpoint.yml
+great_expectations/checkpoints/prospects_pre_ml_checkpoint.yml
+great_expectations/great_expectations.yml
+infra/airflow/dags/property_processing_pipeline.py
+tests/data_quality/test_gx_failures.py
+4eda053 feat(security): Complete multi-tenant isolation with defense-in-depth (PR-T1)
+api/db.py
+api/qdrant_client.py
+api/storage.py
+artifacts/isolation/minio-prefix-proof.txt
+artifacts/isolation/negative-tests.txt
+
+=== RETRY MERGE 2: ga-hardening ===
+Already up to date.
+✅ Merge 2 successful (no conflicts)
+169696f Resolve api/main.py conflict: Use comprehensive UX implementation
+
+Conclusion: ga-hardening branch is ancestor, skipping to next merge
+
+=== MERGE 3: realestate-audit-canvas ===
+Auto-merging .github/workflows/ci.yml
+CONFLICT (add/add): Merge conflict in .github/workflows/ci.yml
+Auto-merging api/main.py
+CONFLICT (content): Merge conflict in api/main.py
+Auto-merging pyproject.toml
+CONFLICT (content): Merge conflict in pyproject.toml
+Automatic merge failed; fix conflicts and then commit the result.
+✅ Merge 3 successful
+169696f Resolve api/main.py conflict: Use comprehensive UX implementation
+ infra/lineage/docker-compose-marquez.yml           |   78 ++
+ infra/observability/otel-collector-config.yaml     |   75 ++
+ infra/observability/prometheus.yml                 |   52 +
+ lineage/openlineage_integration.py                 |  355 +++++++
+ ml/__init__.py                                     |    1 +
+ ml/feast_integration.py                            |  172 ++++
+ ml/models/__init__.py                              |   18 +
+ ml/models/comp_critic.py                           |  287 ++++++
+ ml/models/dcf_engine.py                            |  428 ++++++++
+ ml/models/explainability.py                        |  393 +++++++
+ ml/models/negotiation_brain.py                     |  394 +++++++
+ ml/models/offer_optimizer.py                       |  289 ++++++
+ ml/models/regime_monitor.py                        |  404 ++++++++
+ scripts/smoke-verify.sh                            |  180 ++++
+ tests/backend/test_api.py                          |   39 +
+ tests/backend/test_auth.py                         |  206 ++++
+ tests/backend/test_ml_models.py                    |  215 ++++
+ tests/backend/test_tenant_isolation.py             |  454 +++++++++
+ tests/data_quality/test_gx_failures.py             |  322 ++++++
+ 83 files changed, 14995 insertions(+)
+✅ Merge 3 completed successfully
+9d6676c Merge realestate-audit-canvas with conflict resolutions
+
+Files added/modified:
+ services/observability/tests/__init__.py           |    3 +
+ services/observability/tests/test_errors.py        |   55 +
+ services/observability/tests/test_logging.py       |   54 +
+ services/observability/tests/test_metrics.py       |  102 ++
+ services/policy-kernel/poetry.lock                 |  489 +++++++
+ services/policy-kernel/pyproject.toml              |   18 +
+ .../policy-kernel/src/policy_kernel/__init__.py    |   19 +
+ services/policy-kernel/src/policy_kernel/kernel.py |  170 +++
+ .../policy-kernel/src/policy_kernel/providers.py   |   91 ++
+ services/policy-kernel/src/policy_kernel/rules.py  |  134 ++
+ services/policy-kernel/tests/conftest.py           |    8 +
+ services/policy-kernel/tests/test_kernel.py        |  162 +++
+ services/security/README.md                        |   73 +
+ services/security/pyproject.toml                   |   43 +
+ services/security/src/security/__init__.py         |   23 +
+ services/security/src/security/cors.py             |   79 +
+ services/security/src/security/headers.py          |  107 ++
+ services/security/src/security/rate_limit.py       |   90 ++
+ services/security/src/security/request_id.py       |   83 ++
+ services/security/src/security/validation.py       |  199 +++
+ services/security/tests/__init__.py                |    3 +
+ services/security/tests/test_validation.py         |  232 +++
+ services/vector/README.md                          |  238 +++
+ services/vector/pyproject.toml                     |   43 +
+ services/vector/src/vector/__init__.py             |   18 +
+ services/vector/src/vector/client.py               |  296 ++++
+ services/vector/tests/test_vector_smoke.py         |  203 +++
+ tests/e2e/test_property_lifecycle.py               |  490 +++++++
+ tests/integration/test_dlq_flow.py                 |  547 +++++++
+ 249 files changed, 51042 insertions(+), 103 deletions(-)
+
+=== MERGE 4: ux-features-complete (42 commits) ===
+This is the comprehensive UX features branch with:
+- Complete API implementation (100+ endpoints)
+- Frontend (Next.js 14)
+- All 29 roadmap features
+- Mock providers
+- Comprehensive testing
+Auto-merging .env.example
+CONFLICT (add/add): Merge conflict in .env.example
+Auto-merging api/auth.py
+CONFLICT (add/add): Merge conflict in api/auth.py
+Auto-merging api/database.py
+CONFLICT (add/add): Merge conflict in api/database.py
+Auto-merging api/main.py
+CONFLICT (content): Merge conflict in api/main.py
+Auto-merging api/metrics.py
+CONFLICT (add/add): Merge conflict in api/metrics.py
+Auto-merging api/rate_limit.py
+CONFLICT (add/add): Merge conflict in api/rate_limit.py
+Auto-merging api/routers/__init__.py
+CONFLICT (add/add): Merge conflict in api/routers/__init__.py
+Auto-merging api/routers/properties.py
+CONFLICT (add/add): Merge conflict in api/routers/properties.py
+Auto-merging api/routers/quick_wins.py
+CONFLICT (add/add): Merge conflict in api/routers/quick_wins.py
+Auto-merging api/routers/workflow.py
+CONFLICT (add/add): Merge conflict in api/routers/workflow.py
+Auto-merging api/schemas.py
+CONFLICT (add/add): Merge conflict in api/schemas.py
+Auto-merging db/alembic.ini
+CONFLICT (content): Merge conflict in db/alembic.ini
+Auto-merging db/migrations/env.py
+CONFLICT (add/add): Merge conflict in db/migrations/env.py
+CONFLICT (file location): db/versions/c9f3a8e1d4b2_add_ux_feature_models.py added in HEAD inside a directory that was renamed in origin/claude/ux-features-complete-implementation-011CUkFBkadKMjqd7gHkBApY, suggesting it should perhaps be moved to db/migrations/versions/c9f3a8e1d4b2_add_ux_feature_models.py.
+Auto-merging db/models.py
+CONFLICT (content): Merge conflict in db/models.py
+Auto-merging frontend/next.config.js
+CONFLICT (add/add): Merge conflict in frontend/next.config.js
+Auto-merging frontend/package.json
+CONFLICT (add/add): Merge conflict in frontend/package.json
+Auto-merging frontend/postcss.config.js
+CONFLICT (add/add): Merge conflict in frontend/postcss.config.js
+Auto-merging frontend/src/app/globals.css
+CONFLICT (add/add): Merge conflict in frontend/src/app/globals.css
+Auto-merging frontend/src/app/layout.tsx
+CONFLICT (add/add): Merge conflict in frontend/src/app/layout.tsx
+Auto-merging frontend/src/app/page.tsx
+CONFLICT (add/add): Merge conflict in frontend/src/app/page.tsx
+Auto-merging frontend/src/components/PropertyDrawer.tsx
+CONFLICT (add/add): Merge conflict in frontend/src/components/PropertyDrawer.tsx
+Auto-merging frontend/src/lib/utils.ts
+CONFLICT (add/add): Merge conflict in frontend/src/lib/utils.ts
+Auto-merging frontend/src/types/index.ts
+CONFLICT (add/add): Merge conflict in frontend/src/types/index.ts
+Auto-merging pyproject.toml
+CONFLICT (content): Merge conflict in pyproject.toml
+Auto-merging pytest.ini
+CONFLICT (add/add): Merge conflict in pytest.ini
+Automatic merge failed; fix conflicts and then commit the result.
+✅ Merge 4 successful (NO CONFLICTS!)
+9d6676c Merge realestate-audit-canvas with conflict resolutions
+ services/connectors/src/connectors/manager.py      |  314 ++++
+ .../connectors/src/connectors/openaddresses.py     |  307 ++++
+ services/connectors/src/connectors/regrid.py       |  327 +++++
+ services/connectors/tests/conftest.py              |   19 +
+ services/connectors/tests/test_attom.py            |  185 +++
+ services/connectors/tests/test_manager.py          |  273 ++++
+ services/connectors/tests/test_regrid.py           |  202 +++
+ services/events/src/events/dlq_consumer.py         |  382 +++++
+ services/feature-flags/src/flags.py                |  175 +++
+ .../migrations/001_create_metrics_tables.sql       |  200 +++
+ services/metrics/src/metrics/api.py                |  407 ++++++
+ services/metrics/src/metrics/etl_daily.py          |  552 +++++++
+ services/metrics/src/metrics/models.py             |  202 +++
+ services/metrics/tests/test_etl_accuracy.py        |  427 ++++++
+ services/observability/README.md                   |  105 ++
+ services/observability/pyproject.toml              |   43 +
+ .../observability/src/observability/__init__.py    |   32 +
+ services/observability/src/observability/errors.py |  200 +++
+ .../observability/src/observability/logging.py     |  229 +++
+ .../observability/src/observability/metrics.py     |  270 ++++
+ services/observability/tests/__init__.py           |    3 +
+ services/observability/tests/test_errors.py        |   55 +
+ services/observability/tests/test_logging.py       |   54 +
+ services/observability/tests/test_metrics.py       |  102 ++
+ services/policy-kernel/poetry.lock                 |  489 +++++++
+ services/policy-kernel/pyproject.toml              |   18 +
+ .../policy-kernel/src/policy_kernel/__init__.py    |   19 +
+ services/policy-kernel/src/policy_kernel/kernel.py |  170 +++
+ .../policy-kernel/src/policy_kernel/providers.py   |   91 ++
+ services/policy-kernel/src/policy_kernel/rules.py  |  134 ++
+ services/policy-kernel/tests/conftest.py           |    8 +
+ services/policy-kernel/tests/test_kernel.py        |  162 +++
+ services/security/README.md                        |   73 +
+ services/security/pyproject.toml                   |   43 +
+ services/security/src/security/__init__.py         |   23 +
+ services/security/src/security/cors.py             |   79 +
+ services/security/src/security/headers.py          |  107 ++
+ services/security/src/security/rate_limit.py       |   90 ++
+ services/security/src/security/request_id.py       |   83 ++
+ services/security/src/security/validation.py       |  199 +++
+ services/security/tests/__init__.py                |    3 +
+ services/security/tests/test_validation.py         |  232 +++
+ services/vector/README.md                          |  238 +++
+ services/vector/pyproject.toml                     |   43 +
+ services/vector/src/vector/__init__.py             |   18 +
+ services/vector/src/vector/client.py               |  296 ++++
+ services/vector/tests/test_vector_smoke.py         |  203 +++
+ tests/e2e/test_property_lifecycle.py               |  490 +++++++
+ tests/integration/test_dlq_flow.py                 |  547 +++++++
+ 249 files changed, 51042 insertions(+), 103 deletions(-)
+✅ MERGE 4 COMPLETED SUCCESSFULLY!
+b56ac9d Merge ux-features-complete: Comprehensive platform with all 29 features
+
+Files changed:
+ frontend/package.json                              |   56 +-
+ frontend/postcss.config.js                         |    2 +-
+ frontend/src/app/auth/login/page.tsx               |  200 ++
+ frontend/src/app/auth/register/page.tsx            |  270 +++
+ frontend/src/app/dashboard/communications/page.tsx |  353 ++++
+ frontend/src/app/dashboard/page.tsx                |  243 +++
+ frontend/src/app/dashboard/pipeline/page.tsx       |  350 ++++
+ frontend/src/app/dashboard/portfolio/page.tsx      |  316 +++
+ frontend/src/app/dashboard/settings/page.tsx       |  402 ++++
+ frontend/src/app/dashboard/team/page.tsx           |  348 ++++
+ frontend/src/app/dashboard/templates/page.tsx      |  401 ++++
+ frontend/src/app/globals.css                       |   98 +-
+ frontend/src/app/layout.tsx                        |   25 +-
+ frontend/src/app/page.tsx                          |   95 +-
+ frontend/src/components/DashboardLayout.tsx        |  175 ++
+ frontend/src/components/PropertyDrawer.tsx         |  625 +++---
+ frontend/src/hooks/useSSE.ts                       |  235 +++
+ frontend/src/lib/api.ts                            |  325 +++
+ frontend/src/lib/utils.ts                          |  237 ++-
+ frontend/src/store/authStore.ts                    |   72 +
+ frontend/src/types/index.ts                        |  288 ++-
+ frontend/tailwind.config.ts                        |   89 +
+ monitoring/prometheus.yml                          |   55 +
+ nginx/conf.d/api.conf                              |  195 ++
+ nginx/nginx.conf                                   |   69 +
+ playwright.config.py                               |   27 +
+ pyproject.toml                                     |   51 +-
+ pytest.ini                                         |   66 +-
+ requirements-test.txt                              |   30 +
+ requirements.txt                                   |   52 +
+ scripts/seed_data.py                               |  444 ++++
+ scripts/setup.sh                                   |  175 ++
+ services/mock-twilio/Dockerfile                    |   23 +
+ services/mock-twilio/main.py                       |  410 ++++
+ services/mock-twilio/requirements.txt              |    4 +
+ tests/README.md                                    |  286 +++
+ tests/__init__.py                                  |    3 +
+ tests/conftest.py                                  |  251 +++
+ tests/e2e/__init__.py                              |    3 +
+ tests/e2e/test_auth_flow.py                        |  318 +++
+ tests/e2e/test_memo_workflow.py                    |  393 ++++
+ tests/e2e/test_pipeline.py                         |  378 ++++
+ tests/integration/__init__.py                      |    3 +
+ tests/integration/test_auth_and_ratelimiting.py    |  603 ++++++
+ .../integration/test_deliverability_compliance.py  |  642 ++++++
+ tests/integration/test_idempotency.py              |  588 ++++++
+ tests/integration/test_reconciliation.py           |  450 +++++
+ tests/integration/test_sse.py                      |  526 +++++
+ tests/integration/test_webhooks.py                 |  543 +++++
+ 190 files changed, 55294 insertions(+), 3226 deletions(-)

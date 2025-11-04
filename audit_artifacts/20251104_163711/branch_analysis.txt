@@ -1,0 +1,28 @@
+=== Commit counts ===
+
+Main branch commits:
+38
+
+Latest commit on main:
+64ab64b refactor(deploy): make wsl-script.sh more robust
+
+UX features branch commits:
+80
+
+Latest commit on UX features:
+d87ac43 docs: Add comprehensive session summary document
+
+Commits in UX features but not in main:
+42
+
+First 10 commits unique to UX features:
+d87ac43 docs: Add comprehensive session summary document
+18c0e90 feat: Complete Mock Providers - SMS, PDF, LLM + Mock Twilio Service (Step 4/12)
+8926113 feat: Mock Mode Foundation - Self-contained platform without external dependencies (Steps 1-3/12)
+d234c0c feat: Session summary - 93.3% core features, 63.7% overall coverage, comprehensive testing complete
+bda35bc feat: Add automation & onboarding schemas, improve test coverage from 27 to 30 passing (49.2%)
+514fb21 feat: Complete comprehensive endpoint testing and fix router path mismatches
+23d50f9 feat: Achieve 93.3% platform functionality - 28/30 tests passing
+3c73ace docs: Add comprehensive platform status document
+72c9cf6 fix: Add authentication and resolve Quick Wins/Workflow endpoint issues
+ff7590f docs: Add comprehensive session summary with complete status

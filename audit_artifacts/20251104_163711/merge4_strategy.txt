@@ -1,0 +1,16 @@
+=== MERGE 4 CONFLICT RESOLUTION STRATEGY ===
+
+Total conflicts: 27 files
+
+Strategy:
+1. API files auth database routers schemas etc: Use THEIRS ux-features-complete
+   Reason: Comprehensive 100+ endpoint implementation
+
+2. Frontend files: Use THEIRS ux-features-complete
+   Reason: Complete Next.js 14 implementation
+
+3. Database files: Use THEIRS ux-features-complete
+   Reason: Complete 35-model schema
+
+4. Config files .env pyproject.toml pytest.ini: Merge both
+   Reason: Need dependencies from both branches

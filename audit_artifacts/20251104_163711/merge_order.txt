@@ -1,0 +1,35 @@
+=== DETERMINISTIC MERGE ORDER ===
+
+Based on overlap analysis and architectural scope:
+
+1. claude/ux-features-workflow-accelerators-011CUkCyYACjd5NwQS1f9orM (1 commit)
+   Category: Small feature
+   Scope: Workflow accelerators
+   Risk: LOW
+   
+2. claude/ga-hardening-011CUiJxbhgHHMukzneiY4Xn (7 commits)
+   Category: Service-scoped
+   Scope: Data quality (Great Expectations), Lineage (OpenLineage), Security
+   Risk: LOW-MEDIUM
+   
+3. claude/realestate-audit-canvas-011CUjnrkmyeMSTozDmpy6xx (28 commits)
+   Category: Docs + Production features
+   Scope: Audits, DLQ, Backup/Restore, Production readiness
+   Risk: MEDIUM
+   
+4. claude/ux-features-complete-implementation-011CUkFBkadKMjqd7gHkBApY (42 commits)
+   Category: Large feature branch
+   Scope: Complete UX features, Full API, Frontend, Mock providers, Testing
+   Risk: HIGH (but most complete)
+   
+5. claude/systematic-phase-work-011CUhTfsuprpo5BVihNuVQj (54 commits)
+   Category: ML features
+   Scope: Negotiation brain, Market regime, Valuation, Drift detection
+   Risk: MEDIUM-HIGH
+   
+6. claude/systematic-audit-phase-completion-011CUiJxbhgHHMukzneiY4Xn (59 commits)
+   Category: Cross-cutting refactors
+   Scope: Test fixes, systematic improvements
+   Risk: LOW-MEDIUM
+
+Strategy: Start with smallest/safest, build up to largest/most complex

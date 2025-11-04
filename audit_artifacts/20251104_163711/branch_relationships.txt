@@ -1,0 +1,16 @@
+=== Branch Relationship Analysis ===
+✅ ga-hardening IS an ancestor of current HEAD (already merged)
+
+Commit timeline:
+main: 64ab64b refactor(deploy): make wsl-script.sh more robust
+workflow-acc: 7a27b29 feat: Implement comprehensive UX features and workflow accelerators
+ga-hardening: 92a0ad5 docs: Add GA closeout status report
+ux-features: d87ac43 docs: Add comprehensive session summary document
+
+Merge base between workflow-acc and ga-hardening:
+64ab64b refactor(deploy): make wsl-script.sh more robust
+=== Checking for ga-hardening files ===
+✅ Found: GA_CLOSEOUT_STATUS.md
+✅ Found: data_quality/gx_integration.py
+✅ Found: lineage/openlineage_integration.py
+✅ Found: document_processing/lease_parser.py
