@@ -15,7 +15,7 @@ from db.models import (
     BudgetTracking, OpenDataSource, Team
 )
 
-router = APIRouter(prefix="/data", tags=["Data & Propensity"])
+router = APIRouter(prefix="/data-propensity", tags=["Data & Propensity"])
 
 # ============================================================================
 # OWNER PROPENSITY SIGNALS

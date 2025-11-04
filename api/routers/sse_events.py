@@ -21,7 +21,7 @@ from api.auth import get_current_user, get_current_user_from_query, create_sse_t
 from api.sse import sse_manager, send_event_generator
 from db.models import User
 
-router = APIRouter(prefix="/sse", tags=["Real-Time Events"])
+router = APIRouter(prefix="/sse-events", tags=["Real-Time Events"])
 
 # ============================================================================
 # SSE ENDPOINTS
