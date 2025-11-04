@@ -152,3 +152,40 @@ email.send_email(to="user@example.com", subject="Hello", body="World")
 
 ---
 
+### Entry 1.3 - Migration Consolidation Complete
+**Time**: 2025-11-04T17:55:00Z
+**Action**: Resolved duplicate Alembic migrations
+
+**Problem Identified**:
+- Two migrations branched from same base (b81dde19348f):
+  - `001_create_ux_feature_models.py` (327 lines)
+  - `c9f3a8e1d4b2_add_ux_feature_models.py` (579 lines) ← more comprehensive
+- Created conflict in migration chain
+
+**Resolution**:
+1. Archived duplicate: moved 001_create_ux_feature_models.py → db/migrations/archived/
+2. Updated 002_add_rls_policies.py: `down_revision = 'c9f3a8e1d4b2'`
+3. Verified chain 003→004→005→006→007 already correct
+
+**Canonical Migration Chain** (9 migrations):
+```
+fb3c6b29453b (initial_schema_with_rls)
+  └─> b81dde19348f (add_ping_model)
+       └─> c9f3a8e1d4b2 (add_ux_feature_models - 30+ tables)
+            └─> 002_add_rls_policies
+                 └─> 003_add_idempotency
+                      └─> 004_add_dlq_tracking
+                           └─> 005_add_reconciliation_history
+                                └─> 006_add_compliance_tables
+                                     └─> 007_add_password_hash_to_users
+```
+
+**Total Tables**: 35+ (matches audit)
+
+**Artifacts**:
+- audit_artifacts/20251104_173718/migrations_report.txt
+
+**Next**: Phase 1 complete, move to Phase 2 (Docker bring-up)
+
+---
+

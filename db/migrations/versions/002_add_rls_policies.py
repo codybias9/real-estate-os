@@ -1,7 +1,7 @@
 """Add Row-Level Security policies for multi-tenant isolation
 
 Revision ID: 002_add_rls_policies
-Revises: 001_create_ux_features
+Revises: c9f3a8e1d4b2
 Create Date: 2024-01-15 10:00:00.000000
 
 """
@@ -11,7 +11,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision = '002_add_rls_policies'
-down_revision = '001_create_ux_features'
+down_revision = 'c9f3a8e1d4b2'  # Fixed: now points to canonical UX features migration
 branch_labels = None
 depends_on = None
 
