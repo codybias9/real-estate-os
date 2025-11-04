@@ -77,6 +77,10 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     """
     to_encode = data.copy()
 
+    # JWT RFC requires "sub" to be a string, so convert user ID if present
+    if "sub" in to_encode and not isinstance(to_encode["sub"], str):
+        to_encode["sub"] = str(to_encode["sub"])
+
     if expires_delta:
         expire = datetime.utcnow() + expires_delta
     else:
@@ -110,6 +114,11 @@ def decode_token(token: str) -> dict:
     """
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+
+        # Convert "sub" back to int if it's a string (JWT RFC requires string)
+        if "sub" in payload and isinstance(payload["sub"], str):
+            payload["sub"] = int(payload["sub"])
+
         return payload
     except JWTError as e:
         raise HTTPException(
