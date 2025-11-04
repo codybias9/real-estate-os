@@ -108,6 +108,27 @@ services:
     networks:
       - realtor-network
 
+  # SMS Capture - Mock Twilio
+  mock-twilio:
+    build:
+      context: ./services/mock-twilio
+      dockerfile: Dockerfile
+    container_name: realtor-mock-twilio
+    environment:
+      STORAGE_DIR: /data/messages
+      API_WEBHOOK_URL: http://api:8000/api/v1/webhooks/twilio/sms
+    ports:
+      - "4010:4010"
+    volumes:
+      - mock_twilio_data:/data/messages
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:4010/')"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - realtor-network
+
 networks:
   realtor-network:
     driver: bridge
@@ -117,3 +138,4 @@ volumes:
   redis_data:
   rabbitmq_data:
   minio_data:
+  mock_twilio_data:
