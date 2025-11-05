@@ -1,25 +1,82 @@
-from fastapi import FastAPI, Depends, HTTPException
-from sqlalchemy import create_engine, text
-import os
+"""Real Estate OS API."""
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from .config import settings
+from .database import engine, Base
+from .routers import auth, properties, leads
 
-app = FastAPI()
+# Create database tables
+Base.metadata.create_all(bind=engine)
 
-# Health endpoint
+# Create FastAPI app
+app = FastAPI(
+    title=settings.APP_NAME,
+    version=settings.APP_VERSION,
+    description="Real Estate Operating System API",
+    docs_url="/docs",
+    redoc_url="/redoc",
+)
+
+# CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=settings.CORS_CREDENTIALS,
+    allow_methods=settings.CORS_METHODS,
+    allow_headers=settings.CORS_HEADERS,
+)
+
+
+# Exception handlers
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request, exc):
+    """Handle HTTP exceptions."""
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    """Handle validation errors."""
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors()},
+    )
+
+
+# Health endpoints
 @app.get("/healthz")
 def health():
-    return {"status": "ok"}
+    """Health check endpoint."""
+    return {"status": "ok", "version": settings.APP_VERSION}
 
-# Ping endpoint that uses DB_DSN
+
 @app.get("/ping")
 def ping():
-    dsn = os.getenv("DB_DSN")
-    if not dsn:
-        raise HTTPException(500, "DB_DSN not set")
-    engine = create_engine(dsn)
+    """Database connectivity check."""
+    from sqlalchemy import text
     with engine.begin() as conn:
-        conn.execute(text(
-            "CREATE TABLE IF NOT EXISTS ping (id serial PRIMARY KEY, ts timestamptz DEFAULT now())"
-        ))
-        conn.execute(text("INSERT INTO ping DEFAULT VALUES"))
-        count = conn.execute(text("SELECT count(*) FROM ping")).scalar()
-    return {"ping_count": count}
+        result = conn.execute(text("SELECT 1")).scalar()
+    return {"status": "ok", "database": "connected"}
+
+
+# Include routers
+app.include_router(auth.router, prefix="/api/v1")
+app.include_router(properties.router, prefix="/api/v1")
+app.include_router(leads.router, prefix="/api/v1")
+
+
+@app.get("/")
+def root():
+    """Root endpoint."""
+    return {
+        "name": settings.APP_NAME,
+        "version": settings.APP_VERSION,
+        "docs": "/docs",
+        "health": "/healthz",
+    }
