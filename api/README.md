@@ -60,6 +60,8 @@ A comprehensive Real Estate Operating System API built with FastAPI, providing c
 - **Advanced Middleware** - Idempotency, ETags, Rate Limiting, Audit Logging
 - **Database Migrations** - Alembic for version-controlled schema changes
 - **Comprehensive Testing** - pytest with fixtures and integration tests
+- **Production-Ready** - Error handling, logging, health checks, monitoring
+- **Easy Deployment** - Docker Compose, startup scripts, demo workflows
 
 ## 📋 API Endpoints Summary
 
@@ -757,6 +759,346 @@ For issues and questions:
 - Redis caching for frequently accessed data
 - Background task processing via Celery
 - Database connection pooling
+
+## 🛡️ Error Handling & Logging
+
+### Custom Exception Hierarchy
+The API implements a comprehensive exception system with specific error types:
+
+```python
+# Authentication Errors
+AuthenticationError, InvalidCredentialsError, TokenExpiredError, AccountLockedError
+
+# Authorization Errors
+AuthorizationError, InsufficientPermissionsError, OrganizationMismatchError
+
+# Resource Errors
+ResourceNotFoundError, ResourceAlreadyExistsError, ResourceDeletionError
+
+# Validation Errors
+ValidationError, InvalidInputError, MissingRequiredFieldError
+
+# Business Logic Errors
+BusinessLogicError, PropertyNotAvailableError, LeadAlreadyConvertedError
+
+# External Service Errors
+ExternalServiceError, EmailServiceError, SMSServiceError, StorageServiceError
+```
+
+### Consistent Error Response Format
+```json
+{
+  "error": {
+    "type": "ValidationError",
+    "message": "Request validation failed",
+    "details": {
+      "errors": [
+        {
+          "field": "email",
+          "message": "invalid email format",
+          "type": "value_error.email"
+        }
+      ]
+    }
+  }
+}
+```
+
+### Structured Logging with Loguru
+- JSON logging in production for log aggregation
+- Colored console output in development
+- Contextual logging with request ID, user ID, organization ID
+- Automatic log rotation and compression
+- Separate error log files
+
+**Log Example:**
+```
+2024-01-20 10:30:15.123 | INFO     | api.routers.properties:create_property:45 | request_id=abc-123 | user_id=1 | org_id=5 | Creating property
+```
+
+### Request Logging Middleware
+Every request is logged with:
+- Request ID (also in `X-Request-ID` response header)
+- HTTP method and path
+- Query parameters
+- Client IP
+- Response status code
+- Processing time
+
+## 🏥 Health Checks & Monitoring
+
+### Health Check Endpoints
+
+**Basic Health Check** (`/healthz`):
+```bash
+curl http://localhost:8000/healthz
+```
+
+**Detailed Health Check** (`/health`):
+```bash
+curl http://localhost:8000/health
+```
+
+Returns comprehensive health status:
+```json
+{
+  "status": "healthy",
+  "timestamp": "2024-01-20T10:30:00Z",
+  "service": "Real Estate OS API",
+  "version": "1.0.0",
+  "checks": {
+    "database": {
+      "status": "healthy",
+      "response_time_ms": 5.2,
+      "details": {"connection": "ok", "query_test": "passed"}
+    },
+    "redis": {
+      "status": "healthy",
+      "response_time_ms": 1.8,
+      "details": {"connected_clients": 5, "used_memory_human": "2.5M"}
+    },
+    "celery": {
+      "status": "healthy",
+      "details": {"workers": 2}
+    },
+    "storage": {
+      "status": "healthy",
+      "response_time_ms": 12.5,
+      "details": {"connection": "ok", "buckets": 1}
+    }
+  },
+  "response_time_ms": 25.3
+}
+```
+
+**Kubernetes Probes:**
+- **Liveness**: `/live` - Checks if the service is alive
+- **Readiness**: `/ready` - Checks if the service is ready to accept traffic
+
+## 🚀 Quick Start (Production-Ready)
+
+### Option 1: Using Startup Script (Recommended)
+
+```bash
+# Clone the repository
+git clone <repository-url>
+cd real-estate-os
+
+# Run the startup script
+./start.sh
+```
+
+The startup script will:
+1. Check Docker prerequisites
+2. Create `.env` from `.env.example` if needed
+3. Start all services with Docker Compose
+4. Wait for services to be healthy
+5. Run database migrations
+6. Optionally seed the database
+7. Display service URLs and next steps
+
+### Option 2: Manual Docker Compose
+
+```bash
+# Start all services
+docker-compose -f docker-compose-api.yaml up -d
+
+# With monitoring (Prometheus + Grafana)
+docker-compose -f docker-compose-api.yaml --profile monitoring up -d
+
+# View logs
+docker-compose -f docker-compose-api.yaml logs -f api
+
+# Stop services
+./stop.sh
+# or
+docker-compose -f docker-compose-api.yaml down
+```
+
+### Running the Demo
+
+After starting services, run the interactive demo:
+
+```bash
+./demo_api.sh
+```
+
+The demo showcases:
+- User registration and authentication
+- Property creation and management
+- Lead tracking and activities
+- Deal pipeline workflow
+- Analytics dashboard
+- Campaign creation
+
+### Access Points
+
+After startup, access:
+- **API**: http://localhost:8000
+- **API Docs**: http://localhost:8000/docs
+- **Health Check**: http://localhost:8000/health
+- **RabbitMQ**: http://localhost:15672 (admin/admin)
+- **MinIO Console**: http://localhost:9001 (minioadmin/minioadmin)
+- **MailHog**: http://localhost:8025
+- **Prometheus**: http://localhost:9090 (if using monitoring profile)
+- **Grafana**: http://localhost:3001 (admin/admin, if using monitoring profile)
+
+## 📚 API Documentation & Examples
+
+### Interactive Documentation
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+
+### Example Collections
+Comprehensive API examples available in:
+- `API_EXAMPLES.md` - Complete cURL examples for all endpoints
+- Includes authentication, CRUD operations, filters, pagination
+- Real-time updates and advanced features
+
+### Quick Example
+
+```bash
+# Register user
+curl -X POST "http://localhost:8000/api/v1/auth/register" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "SecurePass123!",
+    "first_name": "John",
+    "last_name": "Doe",
+    "organization_name": "Acme Real Estate"
+  }'
+
+# Create property (with auth token)
+curl -X POST "http://localhost:8000/api/v1/properties" \
+  -H "Authorization: Bearer <access_token>" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "address": "123 Main St",
+    "city": "Los Angeles",
+    "state": "CA",
+    "zip_code": "90001",
+    "property_type": "single_family",
+    "price": 750000,
+    "bedrooms": 3,
+    "bathrooms": 2.5
+  }'
+```
+
+## 🔧 Development
+
+### Local Development Setup
+
+```bash
+cd api
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Set environment variables
+export DB_DSN="postgresql://postgres:postgres@localhost:5432/real_estate_os"
+export JWT_SECRET_KEY="your-secret-key"
+export REDIS_URL="redis://localhost:6379/0"
+
+# Run migrations
+alembic upgrade head
+
+# Seed database (optional)
+python scripts/seed_data.py
+
+# Start development server
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### Running Tests
+
+```bash
+cd api
+
+# Run all tests
+pytest
+
+# With coverage
+pytest --cov=. --cov-report=html
+
+# Run specific test categories
+pytest -m unit
+pytest -m integration
+pytest -m property
+pytest -m auth
+
+# Verbose output
+pytest -v
+
+# Stop after first failure
+pytest --maxfail=1
+```
+
+## 📦 Production Deployment
+
+### Environment Variables
+
+Key production settings in `.env`:
+
+```bash
+# Security
+JWT_SECRET_KEY=<strong-random-secret>
+DEBUG=false
+
+# Database
+DB_DSN=postgresql://user:password@host:5432/dbname
+
+# Redis & Celery
+REDIS_URL=redis://host:6379/0
+CELERY_BROKER_URL=redis://host:6379/0
+
+# Email
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_USER=user@example.com
+SMTP_PASSWORD=<password>
+
+# Storage
+MINIO_ENDPOINT=storage.example.com:9000
+MINIO_ACCESS_KEY=<access-key>
+MINIO_SECRET_KEY=<secret-key>
+MINIO_SECURE=true
+```
+
+### Deployment Checklist
+
+- [ ] Set strong `JWT_SECRET_KEY`
+- [ ] Set `DEBUG=false`
+- [ ] Configure production database
+- [ ] Set up email service (SMTP)
+- [ ] Configure object storage (MinIO/S3)
+- [ ] Set up SSL/TLS certificates
+- [ ] Configure rate limiting
+- [ ] Set up log aggregation
+- [ ] Configure monitoring (Prometheus/Grafana)
+- [ ] Set up backup strategy
+- [ ] Configure CORS origins
+- [ ] Review security settings
+
+### Kubernetes Deployment
+
+Health check endpoints are Kubernetes-ready:
+
+```yaml
+livenessProbe:
+  httpGet:
+    path: /live
+    port: 8000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /ready
+    port: 8000
+  initialDelaySeconds: 5
+  periodSeconds: 5
+```
 
 ---
 
