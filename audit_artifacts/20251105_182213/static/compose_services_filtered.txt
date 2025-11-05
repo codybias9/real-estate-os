@@ -1,0 +1,13 @@
+api
+celery-beat
+celery-worker
+flower
+grafana
+minio
+minio-init
+nginx
+postgres
+prometheus
+rabbitmq
+real-estate-os
+redis

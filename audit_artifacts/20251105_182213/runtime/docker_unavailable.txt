@@ -1,0 +1,1 @@
+ERROR: Docker is unavailable on this host. Aborting runtime audit.

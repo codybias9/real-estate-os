@@ -1,0 +1,16 @@
+api/routers/admin.py
+api/routers/auth.py
+api/routers/automation.py
+api/routers/communications.py
+api/routers/data_propensity.py
+api/routers/differentiators.py
+api/routers/jobs.py
+api/routers/onboarding.py
+api/routers/open_data.py
+api/routers/portfolio.py
+api/routers/properties.py
+api/routers/quick_wins.py
+api/routers/sharing.py
+api/routers/sse_events.py
+api/routers/webhooks.py
+api/routers/workflow.py
