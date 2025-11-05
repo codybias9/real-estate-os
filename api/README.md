@@ -180,7 +180,7 @@ GET    /api/v1/sse/stream                 - SSE event stream for real-time updat
 GET    /api/v1/sse/status                 - Get SSE connection status
 ```
 
-**Total: 82+ API Endpoints**
+**Total: 73 API Endpoints**
 
 ## 🗄️ Database Models (26 Models)
 

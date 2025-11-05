@@ -1,0 +1,13 @@
+Docker Compose Services Defined:
+=================================
+1. postgres-api (PostgreSQL 15)
+2. redis-api (Redis 7.2-alpine)
+3. rabbitmq (RabbitMQ 3.12 with management)
+4. minio (MinIO object storage)
+5. api (FastAPI application)
+6. celery-worker (Celery background worker)
+7. mailhog (Email testing)
+8. prometheus (Metrics - profile: monitoring)
+9. grafana (Dashboards - profile: monitoring)
+
+Total: 9 services (7 core + 2 monitoring)

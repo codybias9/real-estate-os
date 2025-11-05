@@ -1,0 +1,24 @@
+AUTHORITATIVE COUNTS
+====================
+Branch: claude/review-real-estate-api-011CUoxkF8YQMZHkH78uaABC
+Commit: 2e9a4a90c8ec004f9224088c97595b96b2e9e18e
+
+Router Files: 8 (analytics, auth, campaigns, deals, leads, properties, sse, users)
+Health Module: 1 (health.py with 5 endpoints)
+Total Router Modules: 9
+
+Endpoints by Method:
+- GET: 32
+- POST: 23
+- PUT: 6
+- DELETE: 7
+- Health Checks: 5 (healthz, health, ready, live, metrics)
+Total Endpoints: 73
+
+Models (SQLAlchemy): 26
+
+DISCREPANCY NOTE:
+- Claimed "82+ endpoints" in documentation
+- Actual count: 73 endpoints
+- Difference: -9 endpoints
+- Possible explanation: Counted planned but unimplemented endpoints, or double-counted some routes

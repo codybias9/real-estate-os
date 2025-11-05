@@ -1,0 +1,9 @@
+/home/user/real-estate-os/api/routers/campaigns.py
+/home/user/real-estate-os/api/routers/deals.py
+/home/user/real-estate-os/api/routers/sse.py
+/home/user/real-estate-os/api/routers/auth.py
+/home/user/real-estate-os/api/routers/__init__.py
+/home/user/real-estate-os/api/routers/users.py
+/home/user/real-estate-os/api/routers/leads.py
+/home/user/real-estate-os/api/routers/analytics.py
+/home/user/real-estate-os/api/routers/properties.py
