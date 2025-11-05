@@ -56,7 +56,7 @@ class Lead(Base):
     budget = Column(Numeric(12, 2), nullable=True)
     timeline = Column(String(100), nullable=True)  # e.g., '0-3 months', '3-6 months'
     notes = Column(Text, nullable=True)
-    metadata = Column(Text, nullable=True)  # JSON object
+    additional_data = Column(Text, nullable=True)  # JSON object (renamed from metadata)
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -87,7 +87,7 @@ class LeadActivity(Base):
     outcome = Column(String(100), nullable=True)  # success, failed, no_answer, scheduled
     scheduled_at = Column(DateTime(timezone=True), nullable=True)
     completed_at = Column(DateTime(timezone=True), nullable=True)
-    metadata = Column(Text, nullable=True)  # JSON object
+    additional_data = Column(Text, nullable=True)  # JSON object (renamed from metadata)
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 

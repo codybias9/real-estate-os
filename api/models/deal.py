@@ -72,7 +72,7 @@ class Deal(Base):
     probability = Column(Integer, default=50, nullable=False)  # 0-100
     expected_close_date = Column(Date, nullable=True)
     notes = Column(Text, nullable=True)
-    metadata = Column(Text, nullable=True)  # JSON object
+    additional_data = Column(Text, nullable=True)  # JSON object (renamed from metadata)
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -101,7 +101,7 @@ class Transaction(Base):
     amount = Column(Numeric(12, 2), nullable=False)
     description = Column(Text, nullable=True)
     transaction_date = Column(Date, nullable=False, index=True)
-    metadata = Column(Text, nullable=True)  # JSON object
+    additional_data = Column(Text, nullable=True)  # JSON object (renamed from metadata)
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -124,7 +124,7 @@ class Portfolio(Base):
     # Portfolio Details
     name = Column(String(200), nullable=False)
     description = Column(Text, nullable=True)
-    metadata = Column(Text, nullable=True)  # JSON object
+    additional_data = Column(Text, nullable=True)  # JSON object (renamed from metadata)
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

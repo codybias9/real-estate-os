@@ -58,7 +58,7 @@ class Property(Base):
     year_built = Column(Integer, nullable=True)
     description = Column(Text, nullable=True)
     features = Column(Text, nullable=True)  # JSON array
-    metadata = Column(Text, nullable=True)  # JSON object
+    additional_data = Column(Text, nullable=True)  # JSON object (renamed from metadata)
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -137,7 +137,7 @@ class PropertyActivity(Base):
     property_id = Column(Integer, ForeignKey("properties.id"), nullable=False, index=True)
     activity_type = Column(String(50), nullable=False, index=True)  # e.g., 'viewing', 'offer', 'inspection'
     description = Column(Text, nullable=False)
-    metadata = Column(Text, nullable=True)  # JSON object
+    additional_data = Column(Text, nullable=True)  # JSON object (renamed from metadata)
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 

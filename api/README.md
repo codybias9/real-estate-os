@@ -55,6 +55,11 @@ A comprehensive Real Estate Operating System API built with FastAPI, providing c
 - **Activity Tracking** - Comprehensive audit trails
 - **CORS Support** - Cross-origin resource sharing
 - **Auto-generated API Docs** - OpenAPI/Swagger
+- **Real-time Updates** - Server-Sent Events (SSE) for live updates
+- **Background Tasks** - Celery-based async processing
+- **Advanced Middleware** - Idempotency, ETags, Rate Limiting, Audit Logging
+- **Database Migrations** - Alembic for version-controlled schema changes
+- **Comprehensive Testing** - pytest with fixtures and integration tests
 
 ## 📋 API Endpoints Summary
 
@@ -167,7 +172,13 @@ GET    /api/v1/analytics/campaigns        - Get campaign analytics
 GET    /api/v1/analytics/revenue          - Get revenue analytics
 ```
 
-**Total: 80+ API Endpoints**
+### Real-time Updates (2 endpoints)
+```
+GET    /api/v1/sse/stream                 - SSE event stream for real-time updates
+GET    /api/v1/sse/status                 - Get SSE connection status
+```
+
+**Total: 82+ API Endpoints**
 
 ## 🗄️ Database Models (26 Models)
 
@@ -288,23 +299,30 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 │                      Real Estate OS API                      │
 ├─────────────────────────────────────────────────────────────┤
 │  FastAPI Application (Python 3.11)                          │
+│  ├── Middleware Stack                                        │
+│  │   ├── Idempotency (duplicate prevention)                │
+│  │   ├── ETag (HTTP caching)                               │
+│  │   ├── Rate Limiting (abuse protection)                  │
+│  │   └── Audit Logging (activity tracking)                 │
 │  ├── Authentication & Authorization (JWT + RBAC)            │
 │  ├── Property Management                                     │
 │  ├── Lead & CRM                                             │
 │  ├── Campaign Management                                     │
 │  ├── Deal & Portfolio Tracking                              │
 │  ├── User Management                                         │
-│  └── Analytics & Reporting                                   │
+│  ├── Analytics & Reporting                                   │
+│  └── Real-time Updates (SSE)                                │
 └─────────────────────────────────────────────────────────────┘
                           ↓
 ┌─────────────────────────────────────────────────────────────┐
 │                    Infrastructure Services                    │
 ├─────────────────────────────────────────────────────────────┤
 │  ├── PostgreSQL - Primary Database                          │
-│  ├── Redis - Caching & Celery Backend                       │
-│  ├── RabbitMQ - Message Broker                              │
+│  ├── Redis - Caching, Rate Limiting, SSE Pub/Sub           │
+│  ├── RabbitMQ - Message Broker (Celery)                    │
 │  ├── MinIO - Object Storage (S3-compatible)                 │
-│  ├── Celery - Background Task Processing                    │
+│  ├── Celery Worker - Background Task Processing             │
+│  ├── Celery Beat - Task Scheduler                           │
 │  └── MailHog - Email Testing                                │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -336,6 +354,110 @@ Key configurations:
 - JWT token expiration (30 min access, 7 days refresh)
 - Email verification
 - Password reset flow
+
+## 🔌 Middleware Stack
+
+The API includes several middleware layers for enhanced functionality:
+
+### 1. Idempotency Middleware
+Prevents duplicate request processing using `Idempotency-Key` header:
+```bash
+curl -X POST "http://localhost:8000/api/v1/properties" \
+  -H "Idempotency-Key: unique-request-id-123" \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{"address": "123 Main St", ...}'
+```
+- Caches responses for 24 hours
+- Applies to POST, PUT, PATCH, DELETE methods
+- Returns cached response for duplicate requests
+
+### 2. ETag Middleware
+HTTP caching using ETags:
+```bash
+curl -H "If-None-Match: \"abc123\"" \
+  http://localhost:8000/api/v1/properties/1
+```
+- Returns `304 Not Modified` for unchanged resources
+- Reduces bandwidth and improves performance
+
+### 3. Rate Limiting Middleware
+Protects API from abuse:
+- **60 requests per minute** per IP
+- **1,000 requests per hour** per IP
+- **10,000 requests per day** per IP
+- Returns `429 Too Many Requests` when exceeded
+- Response headers: `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
+
+### 4. Audit Log Middleware
+Comprehensive activity tracking:
+- Logs all successful operations (2xx status codes)
+- Captures: user, action, resource, changes, IP, user agent
+- Stored in `audit_logs` table
+- Queryable for compliance and security
+
+## 🔄 Real-time Updates (Server-Sent Events)
+
+Connect to SSE stream for live updates:
+
+```javascript
+const eventSource = new EventSource(
+  'http://localhost:8000/api/v1/sse/stream',
+  { headers: { 'Authorization': 'Bearer <token>' } }
+);
+
+eventSource.onmessage = (event) => {
+  const data = JSON.parse(event.data);
+  console.log('Event:', data.type, data.data);
+};
+
+// Available event types:
+// - property.created, property.updated, property.deleted
+// - lead.created, lead.updated, lead.assigned
+// - deal.created, deal.stage_changed
+// - campaign.completed
+// - notification
+```
+
+Benefits:
+- Real-time collaboration across teams
+- Instant notifications for important events
+- Reduced polling and server load
+- Organization-level event broadcasting
+
+## ⚙️ Background Tasks (Celery)
+
+Async processing for long-running operations:
+
+### Campaign Tasks
+- **send_campaign** - Send email/SMS campaigns to recipients
+- Processes recipients in batches
+- Updates campaign metrics in real-time
+
+### Email Tasks
+- **send_welcome_email** - Welcome new users
+- **send_lead_assigned_email** - Notify agents of lead assignments
+- **send_deal_stage_changed_email** - Alert on deal stage changes
+- **send_daily_analytics_report** - Daily summary emails
+
+### Webhook Tasks
+- **send_webhook** - Deliver webhooks with retry logic
+- **retry_failed_webhooks** - Retry failed webhooks (max 3 attempts)
+
+### Cleanup Tasks (Scheduled)
+- **cleanup_idempotency_keys** - Remove expired keys (hourly)
+- **cleanup_audit_logs** - Archive old logs (daily)
+- **cleanup_soft_deleted_records** - Purge old deleted records (weekly)
+
+### Start Celery Worker
+```bash
+celery -A tasks.celery_app worker --loglevel=info
+```
+
+### Start Celery Beat (Scheduler)
+```bash
+celery -A tasks.celery_app beat --loglevel=info
+```
 
 ## 📖 API Documentation
 
@@ -389,20 +511,161 @@ curl -H "Authorization: Bearer <access_token>" \
 
 ## 🧪 Testing
 
+The API includes comprehensive test coverage with pytest.
+
+### Test Structure
+```
+api/tests/
+├── conftest.py              # Fixtures and test configuration
+├── test_auth.py             # Authentication tests (15+ tests)
+├── test_properties.py       # Property CRUD and features tests
+├── test_leads.py            # Lead management tests
+├── test_campaigns.py        # Campaign tests
+├── test_deals.py            # Deal and portfolio tests
+└── test_integration.py      # End-to-end workflow tests
+```
+
 ### Run Tests
 ```bash
 cd api
-pytest
+pytest                       # Run all tests
+pytest -v                    # Verbose output
+pytest -k "test_auth"        # Run specific test file pattern
+pytest -m unit               # Run only unit tests
+pytest -m integration        # Run only integration tests
+pytest --maxfail=1           # Stop after first failure
 ```
 
 ### Test Coverage
 ```bash
 pytest --cov=. --cov-report=html
+# View coverage report at htmlcov/index.html
 ```
+
+### Test Markers
+Tests are organized with pytest markers:
+- `@pytest.mark.unit` - Unit tests
+- `@pytest.mark.integration` - Integration tests
+- `@pytest.mark.slow` - Slow-running tests
+- `@pytest.mark.property` - Property-related tests
+- `@pytest.mark.auth` - Authentication tests
+
+### Available Fixtures
+The test suite includes comprehensive fixtures:
+- `db_session` - Database session
+- `client` - FastAPI test client
+- `organization` - Test organization
+- `test_user` - Test user with admin role
+- `auth_headers` - Authentication headers
+- `test_property` - Sample property
+- `test_lead` - Sample lead
+- `test_deal` - Sample deal
+- `sample_*_data` - Sample data for creation
+
+### Integration Tests
+End-to-end workflow tests:
+```bash
+pytest api/tests/test_integration.py -v
+```
+Tests include:
+- Complete user registration → property → lead → deal workflow
+- Property lifecycle (create → images → valuation → update → delete)
+- Multi-tenancy isolation
+- Lead conversion to deal workflow
+- Campaign creation and sending
 
 ### Email Testing
 All emails are captured by MailHog:
 - Web UI: http://localhost:8025
+
+## 🗄️ Database Migrations (Alembic)
+
+The API uses Alembic for version-controlled database schema changes.
+
+### Migration Structure
+```
+api/migrations/
+├── alembic.ini              # Alembic configuration
+├── env.py                   # Migration environment
+├── script.py.mako           # Migration template
+└── versions/                # Migration files
+    └── f4c7c458b274_initial_migration_with_all_models.py
+```
+
+### Run Migrations
+```bash
+cd api
+
+# Run all pending migrations
+alembic upgrade head
+
+# Downgrade one version
+alembic downgrade -1
+
+# View migration history
+alembic history
+
+# View current version
+alembic current
+```
+
+### Create New Migration
+```bash
+# Auto-generate migration from model changes
+alembic revision --autogenerate -m "Add new column to properties"
+
+# Create blank migration
+alembic revision -m "Custom migration"
+```
+
+### Migration Best Practices
+- Always review auto-generated migrations before applying
+- Test migrations on a copy of production data
+- Include both upgrade and downgrade paths
+- Use `alembic stamp head` to mark existing database as current
+
+## 🌱 Seed Data
+
+Populate the database with sample data for development and testing.
+
+### Full Seed (All Data)
+```bash
+cd api
+python scripts/seed_data.py
+```
+
+This creates:
+- 2 organizations (Acme Real Estate, Premium Properties LLC)
+- 3 roles (Admin, Manager, Agent) with permissions
+- 6 users across different roles
+- 5 properties with images and valuations
+- 5 leads with activities
+- 3 deals with transactions
+- 1 portfolio
+- 1 campaign with template
+
+### Test Credentials (After Seeding)
+```
+Admin:   admin@acme-realestate.com    / Admin123!
+Manager: manager@acme-realestate.com  / Manager123!
+Agent:   mike@acme-realestate.com     / Agent123!
+```
+
+### Create Admin User Only
+```bash
+cd api
+python scripts/create_admin.py \
+  admin@example.com \
+  "SecurePass123!" \
+  "My Company Name"
+```
+
+### Custom Seed Data
+Modify `api/scripts/seed_data.py` to customize:
+- Organization names and settings
+- User roles and permissions
+- Sample properties and leads
+- Default campaign templates
 
 ## 🐳 Docker Services
 
@@ -474,12 +737,18 @@ For issues and questions:
 
 ## 🎯 Roadmap
 
-- [ ] WebSocket support for real-time updates
+- [x] Real-time updates (SSE implemented)
+- [x] Background task processing (Celery)
+- [x] Advanced middleware (Idempotency, ETag, Rate Limiting, Audit Logging)
+- [x] Comprehensive testing suite
+- [x] Database migrations (Alembic)
+- [x] Seed data scripts
 - [ ] Advanced reporting and custom dashboards
 - [ ] Integration with external MLS systems
 - [ ] Mobile app API enhancements
 - [ ] AI-powered lead scoring
 - [ ] Automated property valuation
+- [ ] WebSocket support for bidirectional real-time communication
 
 ## 📈 Performance
 

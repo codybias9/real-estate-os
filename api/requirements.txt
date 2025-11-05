@@ -18,6 +18,7 @@ bcrypt==4.1.1
 # Background Tasks
 celery==5.3.4
 redis==5.0.1
+redis[hiredis]==5.0.1  # For async Redis support
 
 # Email & SMS
 aiosmtplib==3.0.1

@@ -63,7 +63,7 @@ class AuditLog(Base):
     changes = Column(Text, nullable=True)  # JSON object with before/after values
     ip_address = Column(String(50), nullable=True)
     user_agent = Column(String(500), nullable=True)
-    metadata = Column(Text, nullable=True)  # JSON object
+    additional_data = Column(Text, nullable=True)  # JSON object (renamed from metadata)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     # Relationships

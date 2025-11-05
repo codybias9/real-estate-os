@@ -7,7 +7,13 @@ import os
 
 from .config import settings
 from .database import init_db
-from .routers import auth, properties, leads, campaigns, deals, users, analytics
+from .routers import auth, properties, leads, campaigns, deals, users, analytics, sse
+from .middleware import (
+    IdempotencyMiddleware,
+    ETagMiddleware,
+    RateLimitMiddleware,
+    AuditLogMiddleware,
+)
 
 # Create FastAPI app
 app = FastAPI(
@@ -18,7 +24,9 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# Add CORS middleware
+# Add middleware (order matters - added in reverse order of execution)
+
+# 1. CORS middleware (outermost)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -26,6 +34,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# 2. Rate limiting middleware
+if not settings.DEBUG:  # Only enable in production
+    app.add_middleware(
+        RateLimitMiddleware,
+        requests_per_minute=60,
+        requests_per_hour=1000,
+        requests_per_day=10000,
+    )
+
+# 3. ETag middleware for caching
+app.add_middleware(ETagMiddleware)
+
+# 4. Idempotency middleware
+app.add_middleware(IdempotencyMiddleware, expire_hours=24)
+
+# 5. Audit logging middleware (innermost)
+app.add_middleware(AuditLogMiddleware, log_read_operations=False)
 
 # Include routers
 app.include_router(auth.router, prefix="/api/v1")
@@ -38,6 +64,7 @@ app.include_router(users.router, prefix="/api/v1")
 app.include_router(users.roles_router, prefix="/api/v1")
 app.include_router(users.permissions_router, prefix="/api/v1")
 app.include_router(analytics.router, prefix="/api/v1")
+app.include_router(sse.router, prefix="/api/v1")
 
 
 @app.on_event("startup")

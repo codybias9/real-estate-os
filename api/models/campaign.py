@@ -61,7 +61,7 @@ class Campaign(Base):
     unsubscribed_count = Column(Integer, default=0, nullable=False)
 
     # Metadata
-    metadata = Column(Text, nullable=True)  # JSON object
+    additional_data = Column(Text, nullable=True)  # JSON object (renamed from metadata)
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -125,7 +125,7 @@ class CampaignRecipient(Base):
 
     # Metadata
     error_message = Column(Text, nullable=True)
-    metadata = Column(Text, nullable=True)  # JSON object
+    additional_data = Column(Text, nullable=True)  # JSON object (renamed from metadata)
 
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
