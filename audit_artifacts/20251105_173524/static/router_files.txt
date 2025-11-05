@@ -1,0 +1,9 @@
+api/routers/__init__.py
+api/routers/analytics.py
+api/routers/auth.py
+api/routers/campaigns.py
+api/routers/deals.py
+api/routers/leads.py
+api/routers/properties.py
+api/routers/sse.py
+api/routers/users.py

@@ -1,0 +1,9 @@
+postgres-api
+redis-api
+rabbitmq
+minio
+api
+celery-worker
+mailhog
+prometheus (monitoring profile)
+grafana (monitoring profile)
