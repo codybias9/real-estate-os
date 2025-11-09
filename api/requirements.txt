@@ -1,4 +1,4 @@
-﻿fastapi
+fastapi
 uvicorn[standard]
 sqlalchemy
 psycopg2-binary
@@ -6,3 +6,7 @@ python-dotenv
 loguru
 prometheus-client>=0.19.0
 prometheus-fastapi-instrumentator>=6.1.0
+pydantic[email]
+redis
+celery
+httpx
