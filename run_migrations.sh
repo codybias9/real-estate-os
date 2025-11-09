@@ -15,16 +15,16 @@ echo "Running Alembic Migrations"
 echo "================================"
 echo ""
 
-# Change to the db directory where alembic.ini is located
-cd /app/db
+# Stay in /app directory so Python can find modules
+cd /app
 
 # Display current database connection
 echo "Database: ${DB_DSN}"
 echo ""
 
-# Run migrations
-echo "Running: alembic upgrade head"
-alembic upgrade head
+# Run migrations with config file in db/ directory
+echo "Running: alembic -c db/alembic.ini upgrade head"
+alembic -c db/alembic.ini upgrade head
 
 echo ""
 echo "================================"

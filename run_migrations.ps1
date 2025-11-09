@@ -8,7 +8,7 @@ Write-Host ""
 
 # Execute migrations inside the API container
 Write-Host "Executing migrations in API container..." -ForegroundColor Yellow
-docker exec -it real-estate-os-api-1 bash -c "cd /app/db && alembic upgrade head"
+docker exec -it real-estate-os-api-1 bash -c "cd /app && alembic -c db/alembic.ini upgrade head"
 
 if ($LASTEXITCODE -eq 0) {
     Write-Host ""
