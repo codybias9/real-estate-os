@@ -10,3 +10,9 @@ pydantic[email]
 redis
 celery
 httpx
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+alembic
+sse-starlette
+aioredis
