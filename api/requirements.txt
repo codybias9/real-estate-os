@@ -16,3 +16,7 @@ python-multipart
 alembic
 sse-starlette
 aioredis
+sendgrid
+twilio
+boto3
+weasyprint
