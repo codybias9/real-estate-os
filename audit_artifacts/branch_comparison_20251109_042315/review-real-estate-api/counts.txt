@@ -1,0 +1,69 @@
+Branch: origin/claude/review-real-estate-api-011CUoxkF8YQMZHkH78uaABC
+Commit: 1c9911a
+Last Commit: docs: Add comprehensive 5-step path to FULL GO with runtime verification
+
+Endpoints: api/main.py:0
+api/routers/auth.py:8
+api/routers/deals.py:8
+api/routers/properties.py:14
+api/routers/campaigns.py:12
+api/routers/leads.py:13
+api/routers/__init__.py:0
+api/routers/users.py:5
+api/routers/sse.py:2
+api/routers/analytics.py:6
+api/exceptions.py:0
+api/database.py:0
+api/migrations/versions/f4c7c458b274_initial_migration_with_all_models.py:0
+api/migrations/env.py:0
+api/models/user.py:0
+api/models/system.py:0
+api/models/campaign.py:0
+api/models/property.py:0
+api/models/deal.py:0
+api/models/lead.py:0
+api/models/__init__.py:0
+api/models/organization.py:0
+api/schemas/user.py:0
+api/schemas/auth.py:0
+api/schemas/campaign.py:0
+api/schemas/property.py:0
+api/schemas/deal.py:0
+api/schemas/lead.py:0
+api/schemas/__init__.py:0
+api/__init__.py:0
+api/dependencies.py:0
+api/logging_config.py:1
+api/scripts/__init__.py:0
+api/scripts/seed_data.py:0
+api/scripts/create_admin.py:0
+api/tasks/email_tasks.py:0
+api/tasks/campaign_tasks.py:0
+api/tasks/cleanup_tasks.py:0
+api/tasks/__init__.py:0
+api/tasks/webhook_tasks.py:0
+api/tasks/celery_app.py:0
+api/exception_handlers.py:0
+api/health.py:5
+api/services/auth.py:0
+api/services/webhook.py:0
+api/services/__init__.py:0
+api/services/sms.py:0
+api/services/storage.py:0
+api/services/email.py:0
+api/tests/conftest.py:0
+api/tests/test_auth.py:0
+api/tests/test_properties.py:0
+api/tests/test_integration.py:0
+api/config.py:0
+api/middleware/idempotency.py:0
+api/middleware/__init__.py:0
+api/middleware/rate_limit.py:0
+api/middleware/audit_log.py:0
+api/middleware/etag.py:0
+Routers: 9
+Models: 16
+DAGs: 11
+Tests: 3
+Frontend: No
+Docker Compose: No

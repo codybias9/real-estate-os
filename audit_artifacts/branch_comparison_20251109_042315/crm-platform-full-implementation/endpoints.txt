@@ -1,0 +1,30 @@
+api/routers/auth.py:58:@router.post("/register", response_model=RegisterResponse, status_code=status.HTTP_201_CREATED)
+api/routers/auth.py:136:@router.post("/login", response_model=LoginResponse)
+api/routers/auth.py:212:@router.post("/refresh", response_model=TokenResponse)
+api/routers/auth.py:254:@router.post("/logout", response_model=MessageResponse)
+api/routers/auth.py:275:@router.post("/password/reset-request", response_model=MessageResponse)
+api/routers/auth.py:309:@router.post("/password/reset-confirm", response_model=MessageResponse)
+api/routers/auth.py:365:@router.post("/password/change", response_model=MessageResponse)
+api/routers/auth.py:404:@router.post("/verify-email", response_model=MessageResponse)
+api/routers/auth.py:446:@router.get("/me", response_model=UserResponse)
+api/routers/properties.py:46:@router.post(
+api/routers/properties.py:78:@router.get(
+api/routers/properties.py:158:@router.get(
+api/routers/properties.py:184:@router.put(
+api/routers/properties.py:219:@router.delete(
+api/routers/properties.py:253:@router.post(
+api/routers/properties.py:291:@router.get(
+api/routers/properties.py:325:@router.post(
+api/routers/properties.py:363:@router.get(
+api/routers/leads.py:47:@router.post(
+api/routers/leads.py:79:@router.get(
+api/routers/leads.py:144:@router.get(
+api/routers/leads.py:170:@router.put(
+api/routers/leads.py:205:@router.delete(
+api/routers/leads.py:239:@router.post(
+api/routers/leads.py:283:@router.get(
+api/routers/leads.py:317:@router.post(
+api/routers/leads.py:357:@router.get(
+api/routers/leads.py:394:@router.put(
+api/dependencies/auth.py:109:        @router.get("/properties", dependencies=[Depends(PermissionChecker(["property:read"]))])
+api/dependencies/auth.py:144:        @router.get("/admin", dependencies=[Depends(RoleChecker(["admin"]))])

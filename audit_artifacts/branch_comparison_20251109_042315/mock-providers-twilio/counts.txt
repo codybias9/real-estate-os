@@ -1,0 +1,67 @@
+Branch: origin/claude/mock-providers-twilio-011CUoNy9C1cvzAMeQmPjREU
+Commit: 330445c
+Last Commit: docs: Add comprehensive demo-readiness audit evidence pack
+
+Endpoints: api/main.py:0
+api/deliverability.py:0
+api/routers/auth.py:8
+api/routers/portfolio.py:8
+api/routers/differentiators.py:4
+api/routers/sse_events.py:4
+api/routers/webhooks.py:4
+api/routers/properties.py:8
+api/routers/data_propensity.py:8
+api/routers/automation.py:17
+api/routers/quick_wins.py:4
+api/routers/onboarding.py:4
+api/routers/sharing.py:10
+api/routers/open_data.py:3
+api/routers/__init__.py:0
+api/routers/jobs.py:11
+api/routers/workflow.py:7
+api/routers/admin.py:12
+api/routers/communications.py:6
+api/auth.py:4
+api/database.py:0
+api/schemas.py:0
+api/webhook_security.py:2
+api/idempotency.py:3
+api/tasks/email_tasks.py:0
+api/tasks/memo_tasks.py:0
+api/tasks/enrichment_tasks.py:0
+api/tasks/__init__.py:0
+api/tasks/maintenance_tasks.py:0
+api/rate_limit.py:0
+api/reconciliation.py:0
+api/etag.py:3
+api/data_providers/osm.py:0
+api/data_providers/usgs.py:0
+api/data_providers/regrid.py:0
+api/data_providers/overture.py:0
+api/data_providers/__init__.py:0
+api/data_providers/fema.py:0
+api/data_providers/base.py:0
+api/data_providers/openaddresses.py:0
+api/data_providers/ms_buildings.py:0
+api/data_providers/attom.py:0
+api/sse.py:0
+api/celery_app.py:0
+api/cache.py:2
+api/dlq.py:0
+api/integrations/twilio_client.py:0
+api/integrations/factory.py:0
+api/integrations/storage_client.py:0
+api/integrations/__init__.py:0
+api/integrations/pdf_generator.py:0
+api/integrations/mock/pdf_mock.py:0
+api/integrations/mock/storage_mock.py:0
+api/integrations/mock/__init__.py:0
+api/integrations/mock/sendgrid_mock.py:0
+api/integrations/mock/twilio_mock.py:0
+api/integrations/sendgrid_client.py:0
+Routers: 16
+Models: 20
+DAGs: 11
+Tests: 3
+Frontend: No
+Docker Compose: Yes

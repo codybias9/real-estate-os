@@ -1,0 +1,37 @@
+Branch: origin/claude/continue-api-implementation-011CUorMFDQTXZTAgKxzs2uQ
+Commit: 97e76c2
+Last Commit: feat(api): Implement comprehensive Real Estate OS API foundation
+
+Endpoints: api/main.py:0
+api/providers/__init__.py:0
+api/routers/auth.py:8
+api/routers/properties.py:13
+api/routers/leads.py:11
+api/routers/__init__.py:0
+api/database.py:0
+api/models/user.py:0
+api/models/system.py:0
+api/models/campaign.py:0
+api/models/property.py:0
+api/models/deal.py:0
+api/models/lead.py:0
+api/models/__init__.py:0
+api/models/organization.py:0
+api/models/base.py:0
+api/schemas/auth.py:0
+api/schemas/property.py:0
+api/schemas/lead.py:0
+api/schemas/__init__.py:0
+api/__init__.py:0
+api/dependencies.py:0
+api/services/auth.py:0
+api/services/__init__.py:0
+api/tests/__init__.py:0
+api/config.py:0
+api/middleware/__init__.py:0
+Routers: 3
+Models: 14
+DAGs: 11
+Tests: 0
+Frontend: No
+Docker Compose: No

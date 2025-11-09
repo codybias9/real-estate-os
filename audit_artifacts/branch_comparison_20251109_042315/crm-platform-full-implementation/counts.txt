@@ -1,0 +1,29 @@
+Branch: origin/claude/crm-platform-full-implementation-011CUob6oo4RPnAbQsWxSPrW
+Commit: 3f3ba7a
+Last Commit: feat: Implement core API routers and security middleware
+
+Endpoints: api/main.py:0
+api/routers/auth.py:9
+api/routers/properties.py:9
+api/routers/leads.py:10
+api/routers/__init__.py:0
+api/schemas/auth.py:0
+api/schemas/campaign.py:0
+api/schemas/property.py:0
+api/schemas/lead.py:0
+api/schemas/__init__.py:0
+api/core/exceptions.py:0
+api/core/database.py:0
+api/core/__init__.py:0
+api/core/security.py:0
+api/core/config.py:0
+api/__init__.py:0
+api/dependencies/auth.py:2
+api/dependencies/__init__.py:0
+api/services/__init__.py:0
+Routers: 3
+Models: 6
+DAGs: 11
+Tests: 0
+Frontend: No
+Docker Compose: No
