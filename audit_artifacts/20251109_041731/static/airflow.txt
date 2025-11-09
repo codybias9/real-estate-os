@@ -1,0 +1,3 @@
+=== Airflow DAGs ===
+DAG_FILES= 11
+DAG_OPERATOR_LINES= 10

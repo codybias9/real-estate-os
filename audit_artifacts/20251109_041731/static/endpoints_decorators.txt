@@ -1,0 +1,3 @@
+=== Endpoint decorators ===
+DECLARED_ENDPOINTS=0
+ROUTER_FILES= 0

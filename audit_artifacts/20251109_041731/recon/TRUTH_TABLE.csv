@@ -1,0 +1,9 @@
+Area,Claimed,Observed,Status,Notes
+API endpoints,118,<fill>,<derive>,grep @router.* count vs runtime
+Models,35,<fill>,<derive>,class .*Base() count
+Routers,17,<fill>,<derive>,APIRouter files
+Airflow DAGs,<n/a>,<fill>,<derive>,present & operator count
+Compose services,11-15,<fill>,<derive>,service name list
+Tests,~47-68 files,<fill>,<derive>,discover test files
+Frontend,Next.js 14,<fill>,<derive>,package.json/scripts
+Mock providers,SendGrid/Twilio/MinIO/PDF,<fill>,<derive>,files + MOCK_MODE

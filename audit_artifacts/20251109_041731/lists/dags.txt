@@ -1,0 +1,11 @@
+./dags/property_processing_pipeline.py
+./dags/discovery_offmarket.py
+./dags/docgen_packet.py
+./dags/example_hello_world.py
+./dags/enrichment_property.py
+./dags/scrape_listings_dag.py
+./dags/discovery_dag.py
+./dags/sys_heartbeat.py
+./dags/example_test_dag.py
+./dags/score_master.py
+./infra/airflow/dags/discovery_offmarket.py

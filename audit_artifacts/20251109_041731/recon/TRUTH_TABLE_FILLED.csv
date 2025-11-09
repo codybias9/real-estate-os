@@ -1,0 +1,11 @@
+Area,Claimed,Observed,Status,Evidence,Notes
+API endpoints,118,0,"❌ MISSING","lists/endpoints_grep.txt (0 decorators)","No @router decorators found; api/main.py has only 2 hardcoded routes (/healthz, /ping)"
+Models,35,1,"❌ MISSING","lists/models_names.txt (0); db/models.py (1 Ping model)","Only one model (Ping) exists; no Property/Lead/Deal models"
+Routers,17,0,"❌ MISSING","lists/router_files.txt (0 files)","No APIRouter imports found; api/ has only main.py"
+Airflow DAGs,N/A,11,"✅ EXISTS","lists/dags.txt (11 files)","11 DAG files found across ./dags and ./infra/airflow/dags"
+Compose services,11-15,0,"⚠️ PARTIAL","static/compose.txt","docker-compose.yml not found; docker-compose.api.yml exists but not counted"
+Tests,47-68 files,0,"❌ MISSING","lists/test_files.txt (0 files)","No test files found; tests/ directory may not exist"
+Frontend,Next.js 14,0,"❌ MISSING","static/frontend.txt","No package.json found; no frontend code"
+Mock providers,SendGrid/Twilio/MinIO/PDF,N/A,"⚠️ CLAIMED","static/mocks.txt (MOCK_MODE references in docs/scripts)","MOCK_MODE mentioned in docs/scripts but no provider implementations found in api/"
+LOC Python,N/A,724,"✅ MEASURED","static/loc.txt","724 total Python lines (mostly in dags/ and db/)"
+Git Status,N/A,Clean,"✅ VERIFIED","git_status.txt","Branch: claude/audit-endpoint-discrepancy-011CUwfgyzvgezDZxoejZqM5"

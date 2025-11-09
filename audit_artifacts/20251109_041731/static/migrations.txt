@@ -1,0 +1,3 @@
+=== Alembic migrations ===
+versions dir: db/versions
+b81dde19348f_add_ping_model.py

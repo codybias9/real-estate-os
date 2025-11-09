@@ -1,0 +1,16 @@
+=== mock providers / flags ===
+./.env.mock:1:MOCK_MODE=true
+./WORKFLOW_FIXES_SUMMARY.md:20:**Problem:** No environment configuration for MOCK_MODE
+./WORKFLOW_FIXES_SUMMARY.md:81:MOCK_MODE=true
+./WORKFLOW_FIXES_SUMMARY.md:215:✅ 2. Prepare MOCK_MODE environment (.env.mock → .env)
+./docker-compose.api.yml:42:      - MOCK_MODE=true
+./scripts/runtime_verification/verify_platform.sh:4:# Performs comprehensive testing of all 118 endpoints in MOCK_MODE
+./scripts/runtime_verification/README.md:3:This directory contains tools for comprehensive runtime verification of the Real Estate OS Platform in MOCK_MODE.
+./scripts/runtime_verification/README.md:346:- Script runs in **MOCK_MODE** only
+./scripts/audit_static.sh:77:grep -Rni "MOCK_MODE" -n . | tee -a "${OUT}/static/mocks.txt" || true
+./scripts/audit_static.sh:94:Mock providers,SendGrid/Twilio/MinIO/PDF,<fill>,<derive>,files + MOCK_MODE
+./.github/workflows/runtime-verification.yml:1:name: Runtime Verification (MOCK_MODE)
+./.github/workflows/runtime-verification.yml:37:      - name: Prepare MOCK_MODE environment
+./.github/workflows/runtime-verification.yml:39:          echo "📋 Setting up .env for MOCK_MODE..."
+./.github/workflows/runtime-verification.yml:46:          MOCK_MODE=true
+./.github/PULL_REQUEST_TEMPLATE.md:86:### Mock Providers (MOCK_MODE)
