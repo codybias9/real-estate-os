@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "reo-enrichment-hub"
+version = "0.1.0"
+description = "Enrichment Hub - Plugin-based property data enrichment"
+authors = ["Real Estate OS Team"]
+packages = [{include = "enrichment_hub", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pydantic = "^2.11.7"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+pytest-asyncio = "^0.23.0"
+pytest-cov = "^4.1.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

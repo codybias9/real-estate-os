@@ -1,0 +1,9 @@
+{
+  "status": "INFEASIBLE",
+  "reason": "Profit margin constraint conflicts with price cap",
+  "elapsed_seconds": 0.0,
+  "constraints_violated": [
+    "min_profit_margin >= 0.15",
+    "price <= max_price (conflicting with ARV - costs)"
+  ]
+}

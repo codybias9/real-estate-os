@@ -1,0 +1,344 @@
+Great Expectations Checkpoint: FAILED Validation
+==================================================
+
+Checkpoint: properties_ingestion_checkpoint
+Run Time: 2024-11-02 14:22:18 UTC
+Run ID: 20241102-142218-properties-ingestion
+Status: ❌ FAILED
+
+Datasource: postgres_datasource
+Data Asset: properties
+Expectation Suite: properties_suite
+Batch: 1,250 rows (ingestion run 2024-11-02)
+
+════════════════════════════════════════════════════════════════════════════════
+VALIDATION STATISTICS
+════════════════════════════════════════════════════════════════════════════════
+
+Total Expectations Evaluated: 20
+Successful Expectations: 16
+Unsuccessful Expectations: 4
+Success Percentage: 80.00%
+
+❌ VALIDATION FAILED - Pipeline execution halted
+
+Execution Time: 3.12 seconds
+
+════════════════════════════════════════════════════════════════════════════════
+FAILED EXPECTATIONS (4)
+════════════════════════════════════════════════════════════════════════════════
+
+❌ FAILURE 1: expect_column_values_to_not_be_null (column: tenant_id)
+
+   SECURITY CRITICAL: Multi-tenant isolation violation!
+
+   Expected: 0 null values
+   Observed: 47 null values (3.76% of rows)
+
+   Null rows sample (first 10):
+     - Row 23: id=prop_00023, tenant_id=NULL, address="123 Market St"
+     - Row 45: id=prop_00045, tenant_id=NULL, address="456 Mission St"
+     - Row 67: id=prop_00067, tenant_id=NULL, address="789 Howard St"
+     - Row 89: id=prop_00089, tenant_id=NULL, address="321 Folsom St"
+     - Row 112: id=prop_00112, tenant_id=NULL, address="654 Bryant St"
+     - Row 134: id=prop_00134, tenant_id=NULL, address="987 Valencia St"
+     - Row 156: id=prop_00156, tenant_id=NULL, address="147 Guerrero St"
+     - Row 178: id=prop_00178, tenant_id=NULL, address="258 Divisadero St"
+     - Row 201: id=prop_00201, tenant_id=NULL, address="369 Castro St"
+     - Row 223: id=prop_00223, tenant_id=NULL, address="741 Haight St"
+
+   IMPACT:
+     🔴 SECURITY: Rows without tenant_id violate multi-tenant isolation
+     🔴 COMPLIANCE: Cannot determine data ownership
+     🔴 DATA QUALITY: RLS policies will reject these rows
+     🔴 OPERATIONS: These properties cannot be queried by tenants
+
+   REMEDIATION:
+     1. Identify source of NULL tenant_id values
+     2. Backfill tenant_id from source system
+     3. If unable to determine tenant, quarantine records
+     4. Update ingestion code to require tenant_id
+
+   Result: ❌ FAIL
+
+────────────────────────────────────────────────────────────────────────────────
+
+❌ FAILURE 2: expect_column_values_to_be_in_set (column: state)
+
+   Expected: All values in [AL, AK, AZ, ..., WY, DC, PR, VI, GU]
+   Observed: 8 unexpected values (0.64% of rows)
+
+   Unexpected values:
+     - "ON" (3 occurrences) - Ontario, Canada
+     - "BC" (2 occurrences) - British Columbia, Canada
+     - "UK" (1 occurrence) - United Kingdom
+     - "QC" (1 occurrence) - Quebec, Canada
+     - "AB" (1 occurrence) - Alberta, Canada
+
+   Sample invalid rows:
+     - Row 145: city="Toronto", state="ON", zip="M5H2N2"
+     - Row 278: city="Vancouver", state="BC", zip="V6B1A1"
+     - Row 489: city="London", state="UK", zip="SW1A1AA"
+
+   IMPACT:
+     🟠 DATA QUALITY: Geographic filters will miss these properties
+     🟠 ML MODELS: State-based features will have unexpected values
+     🟠 REPORTING: State-level analytics will be incorrect
+     🟠 UX: Search by state will not find these properties
+
+   REMEDIATION:
+     1. Verify data source - are international properties expected?
+     2. If yes: Update expectation to include international codes
+     3. If no: Filter out international properties at ingestion
+     4. Add country field to schema for proper geographic handling
+
+   Result: ❌ FAIL
+
+────────────────────────────────────────────────────────────────────────────────
+
+❌ FAILURE 3: expect_column_values_to_match_regex (column: zip)
+
+   Pattern: ^\d{5}(-\d{4})?$
+   Expected: All values match US ZIP format (12345 or 12345-6789)
+   Observed: 45 values do not match (3.60% of rows)
+
+   Invalid ZIP codes:
+     - "INVALID" (12 occurrences)
+     - "00000" (8 occurrences)
+     - "99999-9999" (5 occurrences) - invalid ZIP range
+     - "M5H2N2" (3 occurrences) - Canadian postal code
+     - "V6B1A1" (2 occurrences) - Canadian postal code
+     - "SW1A1AA" (1 occurrence) - UK postal code
+     - Various malformed (14 occurrences): "1234", "12345-", "12345-123"
+
+   Sample invalid rows:
+     - Row 67: address="123 Main St", zip="INVALID"
+     - Row 89: address="456 Oak Ave", zip="00000"
+     - Row 145: address="789 Bay St", zip="M5H2N2"
+
+   IMPACT:
+     🟠 DATA QUALITY: Geocoding will fail for these addresses
+     🟠 SPATIAL ANALYSIS: Cannot perform radius searches
+     🟠 MAPPING: Cannot plot on map
+     🟠 COMPLIANCE: Inaccurate for tax jurisdiction determination
+
+   REMEDIATION:
+     1. Validate ZIP codes against USPS database
+     2. Use libpostal to normalize international addresses
+     3. Add address validation API call at ingestion
+     4. Quarantine properties with invalid addresses for manual review
+
+   Result: ❌ FAIL
+
+────────────────────────────────────────────────────────────────────────────────
+
+❌ FAILURE 4: expect_column_values_to_be_between (column: price, mostly=0.99)
+
+   Expected: At least 99% of prices between $1,000 and $100,000,000
+   Observed: Only 97.84% in range (1,223 / 1,250)
+
+   Out-of-range values (27 total):
+
+   Below minimum ($1,000):
+     - Row 34: price=$100 (likely data entry error)
+     - Row 56: price=$500 (likely data entry error)
+     - Row 78: price=$1 (likely placeholder)
+     - ... 8 more values below $1,000
+
+   Above maximum ($100,000,000):
+     - Row 234: price=$150,000,000 (luxury estate)
+     - Row 456: price=$200,000,000 (commercial property)
+     - Row 678: price=$999,999,999 (likely placeholder)
+     - ... 16 more values above $100M
+
+   IMPACT:
+     🟡 ML MODELS: Outliers will skew valuation models
+     🟡 ANALYTICS: Average/median calculations affected
+     🟡 UI: May cause display issues with very large numbers
+     🟡 DATA QUALITY: Likely data entry errors for very low prices
+
+   REMEDIATION:
+     1. Investigate prices < $1,000 - likely errors, need correction
+     2. Review prices > $100M - may be valid luxury properties
+     3. Update expectation if ultra-luxury properties expected
+     4. Add separate validation for different property types
+
+   Result: ❌ FAIL
+
+════════════════════════════════════════════════════════════════════════════════
+SUCCESSFUL EXPECTATIONS (16)
+════════════════════════════════════════════════════════════════════════════════
+
+✅ expect_table_row_count_to_be_between (1,250 rows)
+✅ expect_table_columns_to_match_set
+✅ expect_column_values_to_not_be_null (column: id)
+✅ expect_column_values_to_be_unique (column: id)
+✅ expect_column_values_to_match_regex (column: tenant_id) [for non-null values]
+✅ expect_column_values_to_not_be_null (column: address)
+✅ expect_column_values_to_not_be_null (column: city)
+✅ expect_column_values_to_not_be_null (column: state)
+✅ expect_column_values_to_be_between (column: bedrooms)
+✅ expect_column_values_to_be_between (column: bathrooms)
+✅ expect_column_values_to_be_between (column: sqft)
+✅ expect_column_values_to_be_between (column: year_built)
+✅ expect_column_values_to_be_in_set (column: property_type)
+✅ expect_column_values_to_be_in_set (column: status)
+✅ expect_column_values_to_not_be_null (column: created_at)
+✅ expect_column_values_to_not_be_null (column: updated_at)
+
+════════════════════════════════════════════════════════════════════════════════
+ACTIONS EXECUTED
+════════════════════════════════════════════════════════════════════════════════
+
+✅ StoreValidationResultAction
+   Validation result stored to: uncommitted/validations/properties_suite/20241102-142218/
+   Result ID: 20241102-142218-properties-ingestion
+   Status: FAILED
+
+✅ StoreEvaluationParametersAction
+   Evaluation parameters stored
+
+✅ UpdateDataDocsAction
+   Data Docs updated with failure report
+   View at: file:///.../great_expectations/uncommitted/data_docs/local_site/index.html
+
+✅ SlackNotificationAction
+   Notification sent to: #data-quality-alerts
+   Webhook: https://hooks.slack.com/services/T0.../B0.../xxx...
+   Message:
+     ┌─────────────────────────────────────────────┐
+     │ 🚨 GX Checkpoint Failed                     │
+     ├─────────────────────────────────────────────┤
+     │ Checkpoint: properties_ingestion_checkpoint │
+     │ Success Rate: 80.00% (16/20 expectations)   │
+     │ Failed Expectations: 4                      │
+     │                                             │
+     │ ❌ tenant_id has 47 NULL values (CRITICAL)  │
+     │ ❌ state has 8 invalid values               │
+     │ ❌ zip has 45 invalid values                │
+     │ ❌ price has 27 outliers                    │
+     │                                             │
+     │ Pipeline: property_processing_pipeline      │
+     │ Task: validate_properties_ingestion         │
+     │ Run ID: 20241102-142218                     │
+     │                                             │
+     │ View Report: [Data Docs Link]               │
+     └─────────────────────────────────────────────┘
+
+════════════════════════════════════════════════════════════════════════════════
+AIRFLOW DAG IMPACT
+════════════════════════════════════════════════════════════════════════════════
+
+Pipeline: property_processing_pipeline
+DAG Run: 2024-11-02T14:00:00+00:00
+
+Task Status:
+  ✅ start
+  ✅ ingest_properties (1,250 properties ingested)
+  ❌ validate_properties_ingestion (FAILED - GXValidationError)
+  ⏸️  normalize_addresses (UPSTREAM_FAILED)
+  ⏸️  enrich_properties (UPSTREAM_FAILED)
+  ⏸️  run_comp_critic_valuation (UPSTREAM_FAILED)
+  ⏸️  score_prospect_motivation (UPSTREAM_FAILED)
+  ⏸️  validate_prospects_pre_ml (UPSTREAM_FAILED)
+  ⏸️  update_vector_embeddings (UPSTREAM_FAILED)
+  ⏸️  generate_daily_report (UPSTREAM_FAILED)
+  ⏸️  end (UPSTREAM_FAILED)
+
+Result: Pipeline execution HALTED at validation gate ✋
+
+Email Alert:
+  To: data-engineering@real-estate-os.com
+  Subject: Airflow Task Failed - validate_properties_ingestion
+  Body: [Stack trace with GXValidationError]
+
+════════════════════════════════════════════════════════════════════════════════
+PREVENTED ISSUES (by halting pipeline)
+════════════════════════════════════════════════════════════════════════════════
+
+By failing fast at the data quality gate, we prevented:
+
+🛡️  SECURITY ISSUES PREVENTED:
+   - 47 properties without tenant_id would bypass RLS policies
+   - Multi-tenant isolation breach avoided
+   - Potential data leak between tenants prevented
+
+🛡️  DATA QUALITY ISSUES PREVENTED:
+   - Invalid geographic data from corrupting spatial indexes
+   - 45 addresses that would fail geocoding
+   - 8 international properties in US-only dataset
+
+🛡️  ML MODEL ISSUES PREVENTED:
+   - Price outliers from skewing Comp-Critic model
+   - Invalid state codes from breaking feature engineering
+   - NULL tenant_id from breaking tenant-scoped model serving
+
+🛡️  DOWNSTREAM SYSTEM ISSUES PREVENTED:
+   - 45 properties that couldn't be mapped
+   - Search functionality breaking on invalid states
+   - Reports showing incorrect geographic aggregations
+
+Cost of Prevention: ~2 hours of pipeline downtime
+Cost of Not Preventing: Multiple days of corrupted data + security breach
+
+════════════════════════════════════════════════════════════════════════════════
+REMEDIATION STEPS
+════════════════════════════════════════════════════════════════════════════════
+
+Priority 1 - SECURITY CRITICAL (Fix immediately):
+  1. ☐ Investigate NULL tenant_id values
+     - Check source system for missing tenant associations
+     - Verify ingestion code includes tenant_id extraction
+     - Backfill tenant_id for 47 affected properties
+
+  2. ☐ Quarantine rows with NULL tenant_id
+     - Move to quarantine table for manual review
+     - DO NOT proceed with pipeline until resolved
+
+Priority 2 - DATA QUALITY (Fix within 24 hours):
+  3. ☐ Review international properties
+     - Determine if international data is expected
+     - If yes: Update schema to support international addresses
+     - If no: Add filter to reject non-US properties at source
+
+  4. ☐ Fix invalid ZIP codes
+     - Run libpostal normalization on addresses
+     - Validate against USPS database
+     - Quarantine addresses that cannot be fixed
+
+Priority 3 - MODEL QUALITY (Fix within 1 week):
+  5. ☐ Review price outliers
+     - Investigate prices < $1,000 (likely errors)
+     - Confirm prices > $100M are valid
+     - Update price bounds if needed
+
+  6. ☐ Add validation to ingestion
+     - Validate data at source before loading
+     - Add pre-flight checks to ingestion script
+     - Fail early to prevent bad data from entering system
+
+════════════════════════════════════════════════════════════════════════════════
+SUMMARY
+════════════════════════════════════════════════════════════════════════════════
+
+❌ VALIDATION FAILED - Data quality below acceptable threshold
+❌ Pipeline execution HALTED to prevent downstream issues
+✅ Security breach PREVENTED (NULL tenant_id)
+✅ Data corruption PREVENTED (invalid geographic data)
+
+Status: REJECTED FOR PROCESSING ❌
+
+Action Required: Fix 4 failed expectations before retrying pipeline
+
+Next Steps:
+  1. Review remediation steps above
+  2. Fix SECURITY CRITICAL issues immediately
+  3. Coordinate with data engineering team
+  4. Retry pipeline after fixes applied
+  5. Monitor validation results to ensure issues resolved
+
+Data Docs: file:///.../great_expectations/uncommitted/data_docs/local_site/index.html
+Slack: #data-quality-alerts
+Incident ID: INC-20241102-001
+
+End of Report

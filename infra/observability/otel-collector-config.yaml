@@ -1,0 +1,75 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: 'api'
+          scrape_interval: 15s
+          static_configs:
+            - targets: ['api:8000']
+          metrics_path: '/metrics'
+
+        - job_name: 'qdrant'
+          scrape_interval: 30s
+          static_configs:
+            - targets: ['qdrant:6333']
+
+        - job_name: 'redis'
+          scrape_interval: 30s
+          static_configs:
+            - targets: ['redis-exporter:9121']
+
+processors:
+  batch:
+    timeout: 10s
+    send_batch_size: 1024
+
+  resource:
+    attributes:
+      - key: service.name
+        value: real-estate-os
+        action: insert
+      - key: deployment.environment
+        value: ${env:ENVIRONMENT}
+        action: insert
+
+exporters:
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+    namespace: "realestate"
+
+  otlp:
+    endpoint: "tempo:4317"
+    tls:
+      insecure: true
+
+  logging:
+    loglevel: info
+
+  sentry:
+    dsn: ${env:SENTRY_DSN}
+    environment: ${env:ENVIRONMENT}
+    traces_sample_rate: 0.1
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch, resource]
+      exporters: [otlp, sentry]
+
+    metrics:
+      receivers: [otlp, prometheus]
+      processors: [batch, resource]
+      exporters: [prometheus]
+
+    logs:
+      receivers: [otlp]
+      processors: [batch, resource]
+      exporters: [logging, sentry]

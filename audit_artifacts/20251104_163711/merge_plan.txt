@@ -1,0 +1,62 @@
+=== MERGE PLAN FOR INTEGRATION BRANCH ===
+Date: 2025-11-04
+Base: origin/main (64ab64b)
+Target: integrate/full-consolidation-20251104
+
+Branch Analysis:
+
+Branch: claude/ga-hardening-011CUiJxbhgHHMukzneiY4Xn
+  Commits ahead of main: 7
+  Latest commit: 92a0ad5 docs: Add GA closeout status report
+  First 5 unique commits:
+    92a0ad5 docs: Add GA closeout status report
+    f694b4f feat(document-processing): Complete lease/rent-roll parsing with 96% accuracy (PR-I1)
+    6bc78e1 feat(lineage): Complete OpenLineage + Marquez integration (PR-T3)
+    74faedb feat(data-quality): Complete Great Expectations integration with Airflow (PR-T2)
+    4eda053 feat(security): Complete multi-tenant isolation with defense-in-depth (PR-T1)
+
+Branch: claude/realestate-audit-canvas-011CUjnrkmyeMSTozDmpy6xx
+  Commits ahead of main: 28
+  Latest commit: 09b5d33 docs: Strategic 6-month post-launch feature roadmap
+  First 5 unique commits:
+    09b5d33 docs: Strategic 6-month post-launch feature roadmap
+    270761a feat: Launch guardrails and Full Go acceptance (Final)
+    783c387 feat: Complete production readiness - Portfolio, DLQ, and Backup/Restore (Yellows → Green)
+    c72d555 docs: Comprehensive audit execution report with final evaluation
+    8fa5aaf docs: Comprehensive documentation and E2E test suite (PR18)
+
+Branch: claude/systematic-audit-phase-completion-011CUiJxbhgHHMukzneiY4Xn
+  Commits ahead of main: 59
+  Latest commit: ccc43bd docs: Add comprehensive systematic test fixing summary
+  First 5 unique commits:
+    ccc43bd docs: Add comprehensive systematic test fixing summary
+    860079b fix: Complete MinIO test fixes - all 18 tests passing
+    06f4faf docs: Update progress summary - 68% failure reduction, 0 errors
+    bcbcd64 fix: Auto-skip database tests when aiosqlite not installed
+    423ef37 docs: Add comprehensive test fixing progress summary
+
+Branch: claude/systematic-phase-work-011CUhTfsuprpo5BVihNuVQj
+  Commits ahead of main: 54
+  Latest commit: 02f6f9e docs: Complete production audit with model cards
+  First 5 unique commits:
+    02f6f9e docs: Complete production audit with model cards
+    6885af0 feat(negotiation): Add negotiation brain with NLP, Thompson Sampling, and contextual bandits (PR#24)
+    26a028b feat(regime): Add market regime monitoring with Bayesian change-point detection (PR#22)
+    365ac99 feat(valuation): Add MF/CRE DCF valuation engine (PR#21)
+    9b6eaba feat(monitoring): Add Evidently drift detection (PR#19)
+
+Branch: claude/ux-features-complete-implementation-011CUkFBkadKMjqd7gHkBApY
+  Commits ahead of main: 42
+  Latest commit: d87ac43 docs: Add comprehensive session summary document
+  First 5 unique commits:
+    d87ac43 docs: Add comprehensive session summary document
+    18c0e90 feat: Complete Mock Providers - SMS, PDF, LLM + Mock Twilio Service (Step 4/12)
+    8926113 feat: Mock Mode Foundation - Self-contained platform without external dependencies (Steps 1-3/12)
+    d234c0c feat: Session summary - 93.3% core features, 63.7% overall coverage, comprehensive testing complete
+    bda35bc feat: Add automation & onboarding schemas, improve test coverage from 27 to 30 passing (49.2%)
+
+Branch: claude/ux-features-workflow-accelerators-011CUkCyYACjd5NwQS1f9orM
+  Commits ahead of main: 1
+  Latest commit: 7a27b29 feat: Implement comprehensive UX features and workflow accelerators
+  First 5 unique commits:
+    7a27b29 feat: Implement comprehensive UX features and workflow accelerators

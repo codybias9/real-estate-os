@@ -1,0 +1,95 @@
+# ALEMBIC MIGRATIONS ANALYSIS
+## Date: 2025-11-04T17:50:00Z
+
+### MIGRATION FILES FOUND (10 total)
+
+#### Hash-Named Migrations (Original Chain):
+1. fb3c6b29453b_initial_schema_with_rls.py (8.5K, 260 lines)
+   - down_revision: None (BASE)
+   - Creates: tenants, properties, users tables with RLS
+
+2. b81dde19348f_add_ping_model.py (742 bytes, 30 lines)
+   - down_revision: fb3c6b29453b
+   - Creates: ping table for health checks
+
+3. c9f3a8e1d4b2_add_ux_feature_models.py (35K, 579 lines)
+   - down_revision: b81dde19348f
+   - Creates: 30+ UX feature tables (comprehensive)
+
+#### Numbered Migrations (Duplicate Chain):
+4. 001_create_ux_feature_models.py (17K, 327 lines)
+   - revision: '001_create_ux_features'
+   - down_revision: 'b81dde19348f'
+   - ❌ DUPLICATE! Same base as c9f3a8e1d4b2
+
+5. 002_add_rls_policies.py (7.8K)
+   - down_revision: '001_create_ux_features'
+   - Creates: RLS policies
+
+6. 003_add_idempotency.py (2.3K)
+   - Creates: idempotency_keys table
+
+7. 004_add_dlq_tracking.py (2.5K)
+   - Creates: failed_tasks table (DLQ)
+
+8. 005_add_reconciliation_history.py (2.2K)
+   - Creates: reconciliation_history table
+
+9. 006_add_compliance_tables.py (2.9K)
+   - Creates: email_unsubscribe, do_not_call, communication_consent
+
+10. 007_add_password_hash_to_users.py (992 bytes)
+    - down_revision: '006_add_compliance_tables'
+    - Alters: users table (add hashed_password column)
+
+### CONFLICT DETECTED
+
+Both migrations branch from b81dde19348f:
+```
+fb3c6b29453b (initial schema)
+    └─> b81dde19348f (ping model)
+         ├─> c9f3a8e1d4b2 (UX features - 579 lines, MORE COMPREHENSIVE)
+         └─> 001_create_ux_features (UX features - 327 lines, LESS COMPREHENSIVE)
+              └─> 002 → 003 → 004 → 005 → 006 → 007 (additional features)
+```
+
+### RESOLUTION STRATEGY
+
+**Option A (RECOMMENDED): Canonical Chain**
+1. Keep: fb3c6b29453b → b81dde19348f → c9f3a8e1d4b2 (hash-named)
+2. Remove: 001_create_ux_feature_models.py (duplicate)
+3. Rebase: 002-007 to point to c9f3a8e1d4b2 as base
+4. Result: Single linear chain
+
+**Option B: Squash All**
+1. Create single mega-migration with all tables
+2. Keep only: fb3c6b29453b (initial) + new squashed migration
+3. Archive old migrations
+4. Result: Clean slate (but loses incremental history)
+
+**CHOSEN: Option A (Canonical Chain)**
+- Preserves migration history
+- Keeps comprehensive c9f3a8e1d4b2
+- Rebase 002-007 to avoid conflict
+
+### ACTION ITEMS
+1. ✅ Remove/archive 001_create_ux_feature_models.py
+2. ✅ Update 002_add_rls_policies.py: down_revision = 'c9f3a8e1d4b2'
+3. ✅ Verify 003-007 chain is correct
+4. ✅ Test migration chain: alembic upgrade head
+5. ✅ Generate migration diagram
+
+### FINAL CANONICAL CHAIN
+```
+fb3c6b29453b (initial_schema_with_rls)
+    └─> b81dde19348f (add_ping_model)
+         └─> c9f3a8e1d4b2 (add_ux_feature_models - 30+ tables)
+              └─> 002_add_rls_policies
+                   └─> 003_add_idempotency
+                        └─> 004_add_dlq_tracking
+                             └─> 005_add_reconciliation_history
+                                  └─> 006_add_compliance_tables
+                                       └─> 007_add_password_hash_to_users
+```
+
+Total Tables Created: 35+ (matches audit)

@@ -1,0 +1,30 @@
+# Testing Dependencies
+
+# Core testing framework
+pytest==7.4.3
+pytest-cov==4.1.0
+pytest-asyncio==0.21.1
+pytest-mock==3.12.0
+pytest-xdist==3.5.0  # Parallel test execution
+
+# FastAPI testing
+httpx==0.25.2
+starlette==0.27.0
+
+# Database testing
+faker==20.1.0  # Generate test data
+factory-boy==3.3.0  # Test fixtures
+
+# E2E testing (Playwright)
+playwright==1.40.0
+pytest-playwright==0.4.3
+
+# Performance testing
+pytest-benchmark==4.0.0
+
+# Test reporting
+pytest-html==4.1.1
+pytest-json-report==1.5.0
+
+# Code quality
+coverage==7.3.3

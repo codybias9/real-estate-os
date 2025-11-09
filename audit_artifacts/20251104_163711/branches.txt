@@ -1,0 +1,12 @@
+Branch Map Summary
+==================
+
+claude | claude/mock-providers-implementation-011CUo8XMMdfTgWrwjpAVcE1 | ahead: 0, behind: 0 | 64ab64b | 2025-07-12 10:03:10 -0700 | codybias9
+claude | claude/ux-features-complete-implementation-011CUkFBkadKMjqd7gHkBApY | ahead: 0, behind: 43 | b8d527a | 2025-11-04 16:19:46 +0000 | Claude
+other | origin/claude/ga-hardening-011CUiJxbhgHHMukzneiY4Xn | ahead: 0, behind: 7 | 92a0ad5 | 2025-11-02 04:30:54 +0000 | Claude
+other | origin/claude/realestate-audit-canvas-011CUjnrkmyeMSTozDmpy6xx | ahead: 0, behind: 28 | 09b5d33 | 2025-11-03 02:53:28 +0000 | Claude
+other | origin/claude/systematic-audit-phase-completion-011CUiJxbhgHHMukzneiY4Xn | ahead: 0, behind: 59 | ccc43bd | 2025-11-02 20:15:36 +0000 | Claude
+other | origin/claude/systematic-phase-work-011CUhTfsuprpo5BVihNuVQj | ahead: 0, behind: 54 | 02f6f9e | 2025-11-01 21:49:46 +0000 | Claude
+other | origin/claude/ux-features-complete-implementation-011CUkFBkadKMjqd7gHkBApY | ahead: 0, behind: 42 | d87ac43 | 2025-11-04 06:56:08 +0000 | Claude
+other | origin/claude/ux-features-workflow-accelerators-011CUkCyYACjd5NwQS1f9orM | ahead: 0, behind: 1 | 7a27b29 | 2025-11-03 03:16:50 +0000 | Claude
+other | origin/main | ahead: 0, behind: 0 | 64ab64b | 2025-07-12 10:03:10 -0700 | codybias9

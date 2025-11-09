@@ -1,0 +1,26 @@
+BOCPD Run Length Matrix for CLARK-NV
+============================================================
+
+Most recent run length distribution:
+Run length  0: 0.0500 ##
+Run length  1: 0.0475 ##
+Run length  2: 0.0451 ##
+Run length  3: 0.0429 ##
+Run length  4: 0.0407 ##
+Run length  5: 0.0387 #
+Run length  6: 0.0368 #
+Run length  7: 0.0349 #
+Run length  8: 0.0332 #
+Run length  9: 0.0315 #
+Run length 10: 0.0299 #
+Run length 11: 0.0284 #
+Run length 12: 0.0270 #
+Run length 13: 0.0257 #
+Run length 14: 0.0244 #
+Run length 15: 0.0232 #
+Run length 16: 0.0220 #
+Run length 17: 0.0209 #
+Run length 18: 0.0199 
+Run length 19: 0.0189 
+
+(In production: this would be a heatmap image)

@@ -1,0 +1,12 @@
+DCF Engine Performance Profile
+==================================================
+
+Multifamily DCF (5-year hold, 60 units):
+  1 iterations: 0.000s (avg 0.37ms per run)
+  5 iterations: 0.001s (avg 0.27ms per run)
+  10 iterations: 0.003s (avg 0.27ms per run)
+  20 iterations: 0.005s (avg 0.27ms per run)
+
+Target: p95 < 500ms for API mode
+Actual: 0.37ms
+Status: ✅ PASS

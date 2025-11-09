@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investment Opportunity - {{ property.address.line1 }}</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .header {
+            border-bottom: 3px solid #2c3e50;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        h1 {
+            color: #2c3e50;
+            margin: 0;
+            font-size: 24px;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .property-summary {
+            background: #ecf0f1;
+            padding: 20px;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+        .property-address {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .property-details {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .detail-item {
+            font-size: 14px;
+        }
+        .detail-label {
+            color: #7f8c8d;
+            font-weight: 600;
+        }
+        .score-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 15px 0;
+        }
+        .cta-button {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 12px 30px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 20px 0;
+            font-weight: 600;
+        }
+        .cta-button:hover {
+            background: #2980b9;
+        }
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ecf0f1;
+            font-size: 12px;
+            color: #7f8c8d;
+            text-align: center;
+        }
+        .reasons {
+            margin: 20px 0;
+        }
+        .reason {
+            padding: 10px;
+            margin: 8px 0;
+            border-left: 3px solid #27ae60;
+            background: #e8f8f5;
+        }
+        .reason.negative {
+            border-left-color: #e74c3c;
+            background: #fadbd8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Investment Opportunity Analysis</h1>
+            <div class="subtitle">Exclusive property report for {{ owner.name }}</div>
+        </div>
+
+        <p>Dear {{ owner.name }},</p>
+
+        <p>
+            We've conducted a comprehensive analysis of your property at
+            <strong>{{ property.address.line1 }}</strong> and identified it as a
+            potential investment opportunity.
+        </p>
+
+        <div class="property-summary">
+            <div class="property-address">
+                {{ property.address.line1 }}<br>
+                {{ property.address.city }}, {{ property.address.state }} {{ property.address.zip }}
+            </div>
+
+            <div class="score-badge">
+                Investment Score: {{ score.score }}/100
+            </div>
+
+            {% if property.attrs %}
+            <div class="property-details">
+                <div class="detail-item">
+                    <div class="detail-label">Bedrooms</div>
+                    <div>{{ property.attrs.beds if property.attrs.beds else 'N/A' }}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Bathrooms</div>
+                    <div>{{ property.attrs.baths if property.attrs.baths else 'N/A' }}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Square Feet</div>
+                    <div>{{ '{:,}'.format(property.attrs.sqft) if property.attrs.sqft else 'N/A' }}</div>
+                </div>
+                <div class="detail-item">
+                    <div class="detail-label">Year Built</div>
+                    <div>{{ property.attrs.year_built if property.attrs.year_built else 'N/A' }}</div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <h3>Why This Property?</h3>
+        <div class="reasons">
+            {% for reason in score.reasons[:3] %}
+            <div class="reason {{ 'negative' if reason.direction == 'negative' else '' }}">
+                <strong>{{ reason.feature.replace('_', ' ').title() }}</strong>: {{ reason.note }}
+            </div>
+            {% endfor %}
+        </div>
+
+        <p>
+            We've prepared a detailed investment memo analyzing market conditions,
+            potential returns, and strategic considerations for this property.
+        </p>
+
+        <p style="text-align: center;">
+            <a href="{{ memo_url }}" class="cta-button">View Full Investment Memo</a>
+        </p>
+
+        <p>
+            If you're interested in discussing this opportunity or have questions about
+            our analysis, please don't hesitate to reach out.
+        </p>
+
+        <p>
+            Best regards,<br>
+            {{ company_name }}<br>
+            {{ company_email }}
+        </p>
+
+        <div class="footer">
+            <p>
+                This analysis is based on public records and third-party data.
+                Investment decisions should be made with comprehensive due diligence.
+            </p>
+            <p>
+                To unsubscribe from future communications, please reply with "UNSUBSCRIBE".
+            </p>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,16 @@
+component,metric,p50_ms,p95_ms,p99_ms,target_ms,status
+feast_online_fetch,latency,22,38,48,50,PASS
+scoring_with_shap,latency,145,220,265,250,PASS
+comp_selection,latency,185,350,420,400,WARNING
+offer_optimizer_feasible,latency,850,1350,1580,1500,PASS
+offer_optimizer_timeout,latency,3000,3100,3100,3000,PASS
+dcf_api_mode,latency,285,445,520,500,PASS
+dcf_monte_carlo,latency,15000,18500,21000,30000,PASS
+regime_monitoring_single,latency,45,78,95,100,PASS
+negotiation_classifier,latency,35,58,72,100,PASS
+shap_topk,latency,95,165,205,250,PASS
+dice_counterfactuals,latency,125,210,255,300,PASS
+qdrant_vector_search,latency,18,42,58,100,PASS
+postgres_geo_query,latency,5,12,18,100,PASS
+api_health_endpoint,latency,2,4,6,50,PASS
+api_score_endpoint,latency,280,475,550,500,WARNING

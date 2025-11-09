@@ -1,0 +1,390 @@
+{
+  "dashboard": {
+    "title": "Real Estate OS - Portfolio Reconciliation",
+    "description": "Portfolio reconciliation monitoring with ±0.5% validation threshold",
+    "tags": ["realestateos", "reconciliation", "portfolio", "validation"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "1m",
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "timepicker": {
+      "refresh_intervals": ["30s", "1m", "5m", "15m", "30m", "1h"],
+      "time_options": ["1h", "6h", "12h", "24h", "2d", "7d", "30d"]
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Reconciliation Status (Last 24h)",
+        "type": "stat",
+        "gridPos": {"x": 0, "y": 0, "w": 8, "h": 6},
+        "targets": [
+          {
+            "expr": "sum(rate(realestateos_reconciliation_validation_total{status=\"pass\"}[24h])) / sum(rate(realestateos_reconciliation_validation_total[24h])) * 100",
+            "legendFormat": "Pass Rate",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": null, "color": "red"},
+                {"value": 90, "color": "yellow"},
+                {"value": 99, "color": "green"}
+              ]
+            },
+            "mappings": []
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          },
+          "text": {"titleSize": 16, "valueSize": 48},
+          "colorMode": "background",
+          "graphMode": "area",
+          "justifyMode": "center"
+        }
+      },
+      {
+        "id": 2,
+        "title": "Total Validations (Last 24h)",
+        "type": "stat",
+        "gridPos": {"x": 8, "y": 0, "w": 8, "h": 6},
+        "targets": [
+          {
+            "expr": "sum(increase(realestateos_reconciliation_validation_total[24h]))",
+            "legendFormat": "Total Validations",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": {"mode": "palette-classic"}
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          },
+          "text": {"titleSize": 16, "valueSize": 48},
+          "colorMode": "value"
+        }
+      },
+      {
+        "id": 3,
+        "title": "Properties Checked",
+        "type": "stat",
+        "gridPos": {"x": 16, "y": 0, "w": 8, "h": 6},
+        "targets": [
+          {
+            "expr": "sum(increase(realestateos_reconciliation_properties_checked_total[24h]))",
+            "legendFormat": "Properties",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": {"mode": "palette-classic"}
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          },
+          "text": {"titleSize": 16, "valueSize": 48},
+          "colorMode": "value"
+        }
+      },
+      {
+        "id": 4,
+        "title": "Reconciliation Validation Status Over Time",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 6, "w": 24, "h": 8},
+        "targets": [
+          {
+            "expr": "rate(realestateos_reconciliation_validation_total{status=\"pass\"}[5m])",
+            "legendFormat": "Pass",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(realestateos_reconciliation_validation_total{status=\"fail\"}[5m])",
+            "legendFormat": "Fail",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "color": {"mode": "palette-classic"},
+            "custom": {
+              "lineInterpolation": "smooth",
+              "fillOpacity": 15,
+              "showPoints": "never",
+              "axisPlacement": "auto"
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "Fail"},
+              "properties": [
+                {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}}
+              ]
+            },
+            {
+              "matcher": {"id": "byName", "options": "Pass"},
+              "properties": [
+                {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}}
+              ]
+            }
+          ]
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom",
+            "calcs": ["last", "mean", "max"]
+          },
+          "tooltip": {"mode": "multi", "sort": "desc"}
+        }
+      },
+      {
+        "id": 5,
+        "title": "Current Discrepancy Percentage by Portfolio",
+        "type": "bargauge",
+        "gridPos": {"x": 0, "y": 14, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "realestateos_reconciliation_discrepancy_percentage",
+            "legendFormat": "Portfolio {{portfolio_id}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 1,
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": null, "color": "green"},
+                {"value": 0.25, "color": "yellow"},
+                {"value": 0.5, "color": "red"}
+              ]
+            }
+          }
+        },
+        "options": {
+          "orientation": "horizontal",
+          "displayMode": "gradient",
+          "showUnfilled": true,
+          "text": {"valueSize": 14}
+        }
+      },
+      {
+        "id": 6,
+        "title": "Reconciliation Failures by Portfolio",
+        "type": "timeseries",
+        "gridPos": {"x": 12, "y": 14, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "rate(realestateos_reconciliation_failures_total[5m])",
+            "legendFormat": "Portfolio {{portfolio_id}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "color": {"mode": "palette-classic"},
+            "custom": {
+              "lineInterpolation": "smooth",
+              "fillOpacity": 10
+            }
+          }
+        },
+        "options": {
+          "legend": {
+            "displayMode": "table",
+            "placement": "right",
+            "calcs": ["last", "mean", "max"]
+          }
+        },
+        "alert": {
+          "name": "Reconciliation Failure Alert",
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [0],
+                "type": "gt"
+              },
+              "operator": {"type": "and"},
+              "query": {"params": ["A", "5m", "now"]},
+              "reducer": {"type": "last"}
+            }
+          ],
+          "executionErrorState": "alerting",
+          "for": "10m",
+          "frequency": "1m",
+          "message": "Portfolio reconciliation failing for > 10 minutes (discrepancy > ±0.5%)",
+          "noDataState": "no_data",
+          "notifications": []
+        }
+      },
+      {
+        "id": 7,
+        "title": "Reconciliation Duration (P95)",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 22, "w": 12, "h": 6},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(realestateos_reconciliation_duration_seconds_bucket[5m]))",
+            "legendFormat": "P95",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(realestateos_reconciliation_duration_seconds_bucket[5m]))",
+            "legendFormat": "P50",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(realestateos_reconciliation_duration_seconds_bucket[5m]))",
+            "legendFormat": "P99",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "color": {"mode": "palette-classic"}
+          }
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom"
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Validation Rate (validations/sec)",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 22, "w": 12, "h": 6},
+        "targets": [
+          {
+            "expr": "rate(realestateos_reconciliation_validation_total[5m])",
+            "legendFormat": "{{status}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "color": {"mode": "palette-classic"}
+          }
+        },
+        "options": {
+          "legend": {
+            "displayMode": "list",
+            "placement": "bottom"
+          }
+        }
+      },
+      {
+        "id": 9,
+        "title": "Threshold Compliance (±0.5%)",
+        "type": "stat",
+        "gridPos": {"x": 0, "y": 28, "w": 24, "h": 4},
+        "targets": [
+          {
+            "expr": "sum(realestateos_reconciliation_discrepancy_percentage < 0.5) / count(realestateos_reconciliation_discrepancy_percentage) * 100",
+            "legendFormat": "Portfolios Within Threshold",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": null, "color": "red"},
+                {"value": 95, "color": "yellow"},
+                {"value": 99, "color": "green"}
+              ]
+            }
+          }
+        },
+        "options": {
+          "reduceOptions": {
+            "values": false,
+            "calcs": ["lastNotNull"]
+          },
+          "text": {"titleSize": 16, "valueSize": 36},
+          "colorMode": "background"
+        }
+      }
+    ],
+    "annotations": {
+      "list": [
+        {
+          "name": "Reconciliation Runs",
+          "datasource": "Prometheus",
+          "enable": true,
+          "iconColor": "blue",
+          "expr": "changes(realestateos_reconciliation_validation_total[1m]) > 0",
+          "titleFormat": "Reconciliation",
+          "textFormat": "Validation completed"
+        },
+        {
+          "name": "Failures",
+          "datasource": "Prometheus",
+          "enable": true,
+          "iconColor": "red",
+          "expr": "changes(realestateos_reconciliation_failures_total[1m]) > 0",
+          "titleFormat": "Failure",
+          "textFormat": "Reconciliation failed (>±0.5%)"
+        }
+      ]
+    },
+    "templating": {
+      "list": [
+        {
+          "name": "portfolio",
+          "type": "query",
+          "datasource": "Prometheus",
+          "query": "label_values(realestateos_reconciliation_discrepancy_percentage, portfolio_id)",
+          "refresh": 1,
+          "multi": true,
+          "includeAll": true
+        },
+        {
+          "name": "threshold",
+          "type": "constant",
+          "query": "0.5",
+          "label": "Discrepancy Threshold (%)"
+        }
+      ]
+    }
+  }
+}

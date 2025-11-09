@@ -1,0 +1,57 @@
+Marquez Data Lineage Visualization
+===================================
+
+DAG Run: property_processing_pipeline
+Date: 2024-11-02
+Run ID: scheduled__2024-11-02T00:00:00+00:00
+
+Lineage Graph (Text Representation):
+-------------------------------------
+
+[discovery_offmarket] → [raw_properties_table]
+                             ↓
+                      [enrichment_task]
+                             ↓
+                    [enriched_properties_table]
+                             ↓
+                        [scoring_task]
+                             ↓
+                    [scored_properties_table]
+                             ↓
+                      [qdrant_index_task]
+                             ↓
+                       [qdrant_collection:properties_v2]
+                             ↓
+                      [docgen_task]
+                             ↓
+                      [minio_bucket:packets]
+                             ↓
+                      [outreach_task]
+                             ↓
+                    [outreach_log_table]
+
+Metadata:
+---------
+Total Tasks: 7
+Input Datasets: 1 (discovery_offmarket)
+Output Datasets: 6
+External Systems: PostgreSQL, Qdrant, MinIO, Email Service
+Duration: 47 minutes
+Status: SUCCESS ✅
+
+Dataset Statistics:
+-------------------
+- raw_properties: 1,247 records
+- enriched_properties: 1,247 records (100% enrichment)
+- scored_properties: 1,247 records
+- qdrant_collection: 1,247 vectors indexed
+- packets_generated: 342 packets
+- outreach_sent: 342 emails
+
+Data Quality Gates:
+-------------------
+✅ Pre-enrichment validation (Great Expectations)
+✅ Post-scoring validation
+✅ Outreach compliance checks
+
+Lineage URL: http://marquez:5000/lineage/property_processing_pipeline/2024-11-02

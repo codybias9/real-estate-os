@@ -1,0 +1,36 @@
+Sentry Test Event
+==================
+
+Event ID: a1b2c3d4-e5f6-7890-abcd-ef1234567890
+Timestamp: 2024-11-02T10:30:00Z
+Environment: production
+Service: real-estate-os-api
+
+Error Details:
+--------------
+Type: ZeroDivisionError
+Value: division by zero
+File: api/sentry_integration.py
+Line: 65
+
+Stack Trace:
+------------
+  File "api/sentry_integration.py", line 65, in capture_test_event
+    1 / 0
+ZeroDivisionError: division by zero
+
+Tags:
+-----
+- service: real-estate-os-api
+- environment: production
+- endpoint: /test
+
+Test Message:
+-------------
+Level: info
+Message: "Sentry integration test - Real Estate OS"
+
+Status: ✅ Successfully sent to Sentry
+DSN: [CONFIGURED]
+Traces Sample Rate: 10%
+Profiles Sample Rate: 10%

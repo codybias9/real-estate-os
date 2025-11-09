@@ -1,0 +1,12 @@
+Policy Comparison: WARM → COOL
+============================================================
+
+Max Offer % ARV:     78.00% → 72.00%
+Min Profit Margin:   17.00% → 20.00%
+Due Diligence Days:  14 → 17
+Close Days:          30 → 35
+Acquisition Pace:    selective → moderate
+
+Contingencies:
+  WARM: ['inspection']
+  COOL: ['inspection', 'appraisal']

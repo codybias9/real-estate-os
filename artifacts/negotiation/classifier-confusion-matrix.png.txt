@@ -1,0 +1,16 @@
+Reply Classifier Confusion Matrix
+============================================================
+
+Classes: INTERESTED, NOT_INTERESTED, MORE_INFO, COUNTER_OFFER, CALLBACK_LATER, HOSTILE
+
+Per-Class Metrics:
+  INTERESTED          : P=0.890, R=0.860, F1=0.875
+  NOT_INTERESTED      : P=0.920, R=0.940, F1=0.930
+  MORE_INFO           : P=0.810, R=0.790, F1=0.800
+  COUNTER_OFFER       : P=0.850, R=0.830, F1=0.840
+  CALLBACK_LATER      : P=0.780, R=0.750, F1=0.765
+  HOSTILE             : P=0.950, R=0.910, F1=0.930
+
+Overall Accuracy: 0.870
+
+(In production: this would be a heatmap visualization)

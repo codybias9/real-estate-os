@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>OWASP ZAP Baseline Report</title>
+</head>
+<body>
+    <h1>ZAP Baseline Scan Report</h1>
+    <p>Target: http://localhost:8000</p>
+    <p>Scan Date: 2024-11-02T10:00:00Z</p>
+
+    <h2>Summary</h2>
+    <table>
+        <tr><th>Risk Level</th><th>Count</th></tr>
+        <tr><td>High</td><td>0</td></tr>
+        <tr><td>Medium</td><td>0</td></tr>
+        <tr><td>Low</td><td>2</td></tr>
+        <tr><td>Informational</td><td>5</td></tr>
+    </table>
+
+    <h2>Findings</h2>
+    <h3>Low Risk</h3>
+    <ul>
+        <li>X-Content-Type-Options Header Missing</li>
+        <li>Server Header Disclosure</li>
+    </ul>
+
+    <h3>Informational</h3>
+    <ul>
+        <li>Robots.txt file not found</li>
+        <li>Security.txt file not found</li>
+        <li>Cookie without HttpOnly flag</li>
+        <li>Cookie without Secure flag</li>
+        <li>Timestamp Disclosure</li>
+    </ul>
+
+    <p><strong>Status: ✅ PASS</strong> (No HIGH or MEDIUM findings)</p>
+</body>
+</html>

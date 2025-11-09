@@ -1,0 +1,292 @@
+version: '3.8'
+
+# ============================================================================
+# Docker Compose Override for Mock Mode
+# ============================================================================
+# Extends docker-compose.yml with application services configured for mock mode.
+#
+# Services Added:
+#  - api: FastAPI application
+#  - celery-worker: Background task processor
+#  - celery-beat: Scheduled task manager
+#  - frontend: Next.js application
+#  - nginx: Reverse proxy
+#  - prometheus: Metrics collection
+#  - grafana: Metrics visualization
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.override.mock.yml up -d
+#
+# Or with docker-compose.override.yml link:
+#   ln -sf docker-compose.override.mock.yml docker-compose.override.yml
+#   docker compose up -d
+# ============================================================================
+
+services:
+  # ==========================================================================
+  # FastAPI Application
+  # ==========================================================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: realtor-api
+    environment:
+      # Load from env/.env.mock
+      - APP_MODE=mock
+      - ENVIRONMENT=development
+      - DEBUG=true
+      - DB_DSN=postgresql://postgres:postgres@postgres:5432/real_estate_os
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672/
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - MOCK_TWILIO_URL=http://mock-twilio:4010
+      - S3_ENDPOINT_URL=http://minio:9000
+      - S3_ACCESS_KEY=minioadmin
+      - S3_SECRET_KEY=minioadmin
+      - GOTENBERG_URL=http://gotenberg:3000
+      - JWT_SECRET_KEY=mock-secret-key-for-development
+      - FEATURE_EXTERNAL_SENDS=false
+      - FEATURE_USE_LLM=false
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./api:/app/api:ro
+      - ./db:/app/db:ro
+      - ./ml:/app/ml:ro
+      - ./audit_artifacts:/app/audit_artifacts
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      mailhog:
+        condition: service_healthy
+      mock-twilio:
+        condition: service_healthy
+    networks:
+      - realtor-network
+
+  # ==========================================================================
+  # Celery Worker (Background Tasks)
+  # ==========================================================================
+  celery-worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: realtor-celery-worker
+    environment:
+      - APP_MODE=mock
+      - ENVIRONMENT=development
+      - DB_DSN=postgresql://postgres:postgres@postgres:5432/real_estate_os
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672/
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - MOCK_TWILIO_URL=http://mock-twilio:4010
+      - S3_ENDPOINT_URL=http://minio:9000
+      - S3_ACCESS_KEY=minioadmin
+      - S3_SECRET_KEY=minioadmin
+      - GOTENBERG_URL=http://gotenberg:3000
+      - FEATURE_EXTERNAL_SENDS=false
+      - FEATURE_USE_LLM=false
+    volumes:
+      - ./api:/app/api:ro
+      - ./db:/app/db:ro
+      - ./ml:/app/ml:ro
+      - ./audit_artifacts:/app/audit_artifacts
+    command: celery -A api.celery_app worker --loglevel=info --concurrency=4 -Q default,high_priority,low_priority
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A api.celery_app inspect ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - realtor-network
+
+  # ==========================================================================
+  # Celery Beat (Scheduled Tasks)
+  # ==========================================================================
+  celery-beat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: realtor-celery-beat
+    environment:
+      - APP_MODE=mock
+      - ENVIRONMENT=development
+      - DB_DSN=postgresql://postgres:postgres@postgres:5432/real_estate_os
+      - REDIS_URL=redis://redis:6379/0
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672/
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    volumes:
+      - ./api:/app/api:ro
+      - ./db:/app/db:ro
+      - ./celerybeat-schedule:/app/celerybeat-schedule
+    command: celery -A api.celery_app beat --loglevel=info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    networks:
+      - realtor-network
+
+  # ==========================================================================
+  # Frontend (Next.js 14)
+  # ==========================================================================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: development
+    container_name: realtor-frontend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
+      - NEXT_PUBLIC_ENVIRONMENT=development
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend/src:/app/src:ro
+      - ./frontend/public:/app/public:ro
+    command: npm run dev
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - realtor-network
+
+  # ==========================================================================
+  # Nginx (Reverse Proxy)
+  # ==========================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: realtor-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    healthcheck:
+      test: ["CMD", "nginx", "-t"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      api:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    networks:
+      - realtor-network
+
+  # ==========================================================================
+  # Prometheus (Metrics Collection)
+  # ==========================================================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: realtor-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - realtor-network
+
+  # ==========================================================================
+  # Grafana (Metrics Visualization)
+  # ==========================================================================
+  grafana:
+    image: grafana/grafana:latest
+    container_name: realtor-grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_SERVER_ROOT_URL=http://localhost:3001
+    ports:
+      - "3001:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    depends_on:
+      prometheus:
+        condition: service_healthy
+    networks:
+      - realtor-network
+
+  # ==========================================================================
+  # Flower (Celery Monitoring)
+  # ==========================================================================
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: realtor-flower
+    environment:
+      - CELERY_BROKER_URL=amqp://guest:guest@rabbitmq:5672/
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    ports:
+      - "5555:5555"
+    command: celery -A api.celery_app flower --port=5555
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5555/healthcheck"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - realtor-network
+
+# ============================================================================
+# Additional Volumes
+# ============================================================================
+volumes:
+  prometheus_data:
+  grafana_data:
+  celerybeat-schedule:
