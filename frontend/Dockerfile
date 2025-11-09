@@ -21,7 +21,7 @@ WORKDIR /app
 # Install dependencies only when needed
 FROM base AS dependencies
 COPY package.json package-lock.json* ./
-RUN npm ci
+RUN npm install
 
 # ---------------------------------------------------------------------------
 # Development Stage (with hot reload)
