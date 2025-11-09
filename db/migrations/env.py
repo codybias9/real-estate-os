@@ -37,8 +37,14 @@ def run_migrations_offline():
 
 def run_migrations_online():
     """Run migrations in 'online' mode (with DB connection)."""
+    # Override sqlalchemy.url with DB_DSN if set
+    configuration = config.get_section(config.config_ini_section)
+    db_dsn = os.getenv("DB_DSN")
+    if db_dsn:
+        configuration["sqlalchemy.url"] = db_dsn
+
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section),
+        configuration,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
