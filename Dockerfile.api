@@ -2,9 +2,16 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies including curl for healthchecks
+# Install system dependencies including curl for healthchecks and PDF generation libraries
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    # PDF generation dependencies (WeasyPrint)
+    libcairo2 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libgdk-pixbuf-2.0-0 \
+    libffi-dev \
+    shared-mime-info \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies
