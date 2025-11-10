@@ -37,7 +37,7 @@ def register(user_data: UserRegister, db: Session = Depends(get_db)):
 
         # Create tenant
         tenant = Tenant(
-            name=user_data.company_name,
+            name=user_data.team_name,
             subscription_tier='trial'
         )
         db.add(tenant)
@@ -46,7 +46,7 @@ def register(user_data: UserRegister, db: Session = Depends(get_db)):
         # Create default team
         team = Team(
             tenant_id=tenant.id,
-            name=f"{user_data.company_name} - Default Team",
+            name=user_data.team_name,
             subscription_tier='trial',
             monthly_budget_cap=500.00
         )
@@ -61,7 +61,7 @@ def register(user_data: UserRegister, db: Session = Depends(get_db)):
             tenant_id=tenant.id,
             team_id=team.id,
             email=user_data.email,
-            name=user_data.name,
+            name=user_data.full_name,
             password_hash=password_hash,
             role='admin',  # First user is admin
             is_active=True
@@ -70,7 +70,7 @@ def register(user_data: UserRegister, db: Session = Depends(get_db)):
         db.commit()
         db.refresh(user)
 
-        return user
+        return UserResponse.from_user(user)
 
     except IntegrityError as e:
         db.rollback()
@@ -105,4 +105,4 @@ def login(email: str, password: str, db: Session = Depends(get_db)):
             detail="User account is inactive"
         )
 
-    return user
+    return UserResponse.from_user(user)

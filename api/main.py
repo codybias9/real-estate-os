@@ -21,8 +21,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(auth.router)
+# Include routers with /api/v1 prefix to match frontend expectations
+app.include_router(auth.router, prefix="/api/v1")
 
 # Health endpoint
 @app.get("/healthz")

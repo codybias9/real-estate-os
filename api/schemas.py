@@ -9,24 +9,37 @@ class UserRegister(BaseModel):
     """Schema for user registration request."""
     email: EmailStr
     password: str = Field(..., min_length=8, max_length=100)
-    name: str = Field(..., min_length=1, max_length=255)
-    company_name: str = Field(..., min_length=1, max_length=255)
+    full_name: str = Field(..., min_length=1, max_length=255)
+    team_name: str = Field(..., min_length=1, max_length=255)
 
 
 class UserResponse(BaseModel):
     """Schema for user response."""
-    id: UUID
-    uuid: UUID
+    id: str  # UUID converted to string for frontend compatibility
     email: str
-    name: str
+    full_name: str
     role: str
+    team_id: str  # UUID converted to string
     is_active: bool
-    tenant_id: UUID
-    team_id: Optional[UUID]
-    created_at: datetime
+    created_at: str  # ISO format string
+    last_login: Optional[str] = None  # ISO format string
 
     class Config:
         from_attributes = True
+
+    @classmethod
+    def from_user(cls, user):
+        """Create response from User model."""
+        return cls(
+            id=str(user.id),
+            email=user.email,
+            full_name=user.name,  # Map DB 'name' field to frontend 'full_name'
+            role=user.role,
+            team_id=str(user.team_id) if user.team_id else "",
+            is_active=user.is_active,
+            created_at=user.created_at.isoformat(),
+            last_login=user.last_login_at.isoformat() if user.last_login_at else None
+        )
 
 
 class TokenResponse(BaseModel):
