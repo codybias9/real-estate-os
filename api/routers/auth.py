@@ -10,7 +10,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../.
 
 from db.models import User, Tenant, Team
 from api.database import get_db
-from api.schemas import UserRegister, UserResponse, TokenResponse
+from api.schemas import UserRegister, UserLogin, UserResponse, TokenResponse
 from api.auth_utils import hash_password, verify_password
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
@@ -87,13 +87,13 @@ def register(user_data: UserRegister, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=UserResponse)
-def login(email: str, password: str, db: Session = Depends(get_db)):
+def login(login_data: UserLogin, db: Session = Depends(get_db)):
     """
     Login endpoint for user authentication.
     """
-    user = db.query(User).filter(User.email == email).first()
+    user = db.query(User).filter(User.email == login_data.email).first()
 
-    if not user or not verify_password(password, user.password_hash):
+    if not user or not verify_password(login_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password"

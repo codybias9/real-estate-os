@@ -13,6 +13,12 @@ class UserRegister(BaseModel):
     team_name: str = Field(..., min_length=1, max_length=255)
 
 
+class UserLogin(BaseModel):
+    """Schema for user login request."""
+    email: EmailStr
+    password: str
+
+
 class UserResponse(BaseModel):
     """Schema for user response."""
     id: str  # UUID converted to string for frontend compatibility
