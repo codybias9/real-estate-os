@@ -33,7 +33,7 @@ class UserResponse(BaseModel):
         return cls(
             id=str(user.id),
             email=user.email,
-            full_name=user.name,  # Map DB 'name' field to frontend 'full_name'
+            full_name=user.full_name,  # Now using full_name directly
             role=user.role,
             team_id=str(user.team_id) if user.team_id else "",
             is_active=user.is_active,

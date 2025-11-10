@@ -56,7 +56,7 @@ class User(Base):
     tenant_id = Column(UUID(as_uuid=True), ForeignKey('tenants.id'), nullable=False)
     team_id = Column(UUID(as_uuid=True), ForeignKey('teams.id'), nullable=True)
     email = Column(String(255), unique=True, nullable=False, index=True)
-    name = Column(String(255), nullable=False)
+    full_name = Column(String(255), nullable=False)  # Changed from 'name' to match DB schema
     password_hash = Column(String(255), nullable=False)
     role = Column(String(50), default='agent')
     is_active = Column(Boolean, default=True)
