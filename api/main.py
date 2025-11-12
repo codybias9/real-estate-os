@@ -4,12 +4,30 @@ from sqlalchemy import create_engine, text
 import os
 
 # Import routers
-from api.routers import auth, analytics, properties, leads, deals, pipelines, system
+from api.routers import (
+    auth,
+    analytics,
+    properties,
+    leads,
+    deals,
+    pipelines,
+    system,
+    workflow,
+    templates,
+    communications,
+    automation,
+    sharing,
+    portfolio,
+    data_propensity,
+    jobs,
+    sse_events,
+    status
+)
 
 app = FastAPI(
     title="Real Estate OS API",
-    description="Data Processing and Automation Platform for Real Estate",
-    version="2.0.0",
+    description="Hybrid Sales Ops & Data Processing Platform for Real Estate Intelligence",
+    version="3.0.0",
     docs_url="/docs",
     redoc_url="/redoc"
 )
@@ -34,6 +52,26 @@ app.include_router(analytics.router, prefix="/api/v1")
 app.include_router(properties.router, prefix="/api/v1")
 app.include_router(leads.router, prefix="/api/v1")
 app.include_router(deals.router, prefix="/api/v1")
+
+# Sales Ops - Core Features
+app.include_router(workflow.router, prefix="/api/v1")
+app.include_router(templates.router, prefix="/api/v1")
+app.include_router(communications.router, prefix="/api/v1")
+
+# Sales Ops - Automation & Compliance
+app.include_router(automation.router, prefix="/api/v1")
+
+# Sales Ops - Collaboration & Portfolio
+app.include_router(sharing.router, prefix="/api/v1")
+app.include_router(portfolio.router, prefix="/api/v1")
+
+# Data Enrichment & Signals
+app.include_router(data_propensity.router, prefix="/api/v1")
+
+# Observability & Monitoring
+app.include_router(jobs.router, prefix="/api/v1")
+app.include_router(sse_events.router, prefix="/api/v1")
+app.include_router(status.router, prefix="/api/v1")
 
 # Technical Platform Features
 app.include_router(pipelines.router, prefix="/api/v1")
