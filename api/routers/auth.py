@@ -86,10 +86,11 @@ def register(user_data: UserRegister, db: Session = Depends(get_db)):
         )
 
 
-@router.post("/login", response_model=UserResponse)
+@router.post("/login", response_model=TokenResponse)
 def login(login_data: UserLogin, db: Session = Depends(get_db)):
     """
     Login endpoint for user authentication.
+    Returns user object with mock access token.
     """
     user = db.query(User).filter(User.email == login_data.email).first()
 
@@ -105,7 +106,12 @@ def login(login_data: UserLogin, db: Session = Depends(get_db)):
             detail="User account is inactive"
         )
 
-    return UserResponse.from_user(user)
+    # Return TokenResponse with mock access token and user data
+    return TokenResponse(
+        access_token="mock-jwt-token-for-demo",
+        token_type="bearer",
+        user=UserResponse.from_user(user)
+    )
 
 
 @router.get("/me", response_model=UserResponse)
