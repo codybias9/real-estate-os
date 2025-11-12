@@ -4,12 +4,14 @@ from sqlalchemy import create_engine, text
 import os
 
 # Import routers
-from api.routers import auth, analytics, properties, leads, deals
+from api.routers import auth, analytics, properties, leads, deals, pipelines, system
 
 app = FastAPI(
     title="Real Estate OS API",
-    description="API for Real Estate Operating System",
-    version="1.0.0"
+    description="Data Processing and Automation Platform for Real Estate",
+    version="2.0.0",
+    docs_url="/docs",
+    redoc_url="/redoc"
 )
 
 # Configure CORS
@@ -22,11 +24,20 @@ app.add_middleware(
 )
 
 # Include routers with /api/v1 prefix to match frontend expectations
+# Authentication & User Management
 app.include_router(auth.router, prefix="/api/v1")
+
+# Analytics & Metrics
 app.include_router(analytics.router, prefix="/api/v1")
+
+# Data Management (CRM features)
 app.include_router(properties.router, prefix="/api/v1")
 app.include_router(leads.router, prefix="/api/v1")
 app.include_router(deals.router, prefix="/api/v1")
+
+# Technical Platform Features
+app.include_router(pipelines.router, prefix="/api/v1")
+app.include_router(system.router, prefix="/api/v1")
 
 # Health endpoint
 @app.get("/healthz")
