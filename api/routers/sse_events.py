@@ -10,7 +10,7 @@ import json
 import secrets
 import random
 
-router = APIRouter(prefix="/sse-events", tags=["sse-events"])
+router = APIRouter(prefix="/sse", tags=["sse"])
 
 
 # ============================================================================
