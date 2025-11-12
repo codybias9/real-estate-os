@@ -27,6 +27,12 @@ export default function DashboardPage() {
   const { user } = useAuthStore()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
+  const [isMounted, setIsMounted] = useState(false)
+
+  // Track client-side mount to prevent hydration mismatch
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -54,6 +60,11 @@ export default function DashboardPage() {
 
     fetchStats()
   }, [user?.team_id])
+
+  // Don't render until mounted on client to prevent hydration mismatch
+  if (!isMounted) {
+    return null
+  }
 
   return (
     <DashboardLayout>
