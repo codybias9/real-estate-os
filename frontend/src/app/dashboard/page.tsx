@@ -5,6 +5,7 @@ import DashboardLayout from '@/components/DashboardLayout'
 import { useAuthStore } from '@/store/authStore'
 import { apiClient } from '@/lib/api'
 import Link from 'next/link'
+import { ClientOnly } from '@/components/ClientOnly'
 import {
   TrendingUp,
   Building2,
@@ -23,16 +24,10 @@ interface DashboardStats {
   avg_days_in_pipeline: number
 }
 
-export default function DashboardPage() {
+function DashboardPageContent() {
   const { user } = useAuthStore()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [loading, setLoading] = useState(true)
-  const [isMounted, setIsMounted] = useState(false)
-
-  // Track client-side mount to prevent hydration mismatch
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -49,7 +44,7 @@ export default function DashboardPage() {
           recent_activity_count: pipelineData.properties_needing_contact || 0,
           pending_tasks_count: 0, // TODO: Add tasks API call
           response_rate: 0.34, // TODO: Calculate from communications
-          avg_days_in_pipeline: 12, // TODO: Calculate from property data
+          avg_days_in_pipeline: 12, // TODO: Calculate from property data,
         })
       } catch (error) {
         console.error('Failed to fetch dashboard stats:', error)
@@ -60,17 +55,6 @@ export default function DashboardPage() {
 
     fetchStats()
   }, [user?.team_id])
-
-  // Render loading state until mounted to prevent hydration mismatch
-  if (!isMounted) {
-    return (
-      <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-gray-400">Loading...</div>
-        </div>
-      </DashboardLayout>
-    )
-  }
 
   return (
     <DashboardLayout>
@@ -256,5 +240,19 @@ export default function DashboardPage() {
         )}
       </div>
     </DashboardLayout>
+  )
+}
+
+export default function DashboardPage() {
+  return (
+    <ClientOnly
+      fallback={
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <div className="text-gray-400">Loading...</div>
+        </div>
+      }
+    >
+      <DashboardPageContent />
+    </ClientOnly>
   )
 }
