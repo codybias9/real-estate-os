@@ -61,9 +61,15 @@ export default function DashboardPage() {
     fetchStats()
   }, [user?.team_id])
 
-  // Don't render until mounted on client to prevent hydration mismatch
+  // Render loading state until mounted to prevent hydration mismatch
   if (!isMounted) {
-    return null
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-gray-400">Loading...</div>
+        </div>
+      </DashboardLayout>
+    )
   }
 
   return (

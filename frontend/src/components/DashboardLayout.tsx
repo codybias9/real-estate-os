@@ -44,15 +44,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     router.push('/auth/login')
   }
 
-  // Don't render anything until mounted on client
-  // This prevents hydration mismatch
-  if (!isMounted) {
-    return null
-  }
-
-  // After mounting, check auth
-  if (!isAuthenticated || !user) {
-    return null // Will redirect via useEffect
+  // Render a minimal loading state until mounted and authenticated
+  // This prevents hydration mismatch by always rendering something
+  if (!isMounted || !isAuthenticated || !user) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-400">Loading...</div>
+      </div>
+    )
   }
 
   const navItems = [
