@@ -106,3 +106,22 @@ def login(login_data: UserLogin, db: Session = Depends(get_db)):
         )
 
     return UserResponse.from_user(user)
+
+
+@router.get("/me", response_model=UserResponse)
+def get_current_user_info(db: Session = Depends(get_db)):
+    """
+    Get current authenticated user profile.
+    For demo purposes, returns the demo user.
+    In production, this would extract user ID from JWT token.
+    """
+    # For demo/mock mode, return the demo user
+    user = db.query(User).filter(User.email == "demo@example.com").first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found"
+        )
+
+    return UserResponse.from_user(user)

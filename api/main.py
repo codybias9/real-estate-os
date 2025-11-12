@@ -4,7 +4,7 @@ from sqlalchemy import create_engine, text
 import os
 
 # Import routers
-from api.routers import auth
+from api.routers import auth, analytics, properties, leads, deals
 
 app = FastAPI(
     title="Real Estate OS API",
@@ -23,6 +23,10 @@ app.add_middleware(
 
 # Include routers with /api/v1 prefix to match frontend expectations
 app.include_router(auth.router, prefix="/api/v1")
+app.include_router(analytics.router, prefix="/api/v1")
+app.include_router(properties.router, prefix="/api/v1")
+app.include_router(leads.router, prefix="/api/v1")
+app.include_router(deals.router, prefix="/api/v1")
 
 # Health endpoint
 @app.get("/healthz")
