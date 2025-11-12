@@ -1,6 +1,9 @@
-﻿fastapi
+fastapi
 uvicorn[standard]
 sqlalchemy
 psycopg2-binary
 python-dotenv
 loguru
+httpx
+pydantic-settings
+psutil

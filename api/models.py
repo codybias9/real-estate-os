@@ -1,9 +1,10 @@
 """
-Database models for Alembic migrations
+SQLAlchemy models for Real Estate OS data processing platform
 """
 from sqlalchemy import Column, Integer, String, Text, TIMESTAMP, JSON, Float, Boolean, Enum as SQLEnum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql import func
+from datetime import datetime
 import enum
 
 Base = declarative_base()
@@ -27,14 +28,10 @@ class JobStatus(str, enum.Enum):
     CANCELLED = "cancelled"
 
 
-class Ping(Base):
-    __tablename__ = "ping"
-    id = Column(Integer, primary_key=True)
-    ts = Column(TIMESTAMP(timezone=True), server_default=func.now())
-
-
 class ProspectQueue(Base):
-    """Prospect queue table - initial ingestion point for scraped data"""
+    """
+    Prospect queue table - initial ingestion point for scraped data
+    """
     __tablename__ = "prospect_queue"
 
     id = Column(Integer, primary_key=True)
@@ -48,11 +45,13 @@ class ProspectQueue(Base):
 
 
 class Property(Base):
-    """Enriched property data"""
+    """
+    Enriched property data
+    """
     __tablename__ = "properties"
 
     id = Column(Integer, primary_key=True)
-    prospect_id = Column(Integer, index=True)
+    prospect_id = Column(Integer, index=True)  # Reference to prospect_queue
     address = Column(Text, nullable=False)
     city = Column(String(255), index=True)
     state = Column(String(50), index=True)
@@ -71,8 +70,8 @@ class Property(Base):
     estimated_value = Column(Float)
 
     # Enrichment data
-    enrichment_data = Column(JSON)
-    enrichment_sources = Column(JSON)
+    enrichment_data = Column(JSON)  # Additional enriched data
+    enrichment_sources = Column(JSON)  # Track which sources provided data
 
     # Metadata
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
@@ -80,7 +79,9 @@ class Property(Base):
 
 
 class ScrapingJob(Base):
-    """Track scraping job executions"""
+    """
+    Track scraping job executions
+    """
     __tablename__ = "scraping_jobs"
 
     id = Column(Integer, primary_key=True)
@@ -98,14 +99,16 @@ class ScrapingJob(Base):
     completed_at = Column(TIMESTAMP(timezone=True))
 
     # Metadata
-    config = Column(JSON)
+    config = Column(JSON)  # Scraping configuration
     error_log = Column(Text)
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
 
 
 class EnrichmentJob(Base):
-    """Track enrichment pipeline executions"""
+    """
+    Track enrichment pipeline executions
+    """
     __tablename__ = "enrichment_jobs"
 
     id = Column(Integer, primary_key=True)
@@ -115,15 +118,15 @@ class EnrichmentJob(Base):
 
     # Job details
     status = Column(SQLEnum(JobStatus), default=JobStatus.QUEUED, nullable=False, index=True)
-    enrichment_type = Column(String(100), index=True)
+    enrichment_type = Column(String(100), index=True)  # e.g., "property_data", "market_data"
 
     # Timing
     started_at = Column(TIMESTAMP(timezone=True))
     completed_at = Column(TIMESTAMP(timezone=True))
 
     # Results
-    data_sources_used = Column(JSON)
-    fields_enriched = Column(JSON)
+    data_sources_used = Column(JSON)  # Which APIs/sources were used
+    fields_enriched = Column(JSON)  # Which fields were enriched
     error_log = Column(Text)
 
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
@@ -131,7 +134,9 @@ class EnrichmentJob(Base):
 
 
 class PropertyScore(Base):
-    """ML-based property scoring results"""
+    """
+    ML-based property scoring results
+    """
     __tablename__ = "property_scores"
 
     id = Column(Integer, primary_key=True)
@@ -145,7 +150,7 @@ class PropertyScore(Base):
     roi_estimate = Column(Float)
 
     # Score breakdown
-    score_components = Column(JSON)
+    score_components = Column(JSON)  # Detailed score breakdown
 
     # Model info
     model_version = Column(String(100))
@@ -156,7 +161,9 @@ class PropertyScore(Base):
 
 
 class PipelineRun(Base):
-    """Track overall pipeline execution metrics"""
+    """
+    Track overall pipeline execution metrics
+    """
     __tablename__ = "pipeline_runs"
 
     id = Column(Integer, primary_key=True)
@@ -165,7 +172,7 @@ class PipelineRun(Base):
     execution_date = Column(TIMESTAMP(timezone=True), nullable=False)
 
     # Status
-    status = Column(String(50), index=True)
+    status = Column(String(50), index=True)  # queued, running, success, failed
 
     # Timing
     started_at = Column(TIMESTAMP(timezone=True))
@@ -186,7 +193,9 @@ class PipelineRun(Base):
 
 
 class DataQualityMetric(Base):
-    """Track data quality metrics over time"""
+    """
+    Track data quality metrics over time
+    """
     __tablename__ = "data_quality_metrics"
 
     id = Column(Integer, primary_key=True)
@@ -199,7 +208,7 @@ class DataQualityMetric(Base):
     is_passing = Column(Boolean)
 
     # Context
-    entity_type = Column(String(100))
+    entity_type = Column(String(100))  # property, prospect, pipeline
     entity_id = Column(Integer)
 
     # Metadata
