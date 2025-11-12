@@ -61,12 +61,24 @@ export const useAuthStore = create<AuthStore>()(
     }),
     {
       name: 'auth-storage',
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => {
+        // SSR-safe: return dummy storage on server, localStorage on client
+        if (typeof window === 'undefined') {
+          return {
+            getItem: () => null,
+            setItem: () => {},
+            removeItem: () => {},
+          }
+        }
+        return localStorage
+      }),
       partialize: (state) => ({
         user: state.user,
         tokens: state.tokens,
         isAuthenticated: state.isAuthenticated,
       }),
+      // Skip hydration during SSR
+      skipHydration: true,
     }
   )
 )
