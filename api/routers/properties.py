@@ -180,3 +180,30 @@ def delete_property(property_id: str):
             return
 
     raise HTTPException(status_code=404, detail="Property not found")
+
+
+class PipelineStats(BaseModel):
+    """Schema for pipeline statistics."""
+    total_properties: int
+    stage_counts: dict
+    properties_needing_contact: int
+
+
+@router.get("/stats/pipeline", response_model=PipelineStats)
+def get_pipeline_stats(team_id: Optional[str] = Query(None)):
+    """
+    Get pipeline statistics for dashboard.
+    Returns mock data for demonstration purposes.
+    """
+    return PipelineStats(
+        total_properties=len(MOCK_PROPERTIES),
+        stage_counts={
+            "new": 5,
+            "outreach": 8,
+            "qualified": 6,
+            "negotiation": 3,
+            "under_contract": 2,
+            "closed_won": 1,
+        },
+        properties_needing_contact=12
+    )
