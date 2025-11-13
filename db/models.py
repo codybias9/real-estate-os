@@ -88,7 +88,7 @@ class Property(Base):
     property_type = Column(String(50))
     listing_url = Column(Text)
     description = Column(Text)
-    metadata = Column(JSONB, default={})
+    property_metadata = Column(JSONB, default={})
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now())
     updated_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), onupdate=func.now())
     deleted_at = Column(TIMESTAMP(timezone=True), nullable=True)

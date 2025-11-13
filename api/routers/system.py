@@ -1,7 +1,7 @@
 """System health and infrastructure monitoring router."""
 from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import List, Dict
+from typing import List, Dict, Optional
 from datetime import datetime, timedelta
 import random
 
