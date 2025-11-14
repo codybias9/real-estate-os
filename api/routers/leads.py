@@ -1,5 +1,5 @@
 """Leads router for customer relationship management."""
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 from datetime import datetime
@@ -7,9 +7,10 @@ import uuid
 import sys
 import os
 
-# Add parent directory to path to import event emitter
+# Add parent directory to path to import event emitter and auth utils
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from api.event_emitter import emit_lead_created
+from api.auth_utils import require_demo_write_permission
 
 router = APIRouter(prefix="/leads", tags=["leads"])
 
@@ -122,10 +123,15 @@ def get_lead(lead_id: str):
 
 
 @router.post("", response_model=LeadResponse, status_code=201)
-def create_lead(lead_data: LeadCreate):
+def create_lead(
+    lead_data: LeadCreate,
+    _write_check: None = Depends(require_demo_write_permission)
+):
     """
     Create a new lead.
     Returns mock data for demonstration purposes.
+
+    Requires: Demo write permission (Bearer token or DEMO_ALLOW_WRITES=true)
     """
     new_lead = LeadResponse(
         id=str(uuid.uuid4()),

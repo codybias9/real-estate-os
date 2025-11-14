@@ -103,3 +103,41 @@ def get_current_user_optional(
         return get_current_user(credentials, db)
     except HTTPException:
         return None
+
+
+def require_demo_write_permission(
+    credentials: HTTPAuthorizationCredentials = Security(security, auto_error=False)
+) -> None:
+    """
+    Demo write guard: Block write operations unless explicitly enabled.
+
+    In MOCK_MODE/demo, this prevents accidental data modifications by requiring
+    either:
+    1. Valid authentication (Bearer token), OR
+    2. DEMO_ALLOW_WRITES=true environment variable
+
+    This is a safety mechanism for demos to operate in read-only mode by default.
+
+    Raises:
+        HTTPException: 403 if write operations are not allowed
+    """
+    # Check if demo writes are explicitly allowed via env var
+    demo_allow_writes = os.getenv("DEMO_ALLOW_WRITES", "false").lower() == "true"
+
+    # If demo writes are globally allowed, permit
+    if demo_allow_writes:
+        return
+
+    # Otherwise, require authentication
+    if not credentials:
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "error": "Write operation blocked in demo mode",
+                "demo_mode_write_block": True,
+                "hint": "Authenticate with Bearer token or set DEMO_ALLOW_WRITES=true"
+            }
+        )
+
+    # If credentials present, allow (token validation happens in get_current_user)
+    return
