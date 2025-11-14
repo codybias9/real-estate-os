@@ -1,5 +1,9 @@
 import os
+import sys
 from logging.config import fileConfig
+
+# Add parent directory to path so we can import db module
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from sqlalchemy import engine_from_config, pool
 from alembic import context
@@ -37,11 +41,17 @@ def run_migrations_offline():
 
 def run_migrations_online():
     """Run migrations in 'online' mode (with DB connection)."""
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    # Use DB_DSN environment variable if available, otherwise use config
+    from sqlalchemy import create_engine
+    db_url = os.getenv("DB_DSN")
+    if db_url:
+        connectable = create_engine(db_url, poolclass=pool.NullPool)
+    else:
+        connectable = engine_from_config(
+            config.get_section(config.config_ini_section),
+            prefix="sqlalchemy.",
+            poolclass=pool.NullPool,
+        )
 
     with connectable.connect() as connection:
         context.configure(
