@@ -21,7 +21,8 @@ from api.routers import (
     data_propensity,
     jobs,
     sse_events,
-    status
+    status,
+    quick_wins
 )
 
 app = FastAPI(
@@ -57,6 +58,7 @@ app.include_router(deals.router, prefix="/api/v1")
 app.include_router(workflow.router, prefix="/api/v1")
 app.include_router(templates.router, prefix="/api/v1")
 app.include_router(communications.router, prefix="/api/v1")
+app.include_router(quick_wins.router, prefix="/api/v1")
 
 # Sales Ops - Automation & Compliance
 app.include_router(automation.router, prefix="/api/v1")
