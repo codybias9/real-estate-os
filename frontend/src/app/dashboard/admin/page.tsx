@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
 import { useAuthStore } from '@/store/authStore'
 import { apiClient } from '@/lib/api'
+import { useToast } from '@/hooks/useToast'
+import { ToastContainer } from '@/components/Toast'
+import { useSSE } from '@/hooks/useSSE'
 import {
   Settings,
   Activity,
@@ -19,6 +22,7 @@ import {
   Database,
   TrendingUp,
   AlertCircle,
+  Zap,
 } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -81,6 +85,10 @@ export default function AdminPage() {
   const { user } = useAuthStore()
   const [activeTab, setActiveTab] = useState<'system' | 'team' | 'users'>('system')
   const [loading, setLoading] = useState(true)
+  const [emitting, setEmitting] = useState(false)
+
+  // Toast notifications
+  const { toasts, removeToast, showEvent, showSuccess, showError } = useToast()
 
   // System state
   const [services, setServices] = useState<ServiceHealth[]>([])
@@ -89,6 +97,17 @@ export default function AdminPage() {
   const [queues, setQueues] = useState<QueueInfo[]>([])
   const [storage, setStorage] = useState<StorageInfo[]>([])
   const [logs, setLogs] = useState<LogEntry[]>([])
+
+  // Listen to SSE events and show toasts
+  useSSE(user?.team_id || null, {
+    onEvent: (event) => {
+      console.log('[Admin] SSE Event received:', event)
+      showEvent(
+        `Event: ${event.type}`,
+        `ID: ${event.data.id || 'N/A'} • ${new Date(event.timestamp).toLocaleTimeString()}`
+      )
+    },
+  })
 
   useEffect(() => {
     fetchData()
@@ -117,6 +136,44 @@ export default function AdminPage() {
       console.error('Failed to fetch admin data:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const emitTestEvent = async () => {
+    try {
+      setEmitting(true)
+      const eventId = `test-${Date.now()}`
+
+      // Emit a test SSE event via the API
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/sse/test/emit`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            event_type: 'property_updated',
+            data: {
+              id: eventId,
+              property_id: 'demo-property-123',
+              message: 'Test event emitted from Admin panel',
+              timestamp: new Date().toISOString(),
+            },
+          }),
+        }
+      )
+
+      if (response.ok) {
+        showSuccess('Test Event Emitted', `Event ID: ${eventId}`)
+      } else {
+        showError('Failed to emit event', 'SSE test endpoint may not be available')
+      }
+    } catch (error) {
+      console.error('Failed to emit test event:', error)
+      showError('Error emitting event', 'Check console for details')
+    } finally {
+      setEmitting(false)
     }
   }
 
@@ -185,14 +242,31 @@ export default function AdminPage() {
               System health, team management, and configuration
             </p>
           </div>
-          <button
-            onClick={fetchData}
-            className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center space-x-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            <span>Refresh</span>
-          </button>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={emitTestEvent}
+              disabled={emitting}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Emit a test SSE event to verify real-time connectivity"
+            >
+              <Zap className={`h-4 w-4 ${emitting ? 'animate-pulse' : ''}`} />
+              <span>{emitting ? 'Emitting...' : 'Emit Test Event'}</span>
+            </button>
+
+            <button
+              onClick={fetchData}
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center space-x-2"
+            >
+              <RefreshCw className="h-4 w-4" />
+              <span>Refresh</span>
+            </button>
+          </div>
         </div>
+
+        {/* Toast notifications */}
+        <ToastContainer toasts={toasts} onRemove={removeToast} />
 
         {/* System Metrics Overview */}
         {metrics && (

@@ -6,6 +6,8 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useAuthStore } from '@/store/authStore'
 import { ClientOnly } from '@/components/ClientOnly'
+import { useSSE } from '@/hooks/useSSE'
+import SSEConnectionBadge from '@/components/SSEConnectionBadge'
 import {
   LayoutDashboard,
   Building2,
@@ -26,6 +28,23 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
   const router = useRouter()
   const pathname = usePathname()
   const { user, isAuthenticated, logout } = useAuthStore()
+  const [eventFlash, setEventFlash] = useState(false)
+
+  // Setup SSE connection
+  const { isConnected, lastEvent } = useSSE(user?.team_id || null, {
+    onEvent: (event) => {
+      console.log('[SSE] Event received:', event.type, event.data)
+      // Trigger flash animation
+      setEventFlash(true)
+      setTimeout(() => setEventFlash(false), 100)
+    },
+    onConnected: () => {
+      console.log('[SSE] Connected to real-time event stream')
+    },
+    onDisconnected: () => {
+      console.log('[SSE] Disconnected from event stream')
+    },
+  })
 
   // Redirect to login if not authenticated
   useEffect(() => {
@@ -98,6 +117,9 @@ function DashboardLayoutContent({ children }: DashboardLayoutProps) {
 
             {/* User Menu */}
             <div className="flex items-center space-x-4">
+              {/* SSE Connection Badge */}
+              <SSEConnectionBadge isConnected={isConnected} onEventReceived={eventFlash} />
+
               <button className="relative p-2 text-gray-400 hover:text-gray-500 transition-colors">
                 <Bell className="h-6 w-6" />
                 <span className="absolute top-1.5 right-1.5 block h-2 w-2 rounded-full bg-red-500" />

@@ -19,6 +19,9 @@ const api: AxiosInstance = axios.create({
 // REQUEST INTERCEPTOR
 // ============================================================================
 
+// Track if we've logged the initial auth status
+let hasLoggedAuthStatus = false
+
 api.interceptors.request.use(
   (config) => {
     // Get auth token from localStorage
@@ -28,10 +31,31 @@ api.interceptors.request.use(
         const { state } = JSON.parse(authStorage)
         if (state?.tokens?.access_token) {
           config.headers.Authorization = `Bearer ${state.tokens.access_token}`
+
+          // Log auth status once on first authenticated request
+          if (!hasLoggedAuthStatus) {
+            console.log(
+              '%c🔐 AUTH: Demo token attached',
+              'color: #10b981; font-weight: bold; padding: 4px 8px; background: #ecfdf5; border-radius: 4px;',
+              {
+                user: state.user?.email || 'demo@example.com',
+                tokenPrefix: state.tokens.access_token.substring(0, 20) + '...',
+                requestsWillIncludeAuth: true
+              }
+            )
+            hasLoggedAuthStatus = true
+          }
         }
       } catch (error) {
         console.error('Failed to parse auth storage:', error)
       }
+    } else if (!hasLoggedAuthStatus) {
+      // Log once if no auth token found
+      console.log(
+        '%c🔓 AUTH: No token found - requests will be unauthenticated',
+        'color: #f59e0b; font-weight: bold; padding: 4px 8px; background: #fffbeb; border-radius: 4px;'
+      )
+      hasLoggedAuthStatus = true
     }
 
     // Add If-None-Match header for caching (if ETag exists)
