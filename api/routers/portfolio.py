@@ -127,6 +127,22 @@ class PerformanceMetrics(BaseModel):
     total_return: float
 
 
+class PortfolioMetrics(BaseModel):
+    """
+    Portfolio metrics for dashboard (frontend-compatible).
+
+    This model matches the frontend expectations in /dashboard/portfolio page.
+    """
+    total_properties: int
+    total_deal_value: float
+    avg_deal_size: float
+    win_rate: float
+    avg_days_to_close: float
+    pipeline_value: float
+    closed_deals_count: int
+    active_deals_count: int
+
+
 # ============================================================================
 # Mock Data Store
 # ============================================================================
@@ -500,6 +516,31 @@ def get_investor_readiness(property_id: str):
         strengths=strengths,
         weaknesses=weaknesses,
         last_updated=datetime.now().isoformat()
+    )
+
+
+@router.get("/metrics", response_model=PortfolioMetrics)
+def get_portfolio_metrics(team_id: int):
+    """
+    Get portfolio metrics for dashboard (frontend-compatible endpoint).
+
+    Returns key performance indicators matching the dashboard UI expectations:
+    - Deal pipeline statistics
+    - Win rates and conversion metrics
+    - Average deal sizes and close times
+
+    This endpoint provides the data for /dashboard/portfolio page.
+    """
+    # Mock data matching frontend PortfolioMetrics interface
+    return PortfolioMetrics(
+        total_properties=42,
+        total_deal_value=18750000,  # Total value of closed deals
+        avg_deal_size=625000,  # Average deal size
+        win_rate=0.425,  # 42.5% win rate
+        avg_days_to_close=18.5,  # Average days from outreach to close
+        pipeline_value=6200000,  # Value of active pipeline
+        closed_deals_count=30,  # Number of closed won deals
+        active_deals_count=15  # Number of deals in progress
     )
 
 
