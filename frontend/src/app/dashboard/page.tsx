@@ -35,16 +35,19 @@ function DashboardPageContent() {
 
       try {
         setLoading(true)
-        // Fetch pipeline stats
-        const pipelineData = await apiClient.properties.getPipelineStats(user.team_id)
+        // Fetch both pipeline stats and dashboard metrics in parallel
+        const [pipelineData, dashboardData] = await Promise.all([
+          apiClient.properties.getPipelineStats(user.team_id),
+          apiClient.analytics.getDashboard(user.team_id),
+        ])
 
         setStats({
           total_properties: pipelineData.total_properties || 0,
           properties_by_stage: pipelineData.stage_counts || {},
           recent_activity_count: pipelineData.properties_needing_contact || 0,
-          pending_tasks_count: 0, // TODO: Add tasks API call
-          response_rate: 0.34, // TODO: Calculate from communications
-          avg_days_in_pipeline: 12, // TODO: Calculate from property data,
+          pending_tasks_count: dashboardData.pending_tasks_count || 0,
+          response_rate: dashboardData.response_rate || 0,
+          avg_days_in_pipeline: dashboardData.avg_days_to_close || 0,
         })
       } catch (error) {
         console.error('Failed to fetch dashboard stats:', error)

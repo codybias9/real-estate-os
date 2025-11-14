@@ -304,6 +304,31 @@ export const apiClient = {
   },
 
   // ============================================================================
+  // ANALYTICS
+  // ============================================================================
+
+  analytics: {
+    getDashboard: async (teamId: number) => {
+      const response = await api.get('/analytics/dashboard', {
+        params: { team_id: teamId },
+      })
+      return response.data
+    },
+
+    getPipeline: async () => {
+      const response = await api.get('/analytics/pipeline')
+      return response.data
+    },
+
+    getRevenue: async (period: string = '30d') => {
+      const response = await api.get('/analytics/revenue', {
+        params: { period },
+      })
+      return response.data
+    },
+  },
+
+  // ============================================================================
   // OPEN DATA
   // ============================================================================
 

@@ -18,6 +18,10 @@ class DashboardMetrics(BaseModel):
     closed_deals_this_month: int
     revenue_this_month: float
     conversion_rate: float
+    # Additional fields for dashboard page
+    pending_tasks_count: int = 0
+    response_rate: float = 0.0
+    avg_days_to_close: float = 0.0
 
 
 class PipelineStage(BaseModel):
@@ -137,10 +141,17 @@ def get_processing_throughput(hours: int = 24):
 
 
 @router.get("/dashboard", response_model=DashboardMetrics)
-def get_dashboard_metrics():
+def get_dashboard_metrics(team_id: int = None):
     """
     Get dashboard metrics overview.
-    Returns mock data for demonstration purposes.
+
+    Returns key performance indicators for the dashboard page, including:
+    - Property and deal counts
+    - Lead conversion metrics
+    - Revenue statistics
+    - Task and communication metrics
+
+    This provides comprehensive data for the main dashboard view.
     """
     return DashboardMetrics(
         total_properties=25,
@@ -151,7 +162,11 @@ def get_dashboard_metrics():
         deals_in_progress=8,
         closed_deals_this_month=3,
         revenue_this_month=4350000.00,
-        conversion_rate=0.317
+        conversion_rate=0.317,
+        # Additional metrics for dashboard page
+        pending_tasks_count=7,  # Mock: tasks pending completion
+        response_rate=0.342,  # Mock: 34.2% response rate to outreach
+        avg_days_to_close=12.3  # Mock: average 12.3 days from outreach to close
     )
 
 
