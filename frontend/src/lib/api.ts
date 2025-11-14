@@ -200,7 +200,7 @@ export const apiClient = {
       return response.data
     },
 
-    get: async (id: number) => {
+    get: async (id: string) => {
       const response = await api.get(`/templates/${id}`)
       return response.data
     },
@@ -208,6 +208,15 @@ export const apiClient = {
     create: async (data: any) => {
       const response = await api.post('/templates', data)
       return response.data
+    },
+
+    update: async (id: string, data: any) => {
+      const response = await api.put(`/templates/${id}`, data)
+      return response.data
+    },
+
+    delete: async (id: string) => {
+      await api.delete(`/templates/${id}`)
     },
   },
 

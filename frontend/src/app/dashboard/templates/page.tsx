@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import DashboardLayout from '@/components/DashboardLayout'
+import TemplateForm from '@/components/TemplateForm'
 import { useAuthStore } from '@/store/authStore'
 import { apiClient } from '@/lib/api'
 import type { Template } from '@/types'
@@ -18,6 +19,7 @@ import {
   Eye,
 } from 'lucide-react'
 import { format } from 'date-fns'
+import { toast } from 'sonner'
 
 export default function TemplatesPage() {
   const { user } = useAuthStore()
@@ -25,6 +27,8 @@ export default function TemplatesPage() {
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null)
   const [loading, setLoading] = useState(true)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [showForm, setShowForm] = useState(false)
+  const [editingTemplate, setEditingTemplate] = useState<any | null>(null)
 
   useEffect(() => {
     fetchTemplates()
@@ -39,9 +43,66 @@ export default function TemplatesPage() {
       setTemplates(data)
     } catch (error) {
       console.error('Failed to fetch templates:', error)
+      toast.error('Failed to load templates')
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleCreateTemplate = async (data: any) => {
+    try {
+      await apiClient.templates.create(data)
+      toast.success('Template created successfully')
+      setShowForm(false)
+      fetchTemplates()
+    } catch (error) {
+      console.error('Failed to create template:', error)
+      toast.error('Failed to create template')
+      throw error
+    }
+  }
+
+  const handleUpdateTemplate = async (data: any) => {
+    if (!editingTemplate?.id) return
+
+    try {
+      await apiClient.templates.update(editingTemplate.id, data)
+      toast.success('Template updated successfully')
+      setEditingTemplate(null)
+      fetchTemplates()
+    } catch (error) {
+      console.error('Failed to update template:', error)
+      toast.error('Failed to update template')
+      throw error
+    }
+  }
+
+  const handleDeleteTemplate = async (templateId: string) => {
+    if (!confirm('Are you sure you want to delete this template?')) {
+      return
+    }
+
+    try {
+      await apiClient.templates.delete(templateId)
+      toast.success('Template deleted successfully')
+      fetchTemplates()
+    } catch (error) {
+      console.error('Failed to delete template:', error)
+      toast.error('Failed to delete template')
+    }
+  }
+
+  const handleEditClick = (template: Template) => {
+    setEditingTemplate({
+      id: template.id,
+      name: template.name,
+      description: '',  // Template interface doesn't have description
+      template_type: template.channel,  // Map channel to template_type
+      category: 'initial_outreach',  // Default, as Template doesn't have category
+      subject: template.subject_template || '',
+      body: template.body_template,
+      tags: [],  // Template interface doesn't expose tags in response
+    })
   }
 
   const getChannelIcon = (channel: string) => {
@@ -100,7 +161,10 @@ export default function TemplatesPage() {
             </p>
           </div>
           <div className="flex items-center space-x-3">
-            <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center space-x-2">
+            <button
+              onClick={() => setShowForm(true)}
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center space-x-2"
+            >
               <Plus className="h-4 w-4" />
               <span>New Template</span>
             </button>
@@ -180,7 +244,10 @@ export default function TemplatesPage() {
               <p className="text-sm text-gray-600 mb-6">
                 Create your first template to start sending personalized communications
               </p>
-              <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors inline-flex items-center space-x-2">
+              <button
+                onClick={() => setShowForm(true)}
+                className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors inline-flex items-center space-x-2"
+              >
                 <Plus className="h-4 w-4" />
                 <span>Create Template</span>
               </button>
@@ -209,11 +276,23 @@ export default function TemplatesPage() {
                       <button
                         onClick={() => setSelectedTemplate(template)}
                         className="p-1.5 hover:bg-gray-100 rounded transition-colors"
+                        title="Preview"
                       >
                         <Eye className="h-4 w-4 text-gray-600" />
                       </button>
-                      <button className="p-1.5 hover:bg-gray-100 rounded transition-colors">
+                      <button
+                        onClick={() => handleEditClick(template)}
+                        className="p-1.5 hover:bg-gray-100 rounded transition-colors"
+                        title="Edit"
+                      >
                         <Edit className="h-4 w-4 text-gray-600" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTemplate(template.id)}
+                        className="p-1.5 hover:bg-red-100 rounded transition-colors"
+                        title="Delete"
+                      >
+                        <Trash2 className="h-4 w-4 text-red-600" />
                       </button>
                     </div>
                   </div>
@@ -387,13 +466,38 @@ export default function TemplatesPage() {
                 >
                   Close
                 </button>
-                <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center space-x-2">
+                <button
+                  onClick={() => {
+                    handleEditClick(selectedTemplate!)
+                    setSelectedTemplate(null)
+                  }}
+                  className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors flex items-center space-x-2"
+                >
                   <Edit className="h-4 w-4" />
                   <span>Edit Template</span>
                 </button>
               </div>
             </div>
           </div>
+        )}
+
+        {/* Create Template Form */}
+        {showForm && (
+          <TemplateForm
+            mode="create"
+            onSubmit={handleCreateTemplate}
+            onCancel={() => setShowForm(false)}
+          />
+        )}
+
+        {/* Edit Template Form */}
+        {editingTemplate && (
+          <TemplateForm
+            mode="edit"
+            initialData={editingTemplate}
+            onSubmit={handleUpdateTemplate}
+            onCancel={() => setEditingTemplate(null)}
+          />
         )}
       </div>
     </DashboardLayout>

@@ -151,7 +151,7 @@ export interface Task {
 // ============================================================================
 
 export interface Template {
-  id: number
+  id: string  // Changed from number to string to match backend (e.g., "tpl_001")
   team_id: number
   name: string
   channel: 'email' | 'sms' | 'mail'
