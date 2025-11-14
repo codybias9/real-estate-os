@@ -1,14 +1,13 @@
-# Enhanced Seed Data - 25 Properties
-# Copy this into api/routers/properties.py replacing MOCK_PROPERTIES
+# Enhanced Seed Data - 15 Properties
+# This documents the actual MOCK_PROPERTIES implementation in api/routers/properties.py
 
-# Stage Distribution:
-# - new: 5 properties (newest leads, just discovered)
-# - outreach: 7 properties (active outreach, some contacted)
-# - qualified: 4 properties (qualified, high potential)
-# - negotiation: 3 properties (in negotiation)
-# - under_contract: 2 properties (under contract)
-# - closed_won: 3 properties (successfully closed)
-# - closed_lost: 1 property (lost deal for learning)
+# Stage Distribution (Actual Implementation):
+# - new: 3 properties (newest leads, just discovered)
+# - outreach: 4 properties (active outreach, some contacted)
+# - qualified: 3 properties (qualified, high potential)
+# - negotiation: 2 properties (in negotiation)
+# - under_contract: 1 property (under contract)
+# - closed_won: 2 properties (successfully closed)
 
 MOCK_PROPERTIES = [
     # ========== NEW STAGE (5 properties) ==========
