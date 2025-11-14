@@ -2,9 +2,13 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies including curl for healthchecks
+# Install system dependencies including curl for healthchecks and build tools for bcrypt
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    libcairo2 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies
@@ -13,6 +17,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY api/ ./api/
+COPY db/ ./db/
+COPY ml/ ./ml/
 
 # Expose port
 EXPOSE 8000

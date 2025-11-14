@@ -215,6 +215,9 @@ node_modules/
 ui/.svelte-kit
 infra/.env
 
+# Runtime verification artifacts
+artifacts/
+
 # Scrapy output files
 *.json
 
