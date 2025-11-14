@@ -1,5 +1,5 @@
 """Properties router for real estate listings management."""
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel, Field
 from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
@@ -11,6 +11,8 @@ import os
 # Add parent directory to path to import event emitter
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from api.event_emitter import emit_property_updated
+from api.auth_utils import get_current_user
+from db.models import User
 
 router = APIRouter(prefix="/properties", tags=["properties"])
 
@@ -492,10 +494,15 @@ def get_property(property_id: str):
 
 
 @router.post("", response_model=PropertyResponse, status_code=201)
-def create_property(property_data: PropertyCreate):
+def create_property(
+    property_data: PropertyCreate,
+    current_user: User = Depends(get_current_user)
+):
     """
     Create a new property.
     Returns mock data for demonstration purposes.
+
+    **Requires authentication**: Bearer token in Authorization header
     """
     new_property = PropertyResponse(
         id=str(uuid.uuid4()),
@@ -508,10 +515,16 @@ def create_property(property_data: PropertyCreate):
 
 
 @router.patch("/{property_id}", response_model=PropertyResponse)
-def update_property(property_id: str, property_data: PropertyUpdate):
+def update_property(
+    property_id: str,
+    property_data: PropertyUpdate,
+    current_user: User = Depends(get_current_user)
+):
     """
     Update property details.
     Returns mock data for demonstration purposes.
+
+    **Requires authentication**: Bearer token in Authorization header
     """
     for prop in MOCK_PROPERTIES:
         if prop.id == property_id:

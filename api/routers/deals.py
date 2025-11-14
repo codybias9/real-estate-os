@@ -1,5 +1,5 @@
 """Deals router for transaction management."""
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
@@ -10,6 +10,8 @@ import os
 # Add parent directory to path to import event emitter
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 from api.event_emitter import emit_deal_stage_changed
+from api.auth_utils import get_current_user
+from db.models import User
 
 router = APIRouter(prefix="/deals", tags=["deals"])
 
@@ -109,10 +111,15 @@ def get_deal(deal_id: str):
 
 
 @router.post("", response_model=DealResponse, status_code=201)
-def create_deal(deal_data: DealCreate):
+def create_deal(
+    deal_data: DealCreate,
+    current_user: User = Depends(get_current_user)
+):
     """
     Create a new deal.
     Returns mock data for demonstration purposes.
+
+    **Requires authentication**: Bearer token in Authorization header
     """
     new_deal = DealResponse(
         id=str(uuid.uuid4()),
@@ -126,10 +133,16 @@ def create_deal(deal_data: DealCreate):
 
 
 @router.patch("/{deal_id}", response_model=DealResponse)
-def update_deal(deal_id: str, deal_data: DealUpdate):
+def update_deal(
+    deal_id: str,
+    deal_data: DealUpdate,
+    current_user: User = Depends(get_current_user)
+):
     """
     Update deal details.
     Returns mock data for demonstration purposes.
+
+    **Requires authentication**: Bearer token in Authorization header
     """
     for deal in MOCK_DEALS:
         if deal.id == deal_id:
