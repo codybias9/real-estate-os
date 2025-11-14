@@ -9,6 +9,12 @@ import asyncio
 import json
 import secrets
 import random
+import sys
+import os
+
+# Add parent directory to path to import event emitter
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from api.event_emitter import event_emitter
 
 router = APIRouter(prefix="/sse", tags=["sse"])
 
@@ -88,7 +94,7 @@ def generate_sse_token() -> str:
     return secrets.token_urlsafe(32)
 
 
-async def event_generator(token: str) -> AsyncGenerator[str, None]:
+async def event_generator(token: str, connection_id: str) -> AsyncGenerator[str, None]:
     """
     Generate SSE events for a client connection.
 
@@ -97,18 +103,23 @@ async def event_generator(token: str) -> AsyncGenerator[str, None]:
     data: <json_data>
     id: <event_id>
 
+    Now uses the centralized event_emitter for real event delivery.
     """
     # Validate token
     if token not in SSE_TOKENS:
         yield f"event: error\ndata: {json.dumps({'error': 'Invalid token'})}\n\n"
         return
 
+    # Register connection with event emitter
+    event_queue = event_emitter.register_connection(connection_id)
+
     # Send initial connection event
     connection_event = {
         "event": "connected",
         "data": json.dumps({
             "message": "Connected to real-time event stream",
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "connection_id": connection_id
         }),
         "id": secrets.token_hex(8)
     }
@@ -117,8 +128,21 @@ async def event_generator(token: str) -> AsyncGenerator[str, None]:
     # Keep connection alive and send events
     try:
         while True:
-            # Mock: Generate random events for demo
-            if random.random() < 0.1:  # 10% chance each iteration
+            try:
+                # Wait for event from queue (with timeout for heartbeat)
+                event_message = await asyncio.wait_for(
+                    event_queue.get(),
+                    timeout=30.0  # 30 second timeout
+                )
+                # Event is already formatted as SSE message
+                yield event_message
+
+            except asyncio.TimeoutError:
+                # No events in 30 seconds - send heartbeat
+                yield f": heartbeat\n\n"
+
+            # Also occasionally send a mock event for demo purposes if queue is empty
+            if random.random() < 0.05:  # 5% chance per heartbeat interval
                 event_type = random.choice(list(EventType))
                 event_data = generate_mock_event_data(event_type)
 
@@ -130,15 +154,12 @@ async def event_generator(token: str) -> AsyncGenerator[str, None]:
 
                 yield f"event: {event['event']}\ndata: {event['data']}\nid: {event['id']}\n\n"
 
-            # Send heartbeat every 30 seconds to keep connection alive
-            yield f": heartbeat\n\n"
-
-            # Wait before next iteration
-            await asyncio.sleep(30)
-
     except asyncio.CancelledError:
         # Client disconnected
         pass
+    finally:
+        # Unregister connection
+        event_emitter.unregister_connection(connection_id)
 
 
 def generate_mock_event_data(event_type: EventType) -> Dict[str, Any]:
@@ -308,7 +329,7 @@ async def sse_stream(token: str):
 
     try:
         return StreamingResponse(
-            event_generator(token),
+            event_generator(token, connection_id),
             media_type="text/event-stream",
             headers={
                 "Cache-Control": "no-cache",

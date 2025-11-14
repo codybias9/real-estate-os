@@ -5,6 +5,12 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 from enum import Enum
 import uuid
+import sys
+import os
+
+# Add parent directory to path to import event emitter
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from api.event_emitter import emit_property_updated
 
 router = APIRouter(prefix="/properties", tags=["properties"])
 
@@ -509,10 +515,24 @@ def update_property(property_id: str, property_data: PropertyUpdate):
     """
     for prop in MOCK_PROPERTIES:
         if prop.id == property_id:
-            # Update fields that were provided
+            # Track changes for event emission
             update_data = property_data.dict(exclude_unset=True)
+
+            # Update fields and emit events for each change
             for key, value in update_data.items():
+                old_value = getattr(prop, key, None)
                 setattr(prop, key, value)
+
+                # Emit property_updated event for significant field changes
+                if old_value != value:
+                    emit_property_updated(
+                        property_id=property_id,
+                        field_updated=key,
+                        old_value=str(old_value) if old_value is not None else None,
+                        new_value=str(value) if value is not None else None,
+                        updated_by="demo@realestateos.com"
+                    )
+
             return prop
 
     raise HTTPException(status_code=404, detail="Property not found")
@@ -614,9 +634,22 @@ def update_property_stage(property_id: str, stage_update: StageUpdate):
     # Find property
     for prop in MOCK_PROPERTIES:
         if prop.id == property_id:
+            # Track old stage for event emission
+            old_stage = getattr(prop, 'current_stage', 'unknown')
+
             # In a real system, would update the stage field
-            # For now, just return the property
-            # The actual stage would be stored in a 'stage' field
+            # For demo, we'll emit the event even though we're not persisting
+            if hasattr(prop, 'current_stage'):
+                prop.current_stage = stage_update.stage.value
+
+            # Emit property_updated event for stage change
+            emit_property_updated(
+                property_id=property_id,
+                field_updated="current_stage",
+                old_value=str(old_stage),
+                new_value=stage_update.stage.value,
+                updated_by="demo@realestateos.com"
+            )
 
             # Mock: Create timeline activity for stage change
             activity_id = str(uuid.uuid4())

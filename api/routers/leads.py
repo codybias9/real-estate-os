@@ -4,6 +4,12 @@ from pydantic import BaseModel, EmailStr
 from typing import List, Optional
 from datetime import datetime
 import uuid
+import sys
+import os
+
+# Add parent directory to path to import event emitter
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from api.event_emitter import emit_lead_created
 
 router = APIRouter(prefix="/leads", tags=["leads"])
 
@@ -128,6 +134,15 @@ def create_lead(lead_data: LeadCreate):
     )
 
     MOCK_LEADS.append(new_lead)
+
+    # Emit lead_created event
+    emit_lead_created(
+        lead_id=new_lead.id,
+        contact_name=new_lead.name,
+        source=new_lead.source,
+        property_id=None  # Could be linked to a property if available
+    )
+
     return new_lead
 
 

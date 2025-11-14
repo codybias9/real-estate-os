@@ -4,6 +4,12 @@ from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime
 import uuid
+import sys
+import os
+
+# Add parent directory to path to import event emitter
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
+from api.event_emitter import emit_deal_stage_changed
 
 router = APIRouter(prefix="/deals", tags=["deals"])
 
@@ -127,11 +133,25 @@ def update_deal(deal_id: str, deal_data: DealUpdate):
     """
     for deal in MOCK_DEALS:
         if deal.id == deal_id:
+            # Track status change for event emission
+            old_status = deal.status
+
             # Update fields that were provided
             update_data = deal_data.dict(exclude_unset=True)
             for key, value in update_data.items():
                 setattr(deal, key, value)
             deal.updated_at = datetime.now().isoformat()
+
+            # Emit deal_stage_changed event if status changed
+            if 'status' in update_data and old_status != update_data['status']:
+                emit_deal_stage_changed(
+                    deal_id=deal_id,
+                    property_id=deal.property_id,
+                    old_stage=old_status,
+                    new_stage=update_data['status'],
+                    changed_by="demo@realestateos.com"
+                )
+
             return deal
 
     raise HTTPException(status_code=404, detail="Deal not found")
