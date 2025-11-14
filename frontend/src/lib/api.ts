@@ -354,6 +354,27 @@ export const apiClient = {
       return response.data
     },
   },
+
+  // ============================================================================
+  // DATA PROPENSITY (Signals & Provenance)
+  // ============================================================================
+
+  dataPropensity: {
+    getSignals: async (propertyId: string) => {
+      const response = await api.get(`/data-propensity/properties/${propertyId}/signals`)
+      return response.data
+    },
+
+    getSignalsSummary: async (propertyId: string) => {
+      const response = await api.get(`/data-propensity/properties/${propertyId}/signals/summary`)
+      return response.data
+    },
+
+    getProvenance: async (propertyId: string) => {
+      const response = await api.get(`/data-propensity/properties/${propertyId}/provenance`)
+      return response.data
+    },
+  },
 }
 
 export default api

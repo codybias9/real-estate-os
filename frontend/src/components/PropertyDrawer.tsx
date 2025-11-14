@@ -17,6 +17,10 @@ import {
   Building2,
   Tag,
   ExternalLink,
+  AlertTriangle,
+  Zap,
+  Database,
+  Shield,
 } from 'lucide-react'
 import { format } from 'date-fns'
 
@@ -31,7 +35,9 @@ export default function PropertyDrawer({ propertyId, isOpen, onClose }: Property
   const [timeline, setTimeline] = useState<TimelineEvent[]>([])
   const [communications, setCommunications] = useState<Communication[]>([])
   const [tasks, setTasks] = useState<Task[]>([])
-  const [activeTab, setActiveTab] = useState<'overview' | 'timeline' | 'communications'>('overview')
+  const [signals, setSignals] = useState<any[]>([])
+  const [provenance, setProvenance] = useState<any | null>(null)
+  const [activeTab, setActiveTab] = useState<'overview' | 'timeline' | 'communications' | 'signals' | 'provenance'>('overview')
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
@@ -61,6 +67,24 @@ export default function PropertyDrawer({ propertyId, isOpen, onClose }: Property
       // Fetch tasks
       const tasksData = await apiClient.tasks.list(propertyId)
       setTasks(tasksData)
+
+      // Fetch data signals (property ID as string)
+      try {
+        const signalsData = await apiClient.dataPropensity.getSignals(propertyId.toString())
+        setSignals(signalsData)
+      } catch (error) {
+        console.error('Failed to fetch signals:', error)
+        setSignals([])
+      }
+
+      // Fetch provenance
+      try {
+        const provenanceData = await apiClient.dataPropensity.getProvenance(propertyId.toString())
+        setProvenance(provenanceData)
+      } catch (error) {
+        console.error('Failed to fetch provenance:', error)
+        setProvenance(null)
+      }
     } catch (error) {
       console.error('Failed to fetch property data:', error)
     } finally {
@@ -153,10 +177,10 @@ export default function PropertyDrawer({ propertyId, isOpen, onClose }: Property
             </div>
 
             {/* Tabs */}
-            <div className="flex border-b border-gray-200 px-6">
+            <div className="flex border-b border-gray-200 px-6 overflow-x-auto">
               <button
                 onClick={() => setActiveTab('overview')}
-                className={`py-3 px-4 font-medium text-sm border-b-2 transition-colors ${
+                className={`py-3 px-4 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === 'overview'
                     ? 'border-primary-600 text-primary-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -166,7 +190,7 @@ export default function PropertyDrawer({ propertyId, isOpen, onClose }: Property
               </button>
               <button
                 onClick={() => setActiveTab('timeline')}
-                className={`py-3 px-4 font-medium text-sm border-b-2 transition-colors ${
+                className={`py-3 px-4 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === 'timeline'
                     ? 'border-primary-600 text-primary-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
@@ -176,13 +200,33 @@ export default function PropertyDrawer({ propertyId, isOpen, onClose }: Property
               </button>
               <button
                 onClick={() => setActiveTab('communications')}
-                className={`py-3 px-4 font-medium text-sm border-b-2 transition-colors ${
+                className={`py-3 px-4 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === 'communications'
                     ? 'border-primary-600 text-primary-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700'
                 }`}
               >
                 Communications ({communications.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('signals')}
+                className={`py-3 px-4 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
+                  activeTab === 'signals'
+                    ? 'border-primary-600 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Data Signals ({signals.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('provenance')}
+                className={`py-3 px-4 font-medium text-sm border-b-2 transition-colors whitespace-nowrap ${
+                  activeTab === 'provenance'
+                    ? 'border-primary-600 text-primary-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Provenance
               </button>
             </div>
 
@@ -411,6 +455,205 @@ export default function PropertyDrawer({ propertyId, isOpen, onClose }: Property
                         </div>
                       </div>
                     ))
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'signals' && (
+                <div className="space-y-4">
+                  {signals.length === 0 ? (
+                    <p className="text-sm text-gray-500 text-center py-8">No data signals detected yet</p>
+                  ) : (
+                    signals.map((signal) => {
+                      const getSignalIcon = (type: string) => {
+                        switch (type) {
+                          case 'distress':
+                            return <AlertTriangle className="h-5 w-5" />
+                          case 'motivation':
+                            return <Zap className="h-5 w-5" />
+                          case 'equity':
+                            return <TrendingUp className="h-5 w-5" />
+                          case 'financial':
+                            return <Building2 className="h-5 w-5" />
+                          default:
+                            return <Database className="h-5 w-5" />
+                        }
+                      }
+
+                      const getStrengthColor = (strength: string) => {
+                        switch (strength) {
+                          case 'strong':
+                            return 'bg-red-100 text-red-700 border-red-200'
+                          case 'moderate':
+                            return 'bg-yellow-100 text-yellow-700 border-yellow-200'
+                          case 'weak':
+                            return 'bg-blue-100 text-blue-700 border-blue-200'
+                          default:
+                            return 'bg-gray-100 text-gray-700 border-gray-200'
+                        }
+                      }
+
+                      return (
+                        <div
+                          key={signal.id}
+                          className={`border rounded-lg p-4 ${getStrengthColor(signal.strength)}`}
+                        >
+                          <div className="flex items-start justify-between mb-2">
+                            <div className="flex items-center space-x-3">
+                              <div className="flex-shrink-0">
+                                {getSignalIcon(signal.signal_type)}
+                              </div>
+                              <div>
+                                <h4 className="text-sm font-semibold">{signal.title}</h4>
+                                <p className="text-xs capitalize mt-1">
+                                  {signal.signal_type.replace('_', ' ')} • {signal.strength} signal
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end space-y-1">
+                              <span className="text-xs font-medium px-2 py-0.5 bg-white rounded">
+                                Impact: {signal.impact_score}/10
+                              </span>
+                              <span className="text-xs font-medium px-2 py-0.5 bg-white rounded">
+                                {Math.round(signal.confidence_score * 100)}% confident
+                              </span>
+                            </div>
+                          </div>
+                          <p className="text-sm mt-2">{signal.description}</p>
+                          <div className="flex items-center justify-between mt-3 pt-3 border-t border-current border-opacity-20">
+                            <p className="text-xs">
+                              Source: {signal.data_source.replace('_', ' ')}
+                            </p>
+                            <p className="text-xs">
+                              Detected: {format(new Date(signal.detected_date), 'MMM d, yyyy')}
+                            </p>
+                          </div>
+                          {signal.actionable && (
+                            <div className="mt-2 flex items-center text-xs font-medium">
+                              <Zap className="h-3 w-3 mr-1" />
+                              Actionable - immediate attention recommended
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              )}
+
+              {activeTab === 'provenance' && (
+                <div className="space-y-4">
+                  {!provenance || provenance.provenance_records.length === 0 ? (
+                    <p className="text-sm text-gray-500 text-center py-8">
+                      No provenance data available
+                    </p>
+                  ) : (
+                    <>
+                      {/* Summary */}
+                      <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                          Data Completeness
+                        </h3>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Enriched Fields</span>
+                            <span className="font-semibold text-gray-900">
+                              {provenance.enriched_fields} / {provenance.total_fields}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-gray-600">Completeness Score</span>
+                            <span className="font-semibold text-gray-900">
+                              {Math.round(provenance.completeness_score)}%
+                            </span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
+                            <div
+                              className="bg-primary-600 h-2 rounded-full transition-all"
+                              style={{ width: `${provenance.completeness_score}%` }}
+                            />
+                          </div>
+                          {provenance.last_enrichment && (
+                            <p className="text-xs text-gray-500 mt-3">
+                              Last enriched: {format(new Date(provenance.last_enrichment), 'MMM d, yyyy')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Provenance Records */}
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-900 mb-3">
+                          Data Sources ({provenance.provenance_records.length})
+                        </h3>
+                        <div className="space-y-2">
+                          {provenance.provenance_records.map((record: any, index: number) => {
+                            const getConfidenceColor = (confidence: string) => {
+                              switch (confidence) {
+                                case 'verified':
+                                  return 'bg-green-100 text-green-700'
+                                case 'high_confidence':
+                                  return 'bg-blue-100 text-blue-700'
+                                case 'medium_confidence':
+                                  return 'bg-yellow-100 text-yellow-700'
+                                case 'low_confidence':
+                                  return 'bg-orange-100 text-orange-700'
+                                default:
+                                  return 'bg-gray-100 text-gray-700'
+                              }
+                            }
+
+                            return (
+                              <div
+                                key={index}
+                                className="bg-white border border-gray-200 rounded-lg p-3 hover:border-gray-300 transition-colors"
+                              >
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center space-x-2 mb-1">
+                                      <Database className="h-3 w-3 text-gray-400" />
+                                      <p className="text-sm font-medium text-gray-900">
+                                        {record.field_name.replace('_', ' ')}
+                                      </p>
+                                    </div>
+                                    <p className="text-sm text-gray-700 font-mono">
+                                      {typeof record.value === 'object'
+                                        ? JSON.stringify(record.value)
+                                        : record.value}
+                                    </p>
+                                    <div className="flex items-center space-x-3 mt-2">
+                                      <span className="text-xs text-gray-500">
+                                        {record.source.replace('_', ' ')}
+                                      </span>
+                                      {record.source_identifier && (
+                                        <span className="text-xs text-gray-500 font-mono">
+                                          {record.source_identifier}
+                                        </span>
+                                      )}
+                                      <span className="text-xs text-gray-500">
+                                        {format(new Date(record.acquired_date), 'MMM d, yyyy')}
+                                      </span>
+                                      {record.cost > 0 && (
+                                        <span className="text-xs text-gray-500">
+                                          ${record.cost.toFixed(2)}
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <span
+                                    className={`text-xs px-2 py-0.5 rounded ${getConfidenceColor(
+                                      record.confidence
+                                    )}`}
+                                  >
+                                    {record.confidence.replace('_', ' ')}
+                                  </span>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </>
                   )}
                 </div>
               )}
