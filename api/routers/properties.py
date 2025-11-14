@@ -1,7 +1,7 @@
 """Properties router for real estate listings management."""
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime, timedelta
 from enum import Enum
 import uuid
@@ -68,64 +68,383 @@ class PropertyUpdate(BaseModel):
 
 
 class PropertyResponse(BaseModel):
-    """Schema for property response."""
+    """Schema for property response (frontend-compatible)."""
     id: str
+    team_id: int = 1  # Default team for demo
     address: str
     city: str
     state: str
-    zip: str
-    price: float
-    bedrooms: int
-    bathrooms: float
-    square_feet: int
-    property_type: str
-    status: str
+    zip_code: str
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
+    apn: Optional[str] = None
+    owner_name: Optional[str] = None
+    bird_dog_score: float = 0.5
+    current_stage: str = "new"  # PropertyStage enum value
+    previous_stage: Optional[str] = None
+    stage_changed_at: str
+    assigned_user_id: Optional[int] = None
+    tags: List[str] = []
+    notes: Optional[str] = None
+    last_contact_at: Optional[str] = None
+    memo_generated_at: Optional[str] = None
+    memo_content: Optional[str] = None
+    custom_fields: Dict[str, Any] = {}
     created_at: str
+    updated_at: str
+    archived_at: Optional[str] = None
+    # Legacy fields for backward compatibility
+    price: Optional[float] = None
+    bedrooms: Optional[int] = None
+    bathrooms: Optional[float] = None
+    square_feet: Optional[int] = None
+    property_type: Optional[str] = None
+    status: Optional[str] = "active"
 
 
 # Mock data storage (in-memory for demo)
+# Enhanced seed data with 15 properties across all pipeline stages
+now = datetime.now()
+
 MOCK_PROPERTIES = [
+    # NEW STAGE (3)
     PropertyResponse(
         id=str(uuid.uuid4()),
-        address="123 Main Street",
+        address="2847 Sacramento St",
         city="San Francisco",
         state="CA",
-        zip="94102",
-        price=1500000,
-        bedrooms=3,
-        bathrooms=2.5,
+        zip_code="94115",
+        owner_name="Margaret Chen",
+        bird_dog_score=0.82,
+        current_stage="new",
+        tags=["high-equity", "motivated"],
+        price=2100000,
+        bedrooms=4,
+        bathrooms=3.0,
         square_feet=2200,
         property_type="single_family",
         status="active",
-        created_at=datetime.now().isoformat()
+        created_at=(now - timedelta(days=1)).isoformat(),
+        updated_at=(now - timedelta(days=1)).isoformat(),
+        stage_changed_at=(now - timedelta(days=1)).isoformat()
+    ),
+    PropertyResponse(
+        id=str(uuid.uuid4()),
+        address="1456 Potrero Ave",
+        city="San Francisco",
+        state="CA",
+        zip_code="94110",
+        owner_name="David Rodriguez",
+        bird_dog_score=0.67,
+        current_stage="new",
+        tags=["out-of-state", "rental"],
+        price=1650000,
+        bedrooms=3,
+        bathrooms=2.0,
+        square_feet=1800,
+        property_type="single_family",
+        status="active",
+        created_at=(now - timedelta(days=2)).isoformat(),
+        updated_at=(now - timedelta(days=2)).isoformat(),
+        stage_changed_at=(now - timedelta(days=2)).isoformat()
+    ),
+    PropertyResponse(
+        id=str(uuid.uuid4()),
+        address="3421 19th Ave",
+        city="San Francisco",
+        state="CA",
+        zip_code="94132",
+        owner_name="Linda Wong",
+        bird_dog_score=0.75,
+        current_stage="new",
+        tags=["vacant", "needs-repair"],
+        price=1450000,
+        bedrooms=2,
+        bathrooms=1.5,
+        square_feet=1400,
+        property_type="single_family",
+        status="active",
+        created_at=(now - timedelta(days=3)).isoformat(),
+        updated_at=(now - timedelta(days=3)).isoformat(),
+        stage_changed_at=(now - timedelta(days=3)).isoformat()
+    ),
+    # OUTREACH STAGE (4)
+    PropertyResponse(
+        id=str(uuid.uuid4()),
+        address="742 Divisadero St",
+        city="San Francisco",
+        state="CA",
+        zip_code="94117",
+        owner_name="Lisa Thompson",
+        bird_dog_score=0.85,
+        current_stage="outreach",
+        previous_stage="new",
+        tags=["high-equity", "pre-foreclosure"],
+        last_contact_at=(now - timedelta(days=1)).isoformat(),
+        memo_generated_at=(now - timedelta(days=2)).isoformat(),
+        price=2350000,
+        bedrooms=4,
+        bathrooms=3.5,
+        square_feet=2600,
+        property_type="single_family",
+        status="active",
+        created_at=(now - timedelta(days=7)).isoformat(),
+        updated_at=(now - timedelta(days=1)).isoformat(),
+        stage_changed_at=(now - timedelta(days=5)).isoformat()
     ),
     PropertyResponse(
         id=str(uuid.uuid4()),
         address="456 Oak Avenue",
         city="San Francisco",
         state="CA",
-        zip="94103",
+        zip_code="94103",
+        owner_name="Sarah Johnson",
+        bird_dog_score=0.73,
+        current_stage="outreach",
+        previous_stage="new",
+        tags=["investment", "rental"],
+        last_contact_at=(now - timedelta(days=3)).isoformat(),
         price=2100000,
         bedrooms=4,
         bathrooms=3.0,
         square_feet=2800,
         property_type="single_family",
         status="active",
-        created_at=datetime.now().isoformat()
+        created_at=(now - timedelta(days=10)).isoformat(),
+        updated_at=(now - timedelta(days=3)).isoformat(),
+        stage_changed_at=(now - timedelta(days=8)).isoformat()
     ),
     PropertyResponse(
         id=str(uuid.uuid4()),
-        address="789 Pine Boulevard",
+        address="2134 Fulton St",
+        city="San Francisco",
+        state="CA",
+        zip_code="94117",
+        owner_name="Michael Brown",
+        bird_dog_score=0.68,
+        current_stage="outreach",
+        previous_stage="new",
+        tags=["renovation", "good-bones"],
+        last_contact_at=(now - timedelta(days=4)).isoformat(),
+        price=1750000,
+        bedrooms=3,
+        bathrooms=2.5,
+        square_feet=2000,
+        property_type="single_family",
+        status="active",
+        created_at=(now - timedelta(days=12)).isoformat(),
+        updated_at=(now - timedelta(days=4)).isoformat(),
+        stage_changed_at=(now - timedelta(days=10)).isoformat()
+    ),
+    PropertyResponse(
+        id=str(uuid.uuid4()),
+        address="789 Pine Blvd",
         city="Oakland",
         state="CA",
-        zip="94601",
+        zip_code="94601",
+        owner_name="Thomas Wilson",
+        bird_dog_score=0.64,
+        current_stage="outreach",
+        previous_stage="new",
+        tags=["first-time-investor"],
+        last_contact_at=(now - timedelta(days=7)).isoformat(),
         price=950000,
         bedrooms=2,
         bathrooms=2.0,
         square_feet=1500,
         property_type="condo",
         status="active",
-        created_at=datetime.now().isoformat()
+        created_at=(now - timedelta(days=16)).isoformat(),
+        updated_at=(now - timedelta(days=7)).isoformat(),
+        stage_changed_at=(now - timedelta(days=14)).isoformat()
+    ),
+    # QUALIFIED STAGE (3)
+    PropertyResponse(
+        id=str(uuid.uuid4()),
+        address="5621 Geary Blvd",
+        city="San Francisco",
+        state="CA",
+        zip_code="94121",
+        owner_name="Barbara Lee",
+        bird_dog_score=0.88,
+        current_stage="qualified",
+        previous_stage="outreach",
+        tags=["hot-lead", "motivated"],
+        last_contact_at=(now - timedelta(days=1)).isoformat(),
+        notes="Owner interested in cash offer, willing to sell before holidays",
+        price=2450000,
+        bedrooms=4,
+        bathrooms=3.0,
+        square_feet=2400,
+        property_type="single_family",
+        status="active",
+        created_at=(now - timedelta(days=20)).isoformat(),
+        updated_at=(now - timedelta(days=1)).isoformat(),
+        stage_changed_at=(now - timedelta(days=5)).isoformat()
+    ),
+    PropertyResponse(
+        id=str(uuid.uuid4()),
+        address="3142 Scott St",
+        city="San Francisco",
+        state="CA",
+        zip_code="94123",
+        owner_name="Richard Martinez",
+        bird_dog_score=0.91,
+        current_stage="qualified",
+        previous_stage="outreach",
+        tags=["duplex", "income"],
+        last_contact_at=(now - timedelta(hours=18)).isoformat(),
+        notes="Seller relocating, needs quick close",
+        price=3100000,
+        bedrooms=6,
+        bathrooms=4.0,
+        square_feet=3500,
+        property_type="multi_family",
+        status="active",
+        created_at=(now - timedelta(days=25)).isoformat(),
+        updated_at=(now - timedelta(hours=18)).isoformat(),
+        stage_changed_at=(now - timedelta(days=10)).isoformat()
+    ),
+    PropertyResponse(
+        id=str(uuid.uuid4()),
+        address="4523 Judah St",
+        city="San Francisco",
+        state="CA",
+        zip_code="94122",
+        owner_name="Christopher Clark",
+        bird_dog_score=0.87,
+        current_stage="qualified",
+        previous_stage="outreach",
+        tags=["beach-adjacent", "strong-rental"],
+        last_contact_at=(now - timedelta(days=3)).isoformat(),
+        notes="Owner interested in 1031 exchange",
+        price=2200000,
+        bedrooms=4,
+        bathrooms=3.0,
+        square_feet=2300,
+        property_type="single_family",
+        status="active",
+        created_at=(now - timedelta(days=30)).isoformat(),
+        updated_at=(now - timedelta(days=3)).isoformat(),
+        stage_changed_at=(now - timedelta(days=15)).isoformat()
+    ),
+    # NEGOTIATION STAGE (2)
+    PropertyResponse(
+        id=str(uuid.uuid4()),
+        address="2789 Broadway",
+        city="San Francisco",
+        state="CA",
+        zip_code="94115",
+        owner_name="Susan Taylor",
+        bird_dog_score=0.93,
+        current_stage="negotiation",
+        previous_stage="qualified",
+        tags=["premium", "pacific-heights"],
+        last_contact_at=(now - timedelta(hours=12)).isoformat(),
+        notes="Negotiating price - seller at $3.5M, we're at $3.2M",
+        price=3350000,
+        bedrooms=5,
+        bathrooms=4.5,
+        square_feet=4000,
+        property_type="single_family",
+        status="active",
+        created_at=(now - timedelta(days=35)).isoformat(),
+        updated_at=(now - timedelta(hours=12)).isoformat(),
+        stage_changed_at=(now - timedelta(days=8)).isoformat()
+    ),
+    PropertyResponse(
+        id=str(uuid.uuid4()),
+        address="1534 Page St",
+        city="San Francisco",
+        state="CA",
+        zip_code="94117",
+        owner_name="Daniel White",
+        bird_dog_score=0.89,
+        current_stage="negotiation",
+        previous_stage="qualified",
+        tags=["victorian", "historic"],
+        last_contact_at=(now - timedelta(hours=6)).isoformat(),
+        notes="Agreed on price, negotiating inspection contingencies",
+        price=2750000,
+        bedrooms=4,
+        bathrooms=3.5,
+        square_feet=2900,
+        property_type="single_family",
+        status="active",
+        created_at=(now - timedelta(days=38)).isoformat(),
+        updated_at=(now - timedelta(hours=6)).isoformat(),
+        stage_changed_at=(now - timedelta(days=12)).isoformat()
+    ),
+    # UNDER CONTRACT (1)
+    PropertyResponse(
+        id=str(uuid.uuid4()),
+        address="1245 Union St",
+        city="San Francisco",
+        state="CA",
+        zip_code="94109",
+        owner_name="Jason Young",
+        bird_dog_score=0.94,
+        current_stage="under_contract",
+        previous_stage="negotiation",
+        tags=["marina", "turnkey"],
+        last_contact_at=(now - timedelta(hours=24)).isoformat(),
+        notes="Pending final walkthrough, closing in 5 days",
+        price=2850000,
+        bedrooms=3,
+        bathrooms=2.5,
+        square_feet=2100,
+        property_type="single_family",
+        status="active",
+        created_at=(now - timedelta(days=45)).isoformat(),
+        updated_at=(now - timedelta(hours=24)).isoformat(),
+        stage_changed_at=(now - timedelta(days=3)).isoformat()
+    ),
+    # CLOSED WON (2)
+    PropertyResponse(
+        id=str(uuid.uuid4()),
+        address="2456 Lombard St",
+        city="San Francisco",
+        state="CA",
+        zip_code="94123",
+        owner_name="Mark Wright",
+        bird_dog_score=0.95,
+        current_stage="closed_won",
+        previous_stage="under_contract",
+        tags=["successful", "quick-close"],
+        last_contact_at=(now - timedelta(days=32)).isoformat(),
+        notes="Closed successfully, 15% below market value",
+        price=1950000,
+        bedrooms=3,
+        bathrooms=2.0,
+        square_feet=1900,
+        property_type="single_family",
+        status="sold",
+        created_at=(now - timedelta(days=55)).isoformat(),
+        updated_at=(now - timedelta(days=32)).isoformat(),
+        stage_changed_at=(now - timedelta(days=32)).isoformat()
+    ),
+    PropertyResponse(
+        id=str(uuid.uuid4()),
+        address="3789 Clay St",
+        city="San Francisco",
+        state="CA",
+        zip_code="94118",
+        owner_name="Laura Scott",
+        bird_dog_score=0.96,
+        current_stage="closed_won",
+        previous_stage="under_contract",
+        tags=["portfolio", "strong-roi"],
+        last_contact_at=(now - timedelta(days=35)).isoformat(),
+        notes="Excellent acquisition, rental income $8k/month",
+        price=2650000,
+        bedrooms=4,
+        bathrooms=3.0,
+        square_feet=2700,
+        property_type="single_family",
+        status="sold",
+        created_at=(now - timedelta(days=60)).isoformat(),
+        updated_at=(now - timedelta(days=35)).isoformat(),
+        stage_changed_at=(now - timedelta(days=35)).isoformat()
     ),
 ]
 
@@ -256,19 +575,27 @@ class CommunicationSummary(BaseModel):
 def get_pipeline_stats(team_id: Optional[str] = Query(None)):
     """
     Get pipeline statistics for dashboard.
-    Returns mock data for demonstration purposes.
+    Returns counts based on enhanced seed data.
     """
+    # Count properties by stage
+    stage_counts = {}
+    for prop in MOCK_PROPERTIES:
+        stage = prop.current_stage
+        stage_counts[stage] = stage_counts.get(stage, 0) + 1
+
+    # Calculate properties needing contact (new + outreach stages with no recent contact)
+    needing_contact = sum(
+        1 for prop in MOCK_PROPERTIES
+        if prop.current_stage in ["new", "outreach"] and (
+            not prop.last_contact_at or
+            (datetime.fromisoformat(prop.last_contact_at) < datetime.now() - timedelta(days=7))
+        )
+    )
+
     return PipelineStats(
         total_properties=len(MOCK_PROPERTIES),
-        stage_counts={
-            "new": 5,
-            "outreach": 8,
-            "qualified": 6,
-            "negotiation": 3,
-            "under_contract": 2,
-            "closed_won": 1,
-        },
-        properties_needing_contact=12
+        stage_counts=stage_counts,
+        properties_needing_contact=needing_contact
     )
 
 
