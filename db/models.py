@@ -70,7 +70,7 @@ class Property(Base):
     status = Column(String(50), nullable=False, default="new", index=True)
 
     # Metadata
-    metadata = Column(JSON, default={})
+    extra_data = Column(JSON, default={})
 
     # Timestamps
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
@@ -265,7 +265,7 @@ class GeneratedDocument(Base):
     generation_time_ms = Column(Integer)
 
     # Additional metadata
-    metadata = Column(JSON, default={})
+    extra_data = Column(JSON, default={})
 
     # Timestamps
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
@@ -328,7 +328,7 @@ class Campaign(Base):
     completed_at = Column(TIMESTAMP(timezone=True))
 
     # Metadata
-    metadata = Column(JSON, default={})
+    extra_data = Column(JSON, default={})
 
     # Timestamps
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
@@ -382,7 +382,7 @@ class OutreachLog(Base):
     bounce_reason = Column(Text)
 
     # Metadata
-    metadata = Column(JSON, default={})
+    extra_data = Column(JSON, default={})
 
     # Timestamps
     created_at = Column(TIMESTAMP(timezone=True), server_default=func.now(), nullable=False)
