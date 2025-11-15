@@ -1,10 +1,258 @@
-﻿<mjml>
-  <mj-body>
-    <mj-section>
+<mjml>
+  <mj-head>
+    <mj-title>Investment Opportunity - {address}</mj-title>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="14px" color="#333333" line-height="1.6" />
+      <mj-section background-color="#ffffff" padding="20px" />
+    </mj-attributes>
+    <mj-style>
+      .score-high { color: #10b981; font-weight: bold; }
+      .score-medium { color: #f59e0b; font-weight: bold; }
+      .score-low { color: #ef4444; font-weight: bold; }
+      .metric-label { color: #6b7280; font-size: 12px; }
+      .metric-value { color: #111827; font-size: 16px; font-weight: 600; }
+    </mj-style>
+  </mj-head>
+  <mj-body background-color="#f3f4f6">
+    <!-- Header -->
+    <mj-section background-color="#2563eb" padding="40px 20px">
       <mj-column>
-        <mj-text font-size="20px" font-weight="bold">Investor Memo – {address}</mj-text>
-        <mj-text>Bird-Dog Score: {score}</mj-text>
-        <mj-text>Asking Price: {price}</mj-text>
+        <mj-text font-size="32px" font-weight="bold" color="#ffffff" align="center">
+          INVESTMENT OPPORTUNITY
+        </mj-text>
+        <mj-text font-size="18px" color="#dbeafe" align="center">
+          Confidential Investment Memo
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Property Address -->
+    <mj-section background-color="#ffffff" padding="30px 20px">
+      <mj-column>
+        <mj-text font-size="24px" font-weight="bold" color="#111827">
+          {address}
+        </mj-text>
+        <mj-text font-size="16px" color="#6b7280">
+          {city}, {state} {zip_code}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Investment Score -->
+    <mj-section background-color="#f9fafb" padding="30px 20px">
+      <mj-column>
+        <mj-text align="center" font-size="14px" color="#6b7280" padding-bottom="10px">
+          INVESTMENT SCORE
+        </mj-text>
+        <mj-text align="center" font-size="64px" font-weight="bold" css-class="{score_class}" padding="0">
+          {total_score}
+        </mj-text>
+        <mj-text align="center" font-size="12px" color="#9ca3af">
+          out of 100
+        </mj-text>
+        <mj-text align="center" font-size="18px" font-weight="bold" color="#2563eb" padding-top="10px">
+          {recommendation}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Key Metrics -->
+    <mj-section background-color="#ffffff" padding="30px 20px">
+      <mj-column>
+        <mj-text font-size="18px" font-weight="bold" color="#111827" padding-bottom="15px">
+          Key Metrics
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#ffffff" padding="10px 20px">
+      <mj-column width="50%">
+        <mj-text css-class="metric-label">Listing Price</mj-text>
+        <mj-text css-class="metric-value">${price}</mj-text>
+      </mj-column>
+      <mj-column width="50%">
+        <mj-text css-class="metric-label">Property Type</mj-text>
+        <mj-text css-class="metric-value">{property_type}</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#ffffff" padding="10px 20px">
+      <mj-column width="25%">
+        <mj-text css-class="metric-label">Bedrooms</mj-text>
+        <mj-text css-class="metric-value">{bedrooms}</mj-text>
+      </mj-column>
+      <mj-column width="25%">
+        <mj-text css-class="metric-label">Bathrooms</mj-text>
+        <mj-text css-class="metric-value">{bathrooms}</mj-text>
+      </mj-column>
+      <mj-column width="25%">
+        <mj-text css-class="metric-label">Square Feet</mj-text>
+        <mj-text css-class="metric-value">{sqft}</mj-text>
+      </mj-column>
+      <mj-column width="25%">
+        <mj-text css-class="metric-label">Year Built</mj-text>
+        <mj-text css-class="metric-value">{year_built}</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Investment Analysis -->
+    <mj-section background-color="#f9fafb" padding="30px 20px">
+      <mj-column>
+        <mj-text font-size="18px" font-weight="bold" color="#111827" padding-bottom="15px">
+          Investment Analysis
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#f9fafb" padding="10px 20px">
+      <mj-column width="50%">
+        <mj-text css-class="metric-label">Cap Rate</mj-text>
+        <mj-text css-class="metric-value">{cap_rate}%</mj-text>
+      </mj-column>
+      <mj-column width="50%">
+        <mj-text css-class="metric-label">Cash on Cash Return</mj-text>
+        <mj-text css-class="metric-value">{cash_on_cash_return}%</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#f9fafb" padding="10px 20px">
+      <mj-column width="50%">
+        <mj-text css-class="metric-label">Monthly Rent Estimate</mj-text>
+        <mj-text css-class="metric-value">${monthly_rent}</mj-text>
+      </mj-column>
+      <mj-column width="50%">
+        <mj-text css-class="metric-label">Gross Yield</mj-text>
+        <mj-text css-class="metric-value">{gross_yield}%</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Market Data -->
+    <mj-section background-color="#ffffff" padding="30px 20px">
+      <mj-column>
+        <mj-text font-size="18px" font-weight="bold" color="#111827" padding-bottom="15px">
+          Market & Location Data
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#ffffff" padding="10px 20px">
+      <mj-column width="50%">
+        <mj-text css-class="metric-label">School Rating</mj-text>
+        <mj-text css-class="metric-value">{school_rating}/10</mj-text>
+      </mj-column>
+      <mj-column width="50%">
+        <mj-text css-class="metric-label">Walk Score</mj-text>
+        <mj-text css-class="metric-value">{walkability_score}/100</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#ffffff" padding="10px 20px">
+      <mj-column width="50%">
+        <mj-text css-class="metric-label">Crime Rate</mj-text>
+        <mj-text css-class="metric-value">{crime_rate}</mj-text>
+      </mj-column>
+      <mj-column width="50%">
+        <mj-text css-class="metric-label">Median Area Rent</mj-text>
+        <mj-text css-class="metric-value">${median_rent}</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Score Breakdown -->
+    <mj-section background-color="#f9fafb" padding="30px 20px">
+      <mj-column>
+        <mj-text font-size="18px" font-weight="bold" color="#111827" padding-bottom="15px">
+          Score Breakdown
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#f9fafb" padding="10px 20px">
+      <mj-column width="50%">
+        <mj-text css-class="metric-label">Price Analysis</mj-text>
+        <mj-text css-class="metric-value">{price_score}/100</mj-text>
+      </mj-column>
+      <mj-column width="50%">
+        <mj-text css-class="metric-label">Investment Metrics</mj-text>
+        <mj-text css-class="metric-value">{investment_metrics_score}/100</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <mj-section background-color="#f9fafb" padding="10px 20px">
+      <mj-column width="50%">
+        <mj-text css-class="metric-label">Location Quality</mj-text>
+        <mj-text css-class="metric-value">{location_quality_score}/100</mj-text>
+      </mj-column>
+      <mj-column width="50%">
+        <mj-text css-class="metric-label">Property Condition</mj-text>
+        <mj-text css-class="metric-value">{property_condition_score}/100</mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Risk Assessment -->
+    <mj-section background-color="#ffffff" padding="30px 20px">
+      <mj-column>
+        <mj-text font-size="18px" font-weight="bold" color="#111827" padding-bottom="10px">
+          Risk Assessment
+        </mj-text>
+        <mj-text css-class="metric-label">Risk Level</mj-text>
+        <mj-text font-size="18px" font-weight="bold" color="#f59e0b">
+          {risk_level}
+        </mj-text>
+        <mj-text font-size="14px" color="#6b7280" padding-top="10px">
+          {risk_factors}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Recommendation Summary -->
+    <mj-section background-color="#f9fafb" padding="30px 20px">
+      <mj-column>
+        <mj-text font-size="18px" font-weight="bold" color="#111827" padding-bottom="10px">
+          Recommendation
+        </mj-text>
+        <mj-text font-size="14px" color="#4b5563" line-height="1.8">
+          {recommendation_reason}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Property Features -->
+    <mj-section background-color="#ffffff" padding="30px 20px">
+      <mj-column>
+        <mj-text font-size="18px" font-weight="bold" color="#111827" padding-bottom="10px">
+          Property Features
+        </mj-text>
+        <mj-text font-size="14px" color="#4b5563">
+          {features}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Description -->
+    <mj-section background-color="#f9fafb" padding="30px 20px">
+      <mj-column>
+        <mj-text font-size="18px" font-weight="bold" color="#111827" padding-bottom="10px">
+          Property Description
+        </mj-text>
+        <mj-text font-size="14px" color="#4b5563" line-height="1.8">
+          {description}
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Footer -->
+    <mj-section background-color="#1f2937" padding="30px 20px">
+      <mj-column>
+        <mj-text align="center" color="#9ca3af" font-size="12px">
+          Generated by Real Estate OS - Investment Analysis Platform
+        </mj-text>
+        <mj-text align="center" color="#9ca3af" font-size="12px">
+          {generated_date}
+        </mj-text>
+        <mj-text align="center" color="#6b7280" font-size="11px" padding-top="15px">
+          This document is confidential and intended solely for investment analysis purposes.
+        </mj-text>
       </mj-column>
     </mj-section>
   </mj-body>

@@ -9,6 +9,7 @@ sys.path.insert(0, '/home/user/real-estate-os')
 from api.database import get_db
 from api.schemas import Campaign, CampaignCreate, OutreachLog, CampaignStatus
 from db.models import Campaign as CampaignModel, OutreachLog as OutreachModel
+from agents.outreach.email_service import EmailService
 
 router = APIRouter(prefix="/api/campaigns", tags=["campaigns"])
 
@@ -70,7 +71,7 @@ def send_campaign(
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
 ):
-    """Send a campaign (simulated)."""
+    """Execute a campaign and send emails (simulated)."""
 
     campaign = db.query(CampaignModel).filter(CampaignModel.id == campaign_id).first()
 
@@ -80,17 +81,41 @@ def send_campaign(
     if campaign.status not in ['draft', 'scheduled']:
         raise HTTPException(status_code=400, detail="Campaign has already been sent or is in progress")
 
-    # Update campaign status
-    campaign.status = 'sending'
-    db.commit()
+    # Execute campaign using email service
+    try:
+        email_service = EmailService(db)
 
-    # In production, trigger actual email sending
-    return {
-        "message": "Campaign send triggered",
-        "campaign_id": campaign_id,
-        "status": "sending",
-        "total_recipients": campaign.total_recipients,
-    }
+        # Send campaign emails
+        result = email_service.send_campaign(campaign_id)
+
+        # Simulate engagement for demo
+        if result['sent'] > 0:
+            engagement = email_service.simulate_engagement(campaign_id, engagement_rate=0.35)
+
+            return {
+                "message": "Campaign executed successfully",
+                "campaign_id": campaign_id,
+                "status": "completed",
+                "sent": result['sent'],
+                "engagement": {
+                    "opened": engagement['opened'],
+                    "clicked": engagement['clicked'],
+                    "replied": engagement['replied'],
+                    "open_rate": engagement['open_rate'],
+                }
+            }
+        else:
+            return {
+                "message": "No emails sent - no matching properties found",
+                "campaign_id": campaign_id,
+                "status": "completed",
+                "sent": 0,
+            }
+
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to send campaign: {str(e)}")
 
 
 @router.get("/{campaign_id}/logs", response_model=List[OutreachLog])

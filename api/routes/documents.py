@@ -4,12 +4,14 @@ from typing import List
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Response
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
+import os
 import sys
 sys.path.insert(0, '/home/user/real-estate-os')
 
 from api.database import get_db
 from api.schemas import GeneratedDocument, DocumentCreate, DocumentType
 from db.models import GeneratedDocument as DocumentModel, Property as PropertyModel
+from agents.docgen.service import DocumentService
 
 router = APIRouter(prefix="/api/properties", tags=["documents"])
 
@@ -87,12 +89,22 @@ def generate_property_memo(
     if not property_obj:
         raise HTTPException(status_code=404, detail=f"Property {property_id} not found")
 
-    # In production, trigger PDF generation service
-    return {
-        "message": "Memo generation triggered",
-        "property_id": property_id,
-        "status": "pending",
-    }
+    # Generate PDF using document service
+    try:
+        service = DocumentService(db)
+        document = service.generate_investor_memo(property_id)
+
+        return {
+            "message": "Memo generated successfully",
+            "property_id": property_id,
+            "document_id": document.id,
+            "file_path": document.file_path,
+            "status": "completed",
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to generate memo: {str(e)}")
 
 
 @router.get("/{property_id}/memo.pdf")
@@ -107,20 +119,22 @@ def download_property_memo(
     if not property_obj:
         raise HTTPException(status_code=404, detail=f"Property {property_id} not found")
 
-    # Get memo
+    # Get most recent memo
     memo = db.query(DocumentModel).filter(
         DocumentModel.property_id == property_id,
-        DocumentModel.document_type == DocumentType.INVESTOR_MEMO,
-        DocumentModel.status == "completed"
-    ).first()
+        DocumentModel.document_type == "investor_memo"
+    ).order_by(DocumentModel.generated_at.desc()).first()
 
     if not memo or not memo.file_path:
         raise HTTPException(status_code=404, detail=f"PDF not available for property {property_id}")
 
-    # In production, return actual PDF file
-    # For now, return placeholder response
-    return Response(
-        content=b"PDF placeholder - not yet generated",
+    # Check if file exists
+    if not os.path.exists(memo.file_path):
+        raise HTTPException(status_code=404, detail=f"PDF file not found at {memo.file_path}")
+
+    # Return the actual PDF file
+    return FileResponse(
+        path=memo.file_path,
         media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename=investor_memo_{property_id}.pdf"}
+        filename=f"investor_memo_{property_id}.pdf"
     )
